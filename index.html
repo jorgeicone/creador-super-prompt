@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creador de Super Prompt</title>
+<style>
+  :root{
+    --bg:#050d1f; --panel:#0b1730; --panel2:#0f1e3d;
+    --border:#1c2f52; --txt:#e8eefc; --muted:#8fa3c8;
+    --cyan:#00d4ff; --purple:#7b2fff; --orange:#ff8c00;
+    --ok:#22d3a6; --err:#ff5a72;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(123,47,255,.18), transparent 55%),
+      radial-gradient(1000px 600px at -10% 20%, rgba(0,212,255,.14), transparent 55%),
+      var(--bg);
+    color:var(--txt); min-height:100vh; line-height:1.55;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 80px}
+  header.top{display:flex;flex-direction:column;gap:6px;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    display:grid;place-items:center;font-weight:800;font-size:20px;color:#04101f;
+    box-shadow:0 0 24px rgba(0,212,255,.35)}
+  h1{font-size:1.7rem;margin:0;font-weight:800;letter-spacing:-.5px}
+  h1 .accent{background:linear-gradient(90deg,var(--cyan),var(--purple));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:.95rem;margin:0}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .card.dim{opacity:.5;pointer-events:none}
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .step-num{width:28px;height:28px;border-radius:50%;flex:0 0 auto;
+    display:grid;place-items:center;font-weight:700;font-size:.9rem;
+    background:rgba(0,212,255,.12);border:1px solid var(--cyan);color:var(--cyan)}
+  .card-head h2{font-size:1.12rem;margin:0}
+  .card-head p{margin:0;color:var(--muted);font-size:.85rem}
+
+  label{display:block;font-size:.82rem;color:var(--muted);margin:0 0 6px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.5px}
+  input[type=text],input[type=password],textarea,select{
+    width:100%;background:#081327;border:1px solid var(--border);color:var(--txt);
+    border-radius:12px;padding:12px 14px;font-size:.98rem;font-family:inherit;outline:none;
+    transition:border-color .15s, box-shadow .15s}
+  textarea{resize:vertical;min-height:96px}
+  input:focus,textarea:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.15)}
+
+  .types{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .type{cursor:pointer;text-align:center;padding:14px 8px;border-radius:12px;
+    border:1px solid var(--border);background:#081327;transition:.15s;font-weight:600;font-size:.9rem}
+  .type .ico{font-size:1.4rem;display:block;margin-bottom:4px}
+  .type:hover{border-color:var(--purple)}
+  .type.active{border-color:var(--cyan);background:rgba(0,212,255,.1);
+    box-shadow:0 0 0 2px rgba(0,212,255,.25) inset}
+
+  .btn{cursor:pointer;border:none;border-radius:12px;padding:13px 22px;font-size:1rem;
+    font-weight:700;font-family:inherit;color:#04101f;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    transition:transform .1s, box-shadow .15s, filter .15s;
+    box-shadow:0 8px 22px rgba(123,47,255,.3)}
+  .btn:hover{filter:brightness(1.06);box-shadow:0 10px 28px rgba(0,212,255,.35)}
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;filter:grayscale(.3)}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--border);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--cyan)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grow{flex:1 1 auto}
+
+  .q{margin-bottom:14px}
+  .q label{color:var(--cyan);text-transform:none;font-size:.95rem;letter-spacing:0}
+
+  .result{background:#04101f;border:1px solid var(--border);border-radius:12px;
+    padding:18px;white-space:pre-wrap;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:.9rem;line-height:1.6;color:#d7e3ff;max-height:520px;overflow:auto}
+
+  .chatlog{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:220px;overflow:auto}
+  .msg{padding:9px 13px;border-radius:12px;font-size:.9rem;max-width:85%}
+  .msg.me{align-self:flex-end;background:rgba(123,47,255,.2);border:1px solid var(--purple)}
+  .msg.ai{align-self:flex-start;background:rgba(0,212,255,.1);border:1px solid var(--border);color:var(--muted)}
+
+  .settings{display:grid;grid-template-columns:1fr 200px;gap:12px}
+  .keyrow{display:flex;gap:8px;align-items:end}
+  .note{font-size:.78rem;color:var(--muted);margin-top:8px}
+  .note a{color:var(--cyan)}
+  .status{font-size:.85rem;margin-top:8px;min-height:1.2em}
+  .status.err{color:var(--err)}
+  .status.ok{color:var(--ok)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.25);
+    border-top-color:var(--cyan);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  details.adv{margin-bottom:18px}
+  details.adv summary{cursor:pointer;color:var(--muted);font-size:.9rem;user-select:none}
+  .hidden{display:none}
+  .pill{display:inline-block;font-size:.72rem;padding:3px 9px;border-radius:20px;
+    background:rgba(255,140,0,.15);border:1px solid var(--orange);color:var(--orange);font-weight:700}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:30px}
+  @media(max-width:640px){.types{grid-template-columns:repeat(2,1fr)}.settings{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">SP</div>
+      <div>
+        <h1>Creador de <span class="accent">Super Prompt</span></h1>
+        <p class="sub">Tu laboratorio de ingeniería de prompts, potenciado por Claude</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Configuración / API -->
+  <details class="adv card" open>
+    <summary style="font-size:1.05rem;font-weight:700;color:var(--txt)">⚙️ Configuración de la API de Claude</summary>
+    <div style="margin-top:16px">
+      <div class="settings">
+        <div>
+          <label>Tu API Key de Anthropic</label>
+          <div class="keyrow">
+            <input type="password" id="apiKey" class="grow" placeholder="sk-ant-..." autocomplete="off" />
+            <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar">👁</button>
+          </div>
+        </div>
+        <div>
+          <label>Modelo</label>
+          <select id="model">
+            <option value="claude-sonnet-5">Claude Sonnet 5 (equilibrado)</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (rápido)</option>
+            <option value="claude-opus-4-8">Claude Opus 4.8 (máxima calidad)</option>
+          </select>
+        </div>
+      </div>
+      <label style="margin-top:12px"><input type="checkbox" id="remember" style="width:auto;margin-right:6px" />Recordar la key en este navegador</label>
+      <p class="note">🔒 La key se usa solo desde <b>tu navegador</b> hacia Anthropic; no se envía ni almacena en ningún servidor. Consíguela en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+    </div>
+  </details>
+
+  <!-- Paso 1 -->
+  <section class="card" id="card1">
+    <div class="card-head">
+      <div class="step-num">1</div>
+      <div><h2>Ingresa tu idea</h2><p>Elige el tipo y descríbela con tus propias palabras.</p></div>
+    </div>
+    <label>Tipo de prompt</label>
+    <div class="types" id="types">
+      <div class="type active" data-type="Redacción"><span class="ico">✍️</span>Redacción</div>
+      <div class="type" data-type="Código"><span class="ico">💻</span>Código</div>
+      <div class="type" data-type="Análisis"><span class="ico">📊</span>Análisis</div>
+      <div class="type" data-type="General"><span class="ico">✨</span>General</div>
+    </div>
+    <label>¿Qué necesitas?</label>
+    <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para LinkedIn sobre inteligencia artificial para emprendedores..."></textarea>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="genQuestions">Generar preguntas →</button>
+      <span class="status" id="status1"></span>
+    </div>
+  </section>
+
+  <!-- Paso 2 -->
+  <section class="card dim" id="card2">
+    <div class="card-head">
+      <div class="step-num">2</div>
+      <div><h2>La IA te interroga</h2><p>Responde estas 3 preguntas clave para afinar el prompt.</p></div>
+    </div>
+    <div id="questions"></div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn" id="genPrompt">Crear Super Prompt ✨</button>
+      <span class="status" id="status2"></span>
+    </div>
+  </section>
+
+  <!-- Paso 3 -->
+  <section class="card dim" id="card3">
+    <div class="card-head">
+      <div class="step-num">3</div>
+      <div><h2>Tu Super Prompt <span class="pill">listo para usar</span></h2><p>Estructurado con rol, contexto, restricciones y formato de salida.</p></div>
+    </div>
+    <div class="result" id="result"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="copyBtn">📋 Copiar</button>
+      <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
+      <span class="status" id="status3"></span>
+    </div>
+
+    <!-- Chat de refinamiento -->
+    <div style="margin-top:22px;border-top:1px solid var(--border);padding-top:18px">
+      <label>Chat de ajuste continuo</label>
+      <div class="chatlog" id="chatlog"></div>
+      <div class="row">
+        <input type="text" id="chatInput" class="grow" placeholder='Ej: "hazlo más corto", "cambia el tono a divertido", "en inglés"...' />
+        <button class="btn" id="chatSend">Ajustar</button>
+      </div>
+      <span class="status" id="status4"></span>
+    </div>
+  </section>
+
+  <footer>Hecho con Claude · ICONE ialabs</footer>
+</div>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+const $ = id => document.getElementById(id);
+
+let state = { type:"Redacción", idea:"", questions:[], currentPrompt:"" };
+
+// ---------- API key persistence ----------
+(function initKey(){
+  const saved = localStorage.getItem("sp_key");
+  if(saved){ $("apiKey").value = saved; $("remember").checked = true; }
+  const savedModel = localStorage.getItem("sp_model");
+  if(savedModel) $("model").value = savedModel;
+})();
+$("remember").addEventListener("change", e=>{
+  if(e.target.checked) localStorage.setItem("sp_key", $("apiKey").value.trim());
+  else localStorage.removeItem("sp_key");
+});
+$("apiKey").addEventListener("input", ()=>{ if($("remember").checked) localStorage.setItem("sp_key",$("apiKey").value.trim()); });
+$("model").addEventListener("change", ()=> localStorage.setItem("sp_model",$("model").value));
+$("toggleKey").addEventListener("click", ()=>{
+  const f=$("apiKey"); f.type = f.type==="password"?"text":"password";
+});
+
+// ---------- type selector ----------
+$("types").addEventListener("click", e=>{
+  const t = e.target.closest(".type"); if(!t) return;
+  document.querySelectorAll(".type").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active"); state.type = t.dataset.type;
+});
+
+// ---------- Claude call ----------
+async function callClaude({system, messages, max_tokens=1500}){
+  const key = $("apiKey").value.trim();
+  if(!key) throw new Error("Ingresa tu API Key de Anthropic arriba.");
+  const res = await fetch(API_URL, {
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body: JSON.stringify({ model:$("model").value, max_tokens, system, messages })
+  });
+  if(!res.ok){
+    let detail="";
+    try{ const j=await res.json(); detail = j.error?.message || JSON.stringify(j); }catch(e){ detail = res.statusText; }
+    if(res.status===401) throw new Error("API Key inválida o sin permisos (401).");
+    throw new Error("Error "+res.status+": "+detail);
+  }
+  const data = await res.json();
+  return (data.content||[]).map(b=>b.text||"").join("").trim();
+}
+
+function extractJSON(txt){
+  // busca el primer bloque JSON válido
+  const clean = txt.replace(/```json/gi,"").replace(/```/g,"").trim();
+  try{ return JSON.parse(clean); }catch(e){}
+  const m = clean.match(/\{[\s\S]*\}/);
+  if(m){ try{ return JSON.parse(m[0]); }catch(e){} }
+  return null;
+}
+
+function setStatus(el, msg, kind){
+  el.className = "status"+(kind?(" "+kind):"");
+  el.innerHTML = kind==="loading" ? '<span class="spin"></span>'+msg : msg;
+}
+
+// ---------- Paso 1 -> preguntas ----------
+$("genQuestions").addEventListener("click", async ()=>{
+  state.idea = $("idea").value.trim();
+  if(!state.idea){ setStatus($("status1"),"Describe primero tu necesidad.","err"); return; }
+  const btn=$("genQuestions"); btn.disabled=true;
+  setStatus($("status1"),"Analizando tu idea…","loading");
+  try{
+    const system = `Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Tu tarea es generar EXACTAMENTE 3 preguntas breves, inteligentes y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (extrayendo rol/persona, formato de salida, audiencia, tono, restricciones o contexto faltante). Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
+    const out = await callClaude({ system, messages:[{role:"user",content:state.idea}], max_tokens:600 });
+    const j = extractJSON(out);
+    if(!j || !Array.isArray(j.questions) || j.questions.length===0) throw new Error("No se pudieron generar las preguntas. Intenta de nuevo.");
+    state.questions = j.questions.slice(0,3);
+    renderQuestions();
+    $("card2").classList.remove("dim");
+    $("card2").scrollIntoView({behavior:"smooth",block:"start"});
+    setStatus($("status1"),"✓ Preguntas generadas","ok");
+  }catch(err){ setStatus($("status1"),err.message,"err"); }
+  finally{ btn.disabled=false; }
+});
+
+function renderQuestions(){
+  $("questions").innerHTML = state.questions.map((q,i)=>`
+    <div class="q">
+      <label>${i+1}. ${q.replace(/</g,"&lt;")}</label>
+      <input type="text" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" />
+    </div>`).join("");
+}
+
+// ---------- Paso 2 -> prompt ----------
+$("genPrompt").addEventListener("click", async ()=>{
+  const answers = [...document.querySelectorAll(".qa")].map((a,i)=>({q:state.questions[i], a:a.value.trim()}));
+  const btn=$("genPrompt"); btn.disabled=true;
+  setStatus($("status2"),"Redactando tu Super Prompt…","loading");
+  try{
+    const qa = answers.map(x=>`- ${x.q}\n  Respuesta: ${x.a||"(sin respuesta / usa tu mejor criterio)"}`).join("\n");
+    const system = `Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla para las entradas del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
+    const user = `TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
+    const out = await callClaude({ system, messages:[{role:"user",content:user}], max_tokens:2000 });
+    state.currentPrompt = out;
+    $("result").textContent = out;
+    $("card3").classList.remove("dim");
+    $("chatlog").innerHTML="";
+    $("card3").scrollIntoView({behavior:"smooth",block:"start"});
+    setStatus($("status2"),"✓ Super Prompt creado","ok");
+  }catch(err){ setStatus($("status2"),err.message,"err"); }
+  finally{ btn.disabled=false; }
+});
+
+// ---------- Copiar / reiniciar ----------
+$("copyBtn").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText(state.currentPrompt); setStatus($("status3"),"✓ Copiado al portapapeles","ok"); }
+  catch(e){ setStatus($("status3"),"No se pudo copiar automáticamente.","err"); }
+});
+$("restartBtn").addEventListener("click", ()=>{
+  state.questions=[]; state.currentPrompt="";
+  $("idea").value=""; $("questions").innerHTML=""; $("result").textContent=""; $("chatlog").innerHTML="";
+  $("card2").classList.add("dim"); $("card3").classList.add("dim");
+  ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+// ---------- Chat de refinamiento ----------
+async function refine(){
+  const instr = $("chatInput").value.trim();
+  if(!instr) return;
+  if(!state.currentPrompt){ setStatus($("status4"),"Primero crea un prompt.","err"); return; }
+  $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg me">${instr.replace(/</g,"&lt;")}</div>`);
+  $("chatInput").value=""; $("chatlog").scrollTop=$("chatlog").scrollHeight;
+  const btn=$("chatSend"); btn.disabled=true;
+  setStatus($("status4"),"Ajustando…","loading");
+  try{
+    const system = `Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const user = `PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
+    const out = await callClaude({ system, messages:[{role:"user",content:user}], max_tokens:2000 });
+    state.currentPrompt = out;
+    $("result").textContent = out;
+    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">✓ Prompt actualizado arriba</div>`);
+    $("chatlog").scrollTop=$("chatlog").scrollHeight;
+    setStatus($("status4"),"","");
+  }catch(err){ setStatus($("status4"),err.message,"err"); }
+  finally{ btn.disabled=false; }
+}
+$("chatSend").addEventListener("click", refine);
+$("chatInput").addEventListener("keydown", e=>{ if(e.key==="Enter") refine(); });
+</script>
+</body>
+</html>
