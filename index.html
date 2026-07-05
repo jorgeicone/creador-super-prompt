@@ -314,17 +314,20 @@
 
 <script>
 /* ====================================================================
-   CONFIGURACIÓN — AQUÍ INCRUSTAS TU KEY GRATIS DE GEMINI
+   CONFIGURACIÓN
    --------------------------------------------------------------------
-   1) Consíguela gratis en: https://aistudio.google.com/apikey
-   2) NO actives facturación en el proyecto de Google (así jamás te cobran).
-   3) Restringe la key a tu dominio (HTTP referrers) en Google Cloud.
-   4) Pega la key entre las comillas de EMBEDDED_KEY.
-      - Si la dejas vacía (""), la app le pedirá al usuario su propia key.
+   MODO REGALO (recomendado): pega la URL de tu proxy en PROXY_URL.
+   La key vive OCULTA en el servidor (Cloudflare Worker), nunca aquí.
+     -> PROXY_URL: "https://superprompt.TU-CUENTA.workers.dev"
+
+   La app decide sola:
+     · Si PROXY_URL está lleno  -> IA gratis incluida (config oculta).
+     · Si está vacío            -> le pide al usuario su propia key gratis.
    ==================================================================== */
 const CONFIG = {
-  EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU KEY GRATIS (ej: "AIzaSy...")
-  MODEL: "gemini-2.5-flash"  // modelo por defecto cuando la key va incrustada
+  PROXY_URL: "",             // 👈 PEGA AQUÍ LA URL DE TU WORKER (modo regalo)
+  EMBEDDED_KEY: "",          // (alternativa NO recomendada: key directa en el código)
+  MODEL: "gemini-2.5-flash"  // modelo por defecto en modo regalo
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
@@ -400,11 +403,13 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
 
 /* ============ LÓGICA DE LA APP (Google Gemini) ============ */
 const $=id=>document.getElementById(id);
-const HAS_EMBEDDED = !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY.trim().length>10);
+const HAS_PROXY = !!(CONFIG.PROXY_URL && /^https?:\/\//.test(CONFIG.PROXY_URL.trim()));
+const HAS_EMBEDDED = !HAS_PROXY && !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY.trim().length>10);
+const FREE_MODE = HAS_PROXY || HAS_EMBEDDED;
 let state={type:"Redacción",idea:"",questions:[],currentPrompt:""};
 
-// Mostrar/ocultar configuración según si la key viene incluida
-if(HAS_EMBEDDED){
+// Mostrar/ocultar configuración según el modo
+if(FREE_MODE){
   $("freeBanner").classList.remove("hidden");
   $("cfg").classList.add("hidden");
 }else{
@@ -412,10 +417,10 @@ if(HAS_EMBEDDED){
 }
 
 function currentKey(){ return HAS_EMBEDDED ? CONFIG.EMBEDDED_KEY.trim() : $("apiKey").value.trim(); }
-function currentModel(){ return HAS_EMBEDDED ? CONFIG.MODEL : $("model").value; }
+function currentModel(){ return FREE_MODE ? CONFIG.MODEL : $("model").value; }
 
 // key badge + persistencia (solo modo "usuario trae su key")
-if(!HAS_EMBEDDED){
+if(!FREE_MODE){
   const refreshBadge=()=>{const b=$("keyBadge"),has=$("apiKey").value.trim().length>10;
     b.className="keybadge "+(has?"yes":"no");b.textContent=has?"Key lista":"Sin key";};
   const k=localStorage.getItem("sp_key"); if(k){$("apiKey").value=k;$("remember").checked=true;}
@@ -445,8 +450,19 @@ function setStep(n){
   document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
 }
 
-// llamada a Gemini
+// llamada a la IA (proxy oculto  ó  key directa)
 async function callAI({system,user,max_tokens=1500,json=false}){
+  if(HAS_PROXY){
+    const res=await fetch(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({model:CONFIG.MODEL,system,user,max_tokens,json})});
+    let data={}; try{data=await res.json();}catch(e){}
+    if(!res.ok||data.error){
+      if(res.status===429)throw new Error("Se alcanzó el límite gratuito por ahora. Intenta en un momento.");
+      throw new Error(data.error||("Error "+res.status));
+    }
+    if(!data.text)throw new Error("La IA no devolvió texto. Intenta de nuevo.");
+    return data.text;
+  }
   const key=currentKey();
   if(!key)throw new Error("Configura primero tu API Key gratis de Gemini.");
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${currentModel()}:generateContent?key=${encodeURIComponent(key)}`;
@@ -483,10 +499,4 @@ $("genQuestions").addEventListener("click",async()=>{
   state.idea=$("idea").value.trim();
   if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");return;}
   const btn=$("genQuestions");btn.disabled=true;
-  setStatus($("status1"),"Analizando tu idea…","loading");
-  try{
-    const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves, inteligentes y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (extrayendo rol/persona, formato de salida, audiencia, tono, restricciones o contexto faltante). Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
-    const out=await callAI({system,user:state.idea,max_tokens:600,json:true});
-    const j=extractJSON(out);
-    if(!j||!Array.isArray(j.questions)||!j.questions.length)throw new Error("No se pudieron generar las preguntas. Intenta de nuevo.");
-    state.questions=j.questions.slice(0,3); renderQuesti
+  setStatus($("status1"),"Analizan
