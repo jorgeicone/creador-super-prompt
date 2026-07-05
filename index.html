@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="author" content="Ingeniero Jorge Hugo Pérez - ICONE ialabs" />
+<meta name="copyright" content="© Jorge Hugo Pérez - ICONE ialabs. Todos los derechos reservados. Prohibida la reproducción o copia sin autorización." />
+<meta name="rights" content="Todos los derechos reservados" />
 <title>Creador de Super Prompt · ICONE</title>
+<!--
+  ====================================================================
+  © Creado por el Ingeniero Jorge Hugo Pérez — ICONE ialabs
+  Todos los derechos reservados.
+  Queda prohibida la reproducción, copia, distribución o modificación
+  total o parcial de esta obra sin autorización expresa del autor.
+  ====================================================================
+-->
 <style>
   :root{
     --bg:#050d1f; --panel:rgba(13,26,52,.62); --panel-solid:#0b1730;
@@ -147,8 +158,14 @@
   .keybadge{font-size:.72rem;padding:4px 10px;border-radius:20px;font-weight:700;white-space:nowrap;align-self:center}
   .keybadge.no{background:rgba(255,90,114,.12);border:1px solid var(--err);color:var(--err)}
   .keybadge.yes{background:rgba(34,211,166,.12);border:1px solid var(--ok);color:var(--ok)}
-  footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:34px}
+  footer{text-align:center;color:var(--muted);margin-top:40px}
   footer .dot{color:var(--cyan)}
+  .legal{max-width:680px;margin:0 auto;padding:18px 22px;border:1px solid var(--border);
+    border-radius:14px;background:rgba(6,14,30,.5);backdrop-filter:blur(8px)}
+  .legal-main{margin:0 0 8px;font-size:.9rem;color:var(--txt)}
+  .legal-main strong{color:var(--cyan)}
+  .legal-fine{margin:0;font-size:.74rem;line-height:1.55;color:var(--muted)}
+  .legal-brand{font-size:.8rem;margin:16px 0 0}
 
   @keyframes rise{to{opacity:1;transform:none}}
   @keyframes slideIn{to{opacity:1;transform:none}}
@@ -276,10 +293,22 @@
     </div>
   </section>
 
-  <footer>Hecho con Claude <span class="dot">●</span> ICONE ialabs</footer>
+  <footer>
+    <div class="legal">
+      <p class="legal-main">© <span id="year"></span> · <strong>Creado por el Ingeniero Jorge Hugo Pérez</strong> · ICONE ialabs</p>
+      <p class="legal-fine">Todos los derechos reservados. Queda estrictamente prohibida la reproducción, copia, distribución, modificación o uso total o parcial de esta aplicación, su código, diseño o metodología sin autorización expresa y por escrito de su autor. Obra protegida por las leyes de propiedad intelectual y derechos de autor.</p>
+    </div>
+    <p class="legal-brand">Hecho con Claude <span class="dot">●</span> ICONE ialabs</p>
+  </footer>
 </div>
 
 <script>
+/* ============ AVISO LEGAL / AUTORÍA ============ */
+/* © Creado por el Ingeniero Jorge Hugo Pérez — ICONE ialabs.
+   Todos los derechos reservados. Prohibida la reproducción o copia sin autorización. */
+document.getElementById("year").textContent=new Date().getFullYear();
+console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — Todos los derechos reservados. Prohibida su reproducción o copia sin autorización expresa.","color:#00d4ff;font-weight:bold;font-size:13px");
+
 /* ============ FONDO: red neuronal + partículas discretas ============ */
 (function neuralBG(){
   const c=document.getElementById("neural"), x=c.getContext("2d");
@@ -454,39 +483,4 @@ $("genPrompt").addEventListener("click",async()=>{
     unlock("card3"); setStep(3); $("chatlog").innerHTML="";
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     setStatus($("status2"),"✓ Super Prompt creado","ok");
-  }catch(err){setStatus($("status2"),err.message,"err");}
-  finally{btn.disabled=false;}
-});
-
-// copiar / reiniciar
-$("copyBtn").addEventListener("click",async()=>{
-  try{await navigator.clipboard.writeText(state.currentPrompt);setStatus($("status3"),"✓ Copiado al portapapeles","ok");}
-  catch(e){setStatus($("status3"),"No se pudo copiar automáticamente.","err");}
-});
-$("restartBtn").addEventListener("click",()=>{
-  state.questions=[];state.currentPrompt="";
-  $("idea").value="";$("questions").innerHTML="";$("result").textContent="";$("chatlog").innerHTML="";
-  $("card2").classList.add("locked");$("card3").classList.add("locked");
-  ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
-  setStep(1); window.scrollTo({top:0,behavior:"smooth"});
-});
-
-// chat de refinamiento
-async function refine(){
-  const instr=$("chatInput").value.trim(); if(!instr)return;
-  if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
-  $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg me">${instr.replace(/</g,"&lt;")}</div>`);
-  $("chatInput").value="";$("chatlog").scrollTop=$("chatlog").scrollHeight;
-  const btn=$("chatSend");btn.disabled=true;
-  setStatus($("status4"),"Ajustando…","loading");
-  try{
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
-    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
-    const out=await callClaude({system,messages:[{role:"user",content:user}],max_tokens:2000});
-    state.currentPrompt=out;$("result").textContent=out;
-    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">✓ Prompt actualizado arriba</div>`);
-    $("chatlog").scrollTop=$("chatlog").scrollHeight;setStatus($("status4"),"","");
-  }catch(err){setStatus($("status4"),err.message,"err");}
-  finally{btn.disabled=false;}
-}
-$("chatSend").addEventListener("click"
+  }catch(err){setStatus($("status2"),err.me
