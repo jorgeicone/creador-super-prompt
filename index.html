@@ -500,4 +500,86 @@ function setStatus(el,msg,kind){el.className="status"+(kind?(" "+kind):"");el.in
 function unlock(id){$(id).classList.remove("locked");}
 
 // Paso 1 -> preguntas
-$("genQuestions").addEventListener("click"
+$("genQuestions").addEventListener("click",async()=>{
+  state.idea=$("idea").value.trim();
+  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");return;}
+  const btn=$("genQuestions");btn.disabled=true;
+  setStatus($("status1"),"Analizando tu idea…","loading");
+  try{
+    const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves, inteligentes y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (extrayendo rol/persona, formato de salida, audiencia, tono, restricciones o contexto faltante). Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
+    const out=await callAI({system,user:state.idea,max_tokens:600,json:true});
+    const j=extractJSON(out);
+    if(!j||!Array.isArray(j.questions)||!j.questions.length)throw new Error("No se pudieron generar las preguntas. Intenta de nuevo.");
+    state.questions=j.questions.slice(0,3); renderQuestions();
+    unlock("card2"); setStep(2);
+    $("card2").scrollIntoView({behavior:"smooth",block:"center"});
+    setStatus($("status1"),"✓ Preguntas generadas","ok");
+  }catch(err){setStatus($("status1"),err.message,"err");}
+  finally{btn.disabled=false;}
+});
+function renderQuestions(){
+  $("questions").innerHTML=state.questions.map((q,i)=>`
+    <div class="q"><label>${i+1}. ${q.replace(/</g,"&lt;")}</label>
+    <input type="text" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" /></div>`).join("");
+}
+
+// Paso 2 -> prompt
+$("genPrompt").addEventListener("click",async()=>{
+  const answers=[...document.querySelectorAll(".qa")].map((a,i)=>({q:state.questions[i],a:a.value.trim()}));
+  const btn=$("genPrompt");btn.disabled=true;
+  setStatus($("status2"),"Redactando tu Super Prompt…","loading");
+  try{
+    const qa=answers.map(x=>`- ${x.q}\n  Respuesta: ${x.a||"(sin respuesta / usa tu mejor criterio)"}`).join("\n");
+    const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla para las entradas del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
+    const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
+    const out=await callAI({system,user,max_tokens:2000});
+    state.currentPrompt=out; $("result").textContent=out;
+    unlock("card3"); setStep(3); $("chatlog").innerHTML="";
+    $("card3").scrollIntoView({behavior:"smooth",block:"start"});
+    setStatus($("status2"),"✓ Super Prompt creado","ok");
+  }catch(err){setStatus($("status2"),err.message,"err");}
+  finally{btn.disabled=false;}
+});
+
+// copiar / reiniciar
+$("copyBtn").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(state.currentPrompt);setStatus($("status3"),"✓ Copiado al portapapeles","ok");}
+  catch(e){setStatus($("status3"),"No se pudo copiar automáticamente.","err");}
+});
+$("restartBtn").addEventListener("click",()=>{
+  state.questions=[];state.currentPrompt="";
+  $("idea").value="";$("questions").innerHTML="";$("result").textContent="";$("chatlog").innerHTML="";
+  $("card2").classList.add("locked");$("card3").classList.add("locked");
+  ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
+  setStep(1); window.scrollTo({top:0,behavior:"smooth"});
+});
+
+// chat de refinamiento
+async function refine(){
+  const instr=$("chatInput").value.trim(); if(!instr)return;
+  if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
+  $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg me">${instr.replace(/</g,"&lt;")}</div>`);
+  $("chatInput").value="";$("chatlog").scrollTop=$("chatlog").scrollHeight;
+  const btn=$("chatSend");btn.disabled=true;
+  setStatus($("status4"),"Ajustando…","loading");
+  try{
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
+    const out=await callAI({system,user,max_tokens:2000});
+    state.currentPrompt=out;$("result").textContent=out;
+    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">✓ Prompt actualizado arriba</div>`);
+    $("chatlog").scrollTop=$("chatlog").scrollHeight;setStatus($("status4"),"","");
+  }catch(err){setStatus($("status4"),err.message,"err");}
+  finally{btn.disabled=false;}
+}
+$("chatSend").addEventListener("click",refine);
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
+
+// red de seguridad: contenido siempre visible aunque fallen las animaciones
+setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
+  if(el.classList.contains("hidden"))return;
+  const cs=getComputedStyle(el); if(parseFloat(cs.opacity)<.9){el.style.opacity="1";el.style.transform="none";}
+});},900);
+</script>
+</body>
+</html>
