@@ -316,18 +316,23 @@
 /* ====================================================================
    CONFIGURACIÓN
    --------------------------------------------------------------------
-   MODO REGALO (recomendado): pega la URL de tu proxy en PROXY_URL.
-   La key vive OCULTA en el servidor (Cloudflare Worker), nunca aquí.
-     -> PROXY_URL: "https://superprompt.TU-CUENTA.workers.dev"
+   👉 PARA REGALAR CON IA GRATIS INCLUIDA:
+      pega tu clave de Gemini entre las comillas de EMBEDDED_KEY.
+        EMBEDDED_KEY: "AQ.Ab8...tu_clave..."
+
+   Antes de publicarla, para que NUNCA te cobren y nadie la abuse:
+     1) NO actives facturación en el proyecto de Google.
+     2) Restringe la clave por dominio (jorgeicone.github.io/*).
 
    La app decide sola:
-     · Si PROXY_URL está lleno  -> IA gratis incluida (config oculta).
-     · Si está vacío            -> le pide al usuario su propia key gratis.
+     · Si EMBEDDED_KEY tiene clave -> IA gratis incluida (config oculta).
+     · Si está vacía              -> le pide al usuario su propia clave.
+   (PROXY_URL es opcional: solo si algún día usas el servidor oculto.)
    ==================================================================== */
 const CONFIG = {
-  PROXY_URL: "",             // 👈 PEGA AQUÍ LA URL DE TU WORKER (modo regalo)
-  EMBEDDED_KEY: "",          // (alternativa NO recomendada: key directa en el código)
-  MODEL: "gemini-2.5-flash"  // modelo por defecto en modo regalo
+  EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
+  PROXY_URL: "",             // (opcional) URL del Worker si usas proxy
+  MODEL: "gemini-2.5-flash"  // modelo por defecto
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
@@ -497,6 +502,4 @@ function unlock(id){$(id).classList.remove("locked");}
 // Paso 1 -> preguntas
 $("genQuestions").addEventListener("click",async()=>{
   state.idea=$("idea").value.trim();
-  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");return;}
-  const btn=$("genQuestions");btn.disabled=true;
-  setStatus($("status1"),"Analizan
+  
