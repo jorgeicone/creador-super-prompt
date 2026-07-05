@@ -455,17 +455,27 @@ function setStep(n){
   document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
 }
 
-// llamada a la IA (proxy oculto  ó  key directa)
-async function callAI({system,user,max_tokens=1500,json=false}){
+// ¿es un error temporal de saturación? (reintentable)
+function isTransient(msg,status){
+  const m=(msg||"").toLowerCase();
+  return status===429||status===500||status===503||
+    m.includes("high demand")||m.includes("overload")||m.includes("unavailable")||
+    m.includes("try again")||m.includes("temporar")||m.includes("demand")||m.includes("503")||m.includes("500");
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// una sola llamada (proxy oculto  ó  key directa)
+async function callOnce({system,user,max_tokens,json}){
   if(HAS_PROXY){
     const res=await fetch(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({model:CONFIG.MODEL,system,user,max_tokens,json})});
     let data={}; try{data=await res.json();}catch(e){}
     if(!res.ok||data.error){
-      if(res.status===429)throw new Error("Se alcanzó el límite gratuito por ahora. Intenta en un momento.");
-      throw new Error(data.error||("Error "+res.status));
+      const status=data.status||res.status;
+      const emsg=data.error||("Error "+status);
+      const err=new Error(emsg); err.status=status; err.transient=isTransient(emsg,status); throw err;
     }
-    if(!data.text)throw new Error("La IA no devolvió texto. Intenta de nuevo.");
+    if(!data.text){const err=new Error("La IA no devolvió texto. Intenta de nuevo.");err.transient=true;throw err;}
     return data.text;
   }
   const key=currentKey();
@@ -480,15 +490,33 @@ async function callAI({system,user,max_tokens=1500,json=false}){
   const res=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
-    if(res.status===429)throw new Error("Se alcanzó el límite gratuito por ahora. Intenta de nuevo en un momento.");
     if(res.status===400&&/API key/i.test(detail))throw new Error("API Key inválida o restringida.");
-    throw new Error("Error "+res.status+": "+detail);
+    const err=new Error("Error "+res.status+": "+detail); err.status=res.status; err.transient=isTransient(detail,res.status); throw err;
   }
   const data=await res.json();
   const parts=data.candidates?.[0]?.content?.parts||[];
   const txt=parts.map(p=>p.text||"").join("").trim();
-  if(!txt)throw new Error("La IA no devolvió texto. Intenta de nuevo.");
+  if(!txt){const err=new Error("La IA no devolvió texto. Intenta de nuevo.");err.transient=true;throw err;}
   return txt;
+}
+
+// llamada a la IA con reintentos automáticos ante saturaciones temporales
+async function callAI({system,user,max_tokens=1500,json=false}){
+  const MAX=4;
+  for(let intento=1;intento<=MAX;intento++){
+    try{
+      return await callOnce({system,user,max_tokens,json});
+    }catch(err){
+      const reintentable = err.transient || isTransient(err.message,err.status||0);
+      if(reintentable && intento<MAX){
+        await sleep(900*intento + Math.random()*500);   // espera creciente
+        continue;
+      }
+      if(err.status===429) throw new Error("Se alcanzó el límite gratuito por ahora. Intenta de nuevo en un momento.");
+      if(reintentable) throw new Error("El servicio de IA está muy solicitado ahora mismo. Espera unos segundos e inténtalo de nuevo.");
+      throw err;
+    }
+  }
 }
 function extractJSON(txt){
   const clean=txt.replace(/```json/gi,"").replace(/```/g,"").trim();
@@ -563,23 +591,4 @@ async function refine(){
   const btn=$("chatSend");btn.disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
-    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
-    const out=await callAI({system,user,max_tokens:2000});
-    state.currentPrompt=out;$("result").textContent=out;
-    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">✓ Prompt actualizado arriba</div>`);
-    $("chatlog").scrollTop=$("chatlog").scrollHeight;setStatus($("status4"),"","");
-  }catch(err){setStatus($("status4"),err.message,"err");}
-  finally{btn.disabled=false;}
-}
-$("chatSend").addEventListener("click",refine);
-$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
-
-// red de seguridad: contenido siempre visible aunque fallen las animaciones
-setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
-  if(el.classList.contains("hidden"))return;
-  const cs=getComputedStyle(el); if(parseFloat(cs.opacity)<.9){el.style.opacity="1";el.style.transform="none";}
-});},900);
-</script>
-</body>
-</html>
+    const system=`Eres un ingeniero de prompts. R
