@@ -155,7 +155,10 @@
   @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
   @keyframes sp{to{transform:rotate(360deg)}}
-  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    header.top,.progress,.card,.q{opacity:1!important;transform:none!important}
+  }
   @media(max-width:640px){
     .types{grid-template-columns:repeat(2,1fr)}.settings{grid-template-columns:1fr}
     h1{font-size:1.6rem}.plabel{display:none}.pline{margin:0 6px}
@@ -486,8 +489,4 @@ async function refine(){
   }catch(err){setStatus($("status4"),err.message,"err");}
   finally{btn.disabled=false;}
 }
-$("chatSend").addEventListener("click",refine);
-$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
-</script>
-</body>
-</html>
+$("chatSend").addEventListener("click"
