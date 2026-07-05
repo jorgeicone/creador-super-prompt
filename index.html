@@ -331,7 +331,7 @@
    ==================================================================== */
 const CONFIG = {
   EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
-  PROXY_URL: "",             // (opcional) URL del Worker si usas proxy
+  PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // (opcional) URL del Worker si usas proxy
   MODEL: "gemini-2.5-flash"  // modelo por defecto
 };
 
@@ -500,6 +500,4 @@ function setStatus(el,msg,kind){el.className="status"+(kind?(" "+kind):"");el.in
 function unlock(id){$(id).classList.remove("locked");}
 
 // Paso 1 -> preguntas
-$("genQuestions").addEventListener("click",async()=>{
-  state.idea=$("idea").value.trim();
-  
+$("genQuestions").addEventListener("click",asyn
