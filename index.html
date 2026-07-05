@@ -591,4 +591,23 @@ async function refine(){
   const btn=$("chatSend");btn.disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
-    const system=`Eres un ingeniero de prompts. R
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
+    const out=await callAI({system,user,max_tokens:2000});
+    state.currentPrompt=out;$("result").textContent=out;
+    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">✓ Prompt actualizado arriba</div>`);
+    $("chatlog").scrollTop=$("chatlog").scrollHeight;setStatus($("status4"),"","");
+  }catch(err){setStatus($("status4"),err.message,"err");}
+  finally{btn.disabled=false;}
+}
+$("chatSend").addEventListener("click",refine);
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
+
+// red de seguridad: contenido siempre visible aunque fallen las animaciones
+setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
+  if(el.classList.contains("hidden"))return;
+  const cs=getComputedStyle(el); if(parseFloat(cs.opacity)<.9){el.style.opacity="1";el.style.transform="none";}
+});},900);
+</script>
+</body>
+</html>
