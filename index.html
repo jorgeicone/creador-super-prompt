@@ -30,7 +30,6 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--bg); color:var(--txt); min-height:100vh; line-height:1.55; overflow-x:hidden;
   }
-  /* canvas de fondo */
   #neural{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
   .bg-veil{position:fixed;inset:0;z-index:1;pointer-events:none;
     background:
@@ -39,7 +38,6 @@
       linear-gradient(180deg, rgba(5,13,31,.15), rgba(5,13,31,.72) 90%);}
   .wrap{position:relative;z-index:2;max-width:1000px;margin:0 auto;padding:34px 20px 90px}
 
-  /* header */
   header.top{margin-bottom:26px;opacity:0;transform:translateY(14px);animation:rise .7s .05s forwards}
   .brand{display:flex;align-items:center;gap:14px}
   .logo{width:52px;height:52px;border-radius:15px;position:relative;
@@ -54,7 +52,6 @@
     filter:drop-shadow(0 0 18px rgba(0,212,255,.25))}
   .sub{color:var(--muted);font-size:1rem;margin:4px 0 0}
 
-  /* progreso */
   .progress{display:flex;align-items:center;gap:0;margin:24px 0 26px;
     opacity:0;transform:translateY(14px);animation:rise .7s .15s forwards}
   .pstep{display:flex;align-items:center;gap:10px;flex:0 0 auto}
@@ -70,7 +67,6 @@
   .pline::after{content:"";position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .5s}
   .pline.fill::after{width:100%}
 
-  /* cards glass */
   .card{position:relative;background:var(--panel);backdrop-filter:blur(16px) saturate(140%);
     -webkit-backdrop-filter:blur(16px) saturate(140%);
     border:1px solid var(--border);border-radius:var(--radius);
@@ -158,6 +154,15 @@
   .keybadge{font-size:.72rem;padding:4px 10px;border-radius:20px;font-weight:700;white-space:nowrap;align-self:center}
   .keybadge.no{background:rgba(255,90,114,.12);border:1px solid var(--err);color:var(--err)}
   .keybadge.yes{background:rgba(34,211,166,.12);border:1px solid var(--ok);color:var(--ok)}
+  /* banner IA incluida gratis */
+  .free-banner{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;
+    background:linear-gradient(135deg,rgba(34,211,166,.14),rgba(0,212,255,.08));
+    border:1px solid rgba(34,211,166,.4);margin-bottom:20px;
+    opacity:0;transform:translateY(16px);animation:rise .6s .18s forwards}
+  .free-banner .fico{font-size:1.5rem}
+  .free-banner b{color:var(--ok)}
+  .free-banner span{font-size:.86rem;color:var(--muted)}
+  .hidden{display:none!important}
   footer{text-align:center;color:var(--muted);margin-top:40px}
   footer .dot{color:var(--cyan)}
   .legal{max-width:680px;margin:0 auto;padding:18px 22px;border:1px solid var(--border);
@@ -174,7 +179,7 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   @media(prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
-    header.top,.progress,.card,.q{opacity:1!important;transform:none!important}
+    header.top,.progress,.card,.q,.free-banner{opacity:1!important;transform:none!important}
   }
   @media(max-width:640px){
     .types{grid-template-columns:repeat(2,1fr)}.settings{grid-template-columns:1fr}
@@ -193,12 +198,11 @@
       <div class="logo">SP</div>
       <div>
         <h1>Creador de <span class="accent">Super Prompt</span></h1>
-        <p class="sub">Laboratorio de ingeniería de prompts · potenciado por Claude</p>
+        <p class="sub">Laboratorio de ingeniería de prompts · potenciado por IA</p>
       </div>
     </div>
   </header>
 
-  <!-- barra de progreso -->
   <div class="progress" id="progress">
     <div class="pstep on" data-s="1"><div class="pdot">1</div><span class="plabel">Idea</span></div>
     <div class="pline" data-l="1"></div>
@@ -207,15 +211,21 @@
     <div class="pstep" data-s="3"><div class="pdot">3</div><span class="plabel">Super Prompt</span></div>
   </div>
 
-  <!-- Configuración -->
-  <details class="cfg card" id="cfg" open>
-    <summary>Configuración de la API de Claude <span class="chev">▸</span></summary>
+  <!-- Banner cuando la IA viene incluida gratis -->
+  <div class="free-banner hidden" id="freeBanner">
+    <span class="fico">🎁</span>
+    <div><b>IA incluida · totalmente gratis</b><br><span>No necesitas configurar nada. Solo escribe tu idea y crea tu Super Prompt.</span></div>
+  </div>
+
+  <!-- Configuración (solo visible si NO hay key incluida) -->
+  <details class="cfg card hidden" id="cfg" open>
+    <summary>Configuración de la IA <span class="chev">▸</span></summary>
     <div style="margin-top:18px">
       <div class="settings">
         <div>
-          <label>Tu API Key de Anthropic</label>
+          <label>Tu API Key gratis de Google Gemini</label>
           <div class="keyrow">
-            <input type="password" id="apiKey" class="grow" placeholder="sk-ant-..." autocomplete="off" />
+            <input type="password" id="apiKey" class="grow" placeholder="AIza..." autocomplete="off" />
             <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
             <span class="keybadge no" id="keyBadge">Sin key</span>
           </div>
@@ -223,15 +233,15 @@
         <div>
           <label>Modelo</label>
           <select id="model">
-            <option value="claude-sonnet-5">Sonnet 5 · equilibrado</option>
-            <option value="claude-haiku-4-5-20251001">Haiku 4.5 · rápido</option>
-            <option value="claude-opus-4-8">Opus 4.8 · máxima calidad</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite · rápido</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
           </select>
         </div>
       </div>
       <label style="margin-top:14px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">
         <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la key en este navegador</label>
-      <p class="note">🔒 La key se usa solo desde <b>tu navegador</b> hacia Anthropic; no se envía ni almacena en ningún servidor. Consíguela en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. La key se usa solo desde tu navegador; no se envía a ningún servidor.</p>
     </div>
   </details>
 
@@ -298,14 +308,26 @@
       <p class="legal-main">© <span id="year"></span> · <strong>Creado por el Ingeniero Jorge Hugo Pérez</strong> · ICONE ialabs</p>
       <p class="legal-fine">Todos los derechos reservados. Queda estrictamente prohibida la reproducción, copia, distribución, modificación o uso total o parcial de esta aplicación, su código, diseño o metodología sin autorización expresa y por escrito de su autor. Obra protegida por las leyes de propiedad intelectual y derechos de autor.</p>
     </div>
-    <p class="legal-brand">Hecho con Claude <span class="dot">●</span> ICONE ialabs</p>
+    <p class="legal-brand">Hecho con IA <span class="dot">●</span> ICONE ialabs</p>
   </footer>
 </div>
 
 <script>
+/* ====================================================================
+   CONFIGURACIÓN — AQUÍ INCRUSTAS TU KEY GRATIS DE GEMINI
+   --------------------------------------------------------------------
+   1) Consíguela gratis en: https://aistudio.google.com/apikey
+   2) NO actives facturación en el proyecto de Google (así jamás te cobran).
+   3) Restringe la key a tu dominio (HTTP referrers) en Google Cloud.
+   4) Pega la key entre las comillas de EMBEDDED_KEY.
+      - Si la dejas vacía (""), la app le pedirá al usuario su propia key.
+   ==================================================================== */
+const CONFIG = {
+  EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU KEY GRATIS (ej: "AIzaSy...")
+  MODEL: "gemini-2.5-flash"  // modelo por defecto cuando la key va incrustada
+};
+
 /* ============ AVISO LEGAL / AUTORÍA ============ */
-/* © Creado por el Ingeniero Jorge Hugo Pérez — ICONE ialabs.
-   Todos los derechos reservados. Prohibida la reproducción o copia sin autorización. */
 document.getElementById("year").textContent=new Date().getFullYear();
 console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — Todos los derechos reservados. Prohibida su reproducción o copia sin autorización expresa.","color:#00d4ff;font-weight:bold;font-size:13px");
 
@@ -337,7 +359,6 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
   const LINK=150*devicePixelRatio;
   function frame(){
     x.clearRect(0,0,W,H);
-    // conexiones (sinapsis)
     for(let i=0;i<nodes.length;i++){
       const a=nodes[i];
       for(let j=i+1;j<nodes.length;j++){
@@ -348,18 +369,15 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
           x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
         }
       }
-      // conexión al mouse
       const mdx=a.x-mouse.x, mdy=a.y-mouse.y, md=Math.hypot(mdx,mdy);
       if(md<LINK*1.4){
         x.strokeStyle=`rgba(${CY},${(1-md/(LINK*1.4))*.6})`;x.lineWidth=1.2*devicePixelRatio;
         x.beginPath();x.moveTo(a.x,a.y);x.lineTo(mouse.x,mouse.y);x.stroke();
       }
     }
-    // nodos (neuronas)
     for(const a of nodes){
       a.x+=a.vx;a.y+=a.vy;a.pulse+=.03;
       if(a.x<0||a.x>W)a.vx*=-1; if(a.y<0||a.y>H)a.vy*=-1;
-      // ligera atracción al mouse
       const mdx=mouse.x-a.x, mdy=mouse.y-a.y, md=Math.hypot(mdx,mdy);
       if(md<LINK){a.x+=mdx*.0015;a.y+=mdy*.0015;}
       const glow=(Math.sin(a.pulse)*.4+.6);
@@ -368,7 +386,6 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
       x.shadowBlur=12*devicePixelRatio;x.shadowColor=`rgba(${a.c},.9)`;
       x.fill();x.shadowBlur=0;
     }
-    // partículas discretas ascendentes
     for(const p of parts){
       p.y+=p.vy;p.tw+=.04;
       if(p.y<0){Object.assign(p,newPart());p.y=H+5;}
@@ -381,28 +398,36 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
   resize();frame();
 })();
 
-/* ============ LÓGICA DE LA APP ============ */
-const API_URL="https://api.anthropic.com/v1/messages";
+/* ============ LÓGICA DE LA APP (Google Gemini) ============ */
 const $=id=>document.getElementById(id);
+const HAS_EMBEDDED = !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY.trim().length>10);
 let state={type:"Redacción",idea:"",questions:[],currentPrompt:""};
 
-// key badge + persistencia
-function refreshBadge(){
-  const b=$("keyBadge"), has=$("apiKey").value.trim().length>10;
-  b.className="keybadge "+(has?"yes":"no"); b.textContent=has?"Key lista":"Sin key";
+// Mostrar/ocultar configuración según si la key viene incluida
+if(HAS_EMBEDDED){
+  $("freeBanner").classList.remove("hidden");
+  $("cfg").classList.add("hidden");
+}else{
+  $("cfg").classList.remove("hidden");
 }
-(function initKey(){
+
+function currentKey(){ return HAS_EMBEDDED ? CONFIG.EMBEDDED_KEY.trim() : $("apiKey").value.trim(); }
+function currentModel(){ return HAS_EMBEDDED ? CONFIG.MODEL : $("model").value; }
+
+// key badge + persistencia (solo modo "usuario trae su key")
+if(!HAS_EMBEDDED){
+  const refreshBadge=()=>{const b=$("keyBadge"),has=$("apiKey").value.trim().length>10;
+    b.className="keybadge "+(has?"yes":"no");b.textContent=has?"Key lista":"Sin key";};
   const k=localStorage.getItem("sp_key"); if(k){$("apiKey").value=k;$("remember").checked=true;}
   const m=localStorage.getItem("sp_model"); if(m)$("model").value=m;
   refreshBadge();
-})();
-$("remember").addEventListener("change",e=>{
-  if(e.target.checked)localStorage.setItem("sp_key",$("apiKey").value.trim());
-  else localStorage.removeItem("sp_key");
-});
-$("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)localStorage.setItem("sp_key",$("apiKey").value.trim());});
-$("model").addEventListener("change",()=>localStorage.setItem("sp_model",$("model").value));
-$("toggleKey").addEventListener("click",()=>{const f=$("apiKey");f.type=f.type==="password"?"text":"password";});
+  $("remember").addEventListener("change",e=>{
+    if(e.target.checked)localStorage.setItem("sp_key",$("apiKey").value.trim());
+    else localStorage.removeItem("sp_key");});
+  $("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)localStorage.setItem("sp_key",$("apiKey").value.trim());});
+  $("model").addEventListener("change",()=>localStorage.setItem("sp_model",$("model").value));
+  $("toggleKey").addEventListener("click",()=>{const f=$("apiKey");f.type=f.type==="password"?"text":"password";});
+}
 
 // selector de tipo
 $("types").addEventListener("click",e=>{
@@ -415,26 +440,34 @@ $("types").addEventListener("click",e=>{
 function setStep(n){
   document.querySelectorAll(".pstep").forEach(s=>{
     const v=+s.dataset.s; s.classList.toggle("on",v===n); s.classList.toggle("done",v<n);
-    if(v<n)s.querySelector(".pdot").textContent="✓"; else s.querySelector(".pdot").textContent=v;
+    s.querySelector(".pdot").textContent=(v<n)?"✓":v;
   });
   document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
 }
 
-// llamada a Claude
-async function callClaude({system,messages,max_tokens=1500}){
-  const key=$("apiKey").value.trim();
-  if(!key)throw new Error("Ingresa tu API Key de Anthropic en Configuración.");
-  const res=await fetch(API_URL,{method:"POST",headers:{
-    "content-type":"application/json","x-api-key":key,
-    "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"
-  },body:JSON.stringify({model:$("model").value,max_tokens,system,messages})});
+// llamada a Gemini
+async function callAI({system,user,max_tokens=1500,json=false}){
+  const key=currentKey();
+  if(!key)throw new Error("Configura primero tu API Key gratis de Gemini.");
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${currentModel()}:generateContent?key=${encodeURIComponent(key)}`;
+  const body={
+    system_instruction:{parts:[{text:system}]},
+    contents:[{role:"user",parts:[{text:user}]}],
+    generationConfig:{maxOutputTokens:max_tokens,temperature:0.7}
+  };
+  if(json) body.generationConfig.responseMimeType="application/json";
+  const res=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
-    if(res.status===401)throw new Error("API Key inválida o sin permisos (401).");
+    if(res.status===429)throw new Error("Se alcanzó el límite gratuito por ahora. Intenta de nuevo en un momento.");
+    if(res.status===400&&/API key/i.test(detail))throw new Error("API Key inválida o restringida.");
     throw new Error("Error "+res.status+": "+detail);
   }
   const data=await res.json();
-  return (data.content||[]).map(b=>b.text||"").join("").trim();
+  const parts=data.candidates?.[0]?.content?.parts||[];
+  const txt=parts.map(p=>p.text||"").join("").trim();
+  if(!txt)throw new Error("La IA no devolvió texto. Intenta de nuevo.");
+  return txt;
 }
 function extractJSON(txt){
   const clean=txt.replace(/```json/gi,"").replace(/```/g,"").trim();
@@ -443,7 +476,7 @@ function extractJSON(txt){
   return null;
 }
 function setStatus(el,msg,kind){el.className="status"+(kind?(" "+kind):"");el.innerHTML=kind==="loading"?'<span class="spin"></span>'+msg:msg;}
-function unlock(id){const c=$(id);c.classList.remove("locked");}
+function unlock(id){$(id).classList.remove("locked");}
 
 // Paso 1 -> preguntas
 $("genQuestions").addEventListener("click",async()=>{
@@ -453,34 +486,7 @@ $("genQuestions").addEventListener("click",async()=>{
   setStatus($("status1"),"Analizando tu idea…","loading");
   try{
     const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves, inteligentes y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (extrayendo rol/persona, formato de salida, audiencia, tono, restricciones o contexto faltante). Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
-    const out=await callClaude({system,messages:[{role:"user",content:state.idea}],max_tokens:600});
+    const out=await callAI({system,user:state.idea,max_tokens:600,json:true});
     const j=extractJSON(out);
     if(!j||!Array.isArray(j.questions)||!j.questions.length)throw new Error("No se pudieron generar las preguntas. Intenta de nuevo.");
-    state.questions=j.questions.slice(0,3); renderQuestions();
-    unlock("card2"); setStep(2);
-    $("card2").scrollIntoView({behavior:"smooth",block:"center"});
-    setStatus($("status1"),"✓ Preguntas generadas","ok");
-  }catch(err){setStatus($("status1"),err.message,"err");}
-  finally{btn.disabled=false;}
-});
-function renderQuestions(){
-  $("questions").innerHTML=state.questions.map((q,i)=>`
-    <div class="q"><label>${i+1}. ${q.replace(/</g,"&lt;")}</label>
-    <input type="text" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" /></div>`).join("");
-}
-
-// Paso 2 -> prompt
-$("genPrompt").addEventListener("click",async()=>{
-  const answers=[...document.querySelectorAll(".qa")].map((a,i)=>({q:state.questions[i],a:a.value.trim()}));
-  const btn=$("genPrompt");btn.disabled=true;
-  setStatus($("status2"),"Redactando tu Super Prompt…","loading");
-  try{
-    const qa=answers.map(x=>`- ${x.q}\n  Respuesta: ${x.a||"(sin respuesta / usa tu mejor criterio)"}`).join("\n");
-    const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla para las entradas del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
-    const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
-    const out=await callClaude({system,messages:[{role:"user",content:user}],max_tokens:2000});
-    state.currentPrompt=out; $("result").textContent=out;
-    unlock("card3"); setStep(3); $("chatlog").innerHTML="";
-    $("card3").scrollIntoView({behavior:"smooth",block:"start"});
-    setStatus($("status2"),"✓ Super Prompt creado","ok");
-  }catch(err){setStatus($("status2"),err.mes
+    state.questions=j.questions.slice(0,3); renderQuesti
