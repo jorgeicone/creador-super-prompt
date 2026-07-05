@@ -202,7 +202,7 @@
   <div class="progress" id="progress">
     <div class="pstep on" data-s="1"><div class="pdot">1</div><span class="plabel">Idea</span></div>
     <div class="pline" data-l="1"></div>
-    <div class="pstep" data-s="2"><div class="pdot">2</div><span class="plabel">Preguntas</span></div>
+    <div class="pstep" data-s="2"><div class="pdot">2</div><span class="plabel">Detalles</span></div>
     <div class="pline" data-l="2"></div>
     <div class="pstep" data-s="3"><div class="pdot">3</div><span class="plabel">Super Prompt</span></div>
   </div>
@@ -260,7 +260,7 @@
   <section class="card locked" id="card2">
     <div class="card-head">
       <div class="step-num">2</div>
-      <div><h2>La IA te interroga</h2><p>Responde estas 3 preguntas clave para afinar el prompt.</p></div>
+      <div><h2>Cuéntame un poco más</h2><p>Con estos 3 detalles dejamos tu prompt a tu medida.</p></div>
     </div>
     <div id="questions"></div>
     <div class="row" style="margin-top:6px">
@@ -483,4 +483,4 @@ $("genPrompt").addEventListener("click",async()=>{
     unlock("card3"); setStep(3); $("chatlog").innerHTML="";
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     setStatus($("status2"),"✓ Super Prompt creado","ok");
-  }catch(err){setStatus($("status2"),err.me
+  }catch(err){setStatus($("status2"),err.mes
