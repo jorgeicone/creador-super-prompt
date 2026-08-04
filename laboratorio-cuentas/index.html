@@ -441,6 +441,44 @@ select.icone-input option{background:var(--navy2);color:#fff}
   <div class="callout" style="margin-top:20px">
     <b>El objetivo de tiempo es 15 minutos por cuenta.</b> El cronómetro de cada tarjeta arranca cuando abres su dossier y se detiene cuando sales. No es una carrera: es la métrica que vamos a comparar con lo que hacías antes.
   </div>
+
+  <div class="card" id="card-sugerir" style="margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div>
+        <h3>¿No tienes las 3 cuentas todavía?</h3>
+        <p class="sub" style="margin-bottom:0">Lo mejor es trabajar tus cuentas reales. Pero si tu radar está corto, dime a quién quieres venderle y te propongo candidatas para arrancar hoy.</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-toggle-sug" onclick="toggleSugerir()">Ayúdame a encontrarlas</button>
+    </div>
+    <div id="sug-form" style="display:none;margin-top:16px">
+      <div class="grid2">
+        <div class="field">
+          <label class="fl">Sector al que le quieres vender</label>
+          <input class="icone-input" id="sug-sector" placeholder="Ej: manufactura de alimentos, logística, salud ocupacional">
+        </div>
+        <div class="field">
+          <label class="fl">Ciudad o región</label>
+          <input class="icone-input" id="sug-ciudad" placeholder="Ej: Bogotá y Sabana">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label class="fl">Tamaño que te sirve</label>
+          <input class="icone-input" id="sug-tam" placeholder="Ej: entre 300 y 1.000 empleados">
+        </div>
+        <div class="field">
+          <label class="fl">¿Qué señal buscas? <span style="font-weight:400;color:var(--muted2)">(opcional)</span></label>
+          <input class="icone-input" id="sug-senal" placeholder="Ej: en expansión, con alta rotación, certificándose">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-sugerir" onclick="runSugerir()">⚡ Proponme candidatas</button>
+        <button class="btn btn-outline btn-sm" onclick="copiarPromptSugerir()">📋 Copiar el prompt P1.5</button>
+      </div>
+      <div id="sug-msg"></div>
+      <div id="sug-out"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ DOSSIER ============ -->
@@ -1144,6 +1182,98 @@ function renderCuentas(){
   }).join("");
 }
 function abrirCuenta(i){ state.activa=i; state.paso=1; save(); go("dossier"); }
+
+/* ---------- SUGERIR CANDIDATAS (plan B: el radar está corto) ---------- */
+let SUGS=[];
+function toggleSugerir(){
+  const f=document.getElementById("sug-form");
+  const abierto=f.style.display!=="none";
+  f.style.display=abierto?"none":"block";
+  document.getElementById("btn-toggle-sug").textContent=abierto?"Ayúdame a encontrarlas":"Ocultar";
+  if(!abierto) setTimeout(()=>document.getElementById("sug-sector").focus(),80);
+}
+function datosSugerir(){
+  return {sec:document.getElementById("sug-sector").value.trim(),
+          ciu:document.getElementById("sug-ciudad").value.trim(),
+          tam:document.getElementById("sug-tam").value.trim(),
+          sen:document.getElementById("sug-senal").value.trim()};
+}
+function promptSugerir(v){
+  return `Actúa como investigador de mercado B2B en Colombia.
+
+Contexto: soy comercial del Politécnico Grancolombiano. Vendo programas de formación corporativa, diplomados y educación continua a empresas. Necesito construir mi lista de cuentas objetivo.
+
+Perfil que busco:
+- Sector: ${v.sec||"[sector]"}
+- Ciudad o región: ${v.ciu||"[ciudad]"}
+- Tamaño: ${v.tam||"[rango de empleados]"}
+- Señal de interés: ${v.sen||"cualquiera que abra la conversación hoy"}
+
+Tarea: propón hasta 8 organizaciones que encajen en ese perfil. Para cada una dime la señal concreta que la vuelve buen prospecto ahora y por dónde entrar (qué área o cargo).
+
+Restricción crítica: no inventes empresas. Prefiero 4 reales que 8 inventadas. Si no estás seguro de que una empresa exista con ese perfil, dilo marcándola como no verificada. No inventes cifras de empleados ni hechos.
+
+Formato: tabla con Empresa / Señal / Por dónde entrar. Tono directo, sin adjetivos de marketing.`;
+}
+function copiarPromptSugerir(){ copyText(promptSugerir(datosSugerir()),"Prompt P1.5 copiado. Pégalo en tu herramienta de IA."); }
+
+async function runSugerir(){
+  const v=datosSugerir();
+  if(!v.sec||!v.ciu){ errBox("sug-msg","Dime al menos el sector y la ciudad. Sin eso la lista sale genérica y no sirve."); return; }
+  if(!hayKey()){ abrirKey(); return; }
+  errBox("sug-msg","");
+  setLoading("btn-sugerir",true,"Buscando…");
+  const extra=`\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
+{"empresas":[{"nombre":"...","senal":"...","entrada":"...","verificar":true}]}
+Máximo 8 elementos. "senal" en máximo 25 palabras: qué está pasando que la vuelve buen prospecto ahora. "entrada" en máximo 15 palabras: por qué área o cargo entrar. "verificar" es true cuando no tengas certeza de que la empresa exista con ese perfil. Sin markdown.`;
+  try{
+    const raw=await callGemini(promptSugerir(v)+extra,SYS_COMERCIAL,true);
+    const data=parseJson(raw);
+    const arr=data&&Array.isArray(data.empresas)?data.empresas.filter(e=>e&&e.nombre):null;
+    if(!arr||!arr.length) throw {fatal:true,msg:"No devolvió candidatas legibles. Copia el prompt P1.5 y ejecútalo en tu herramienta de IA."};
+    SUGS=arr; renderSugerencias();
+    toast(arr.length+" candidatas. Ahora verifícalas.","ok");
+  }catch(e){
+    errBox("sug-msg",(e&&e.msg)?e.msg:"No se pudo consultar.");
+  }finally{ setLoading("btn-sugerir",false); }
+}
+
+function renderSugerencias(){
+  const libres=state.cuentas.filter((c,i)=>i<3&&!tieneDatos(c)).length;
+  document.getElementById("sug-out").innerHTML=`
+    <div class="callout orange" style="margin-top:16px">
+      <b>Esto es una hipótesis, no un directorio.</b> La IA puede proponer empresas que no existan o que no encajen. Antes de invertirle 15 minutos a cualquiera de estas, confirma en su página o en LinkedIn que existe, que está en tu ciudad y que tiene el tamaño que dice. Lo marcado en naranja es lo que ella misma no pudo verificar.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+    ${SUGS.map((s,i)=>`
+      <div style="border:1px solid ${s.verificar?"rgba(255,140,0,.32)":"rgba(255,255,255,.1)"};border-radius:12px;padding:14px 16px;background:rgba(255,255,255,.02)">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:800;font-size:.95rem;margin-bottom:3px">${esc(s.nombre)}
+              ${s.verificar?'<span class="chip warn" style="margin-left:8px;padding:2px 9px;font-size:.65rem">por verificar</span>':''}</div>
+            <div style="font-size:.82rem;color:var(--muted);line-height:1.45">${esc(s.senal||"")}</div>
+            ${s.entrada?`<div style="font-size:.78rem;color:var(--cyan);margin-top:5px">→ ${esc(s.entrada)}</div>`:""}
+          </div>
+          <button class="btn ${libres?"btn-outline":"btn-ghost"} btn-sm" onclick="usarSugerencia(${i})">${libres?"Usar como cuenta":"Sin espacio libre"}</button>
+        </div>
+      </div>`).join("")}
+    </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-ghost btn-sm" onclick="runSugerir()">↻ Proponme otras</button>
+      <span style="font-size:.78rem;color:var(--muted2);align-self:center">${libres} de 3 tarjetas libres</span>
+    </div>`;
+}
+function usarSugerencia(i){
+  const s=SUGS[i]; if(!s)return;
+  const idx=state.cuentas.findIndex((c,k)=>k<3&&!tieneDatos(c));
+  if(idx<0){ toast("Ya tienes las 3 cuentas definidas","err"); return; }
+  const c=state.cuentas[idx];
+  c.nombre=String(s.nombre).trim();
+  c.sector=document.getElementById("sug-sector").value.trim();
+  c.ciudad=document.getElementById("sug-ciudad").value.trim();
+  save(); renderCuentas(); renderSugerencias(); renderTabs();
+  toast("«"+c.nombre+"» quedó como cuenta "+(idx+1)+". Verifícala antes de investigarla.","ok");
+}
 
 /* ---------- DOSSIER ---------- */
 function renderDossier(){
