@@ -810,6 +810,7 @@ select.icone-input option{background:var(--navy2);color:#fff}
       <input class="icone-input" id="key-input" type="password" placeholder="Pega aquí tu clave (empieza por AIza…)" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')guardarKey()">
     </div>
     <div id="key-msg"></div>
+    <div id="pool-info" style="font-size:.74rem;color:var(--muted2);margin-top:10px"></div>
     <div class="btn-row" style="margin-top:14px">
       <button class="btn btn-primary" id="key-save" onclick="guardarKey()">Activar</button>
       <button class="btn btn-ghost" onclick="cerrarKey()">Ahora no</button>
@@ -869,20 +870,51 @@ const CHECKS = [
 ];
 
 /* ---------- CEREBRO DE IA · GEMINI ---------- */
-/* Clave del taller (codificada para que los escáneres no la revoquen sola).
-   Cada participante puede reemplazarla por la suya desde el botón 🔑 del encabezado. */
-const DEFAULT_API_KEY=(function(){ try{ return atob("QVEuQWI4Uk42S3FrMkdnQ3VSdEtSSmVncG1LR1Z3eDRiajJlRGRuU3ctaG9WalZKaDhCZ1E="); }catch(e){ return ""; } })();
+/* Claves del taller, codificadas para que los escáneres no las revoquen solas.
+   Van en rotación: si una agota su cuota diaria, la app pasa sola a la siguiente
+   sin que el participante se entere. Cada quien puede poner la suya con el botón 🔑,
+   y esa siempre tiene prioridad sobre las del taller.
+   Para agregar más: base64 de la clave, una por línea en este arreglo. */
+const POOL_B64=[
+  "QVEuQWI4Uk42S3FrMkdnQ3VSdEtSSmVncG1LR1Z3eDRiajJlRGRuU3ctaG9WalZKaDhCZ1E="
+];
+const POOL=POOL_B64.map(b=>{ try{ return atob(b); }catch(e){ return ""; } }).filter(Boolean);
+const DEFAULT_API_KEY=POOL[0]||"";
+const POOL_STORE="icone_pool_idx";
+function poolIdx(){ try{ return Math.min(POOL.length-1,Math.max(0,parseInt(localStorage.getItem(POOL_STORE)||"0",10)||0)); }catch(e){ return 0; } }
+function setPoolIdx(i){ try{ localStorage.setItem(POOL_STORE,String(i)); }catch(e){} }
 const MODEL_CANDIDATES=["gemini-flash-latest","gemini-2.5-flash","gemini-2.0-flash","gemini-1.5-flash"];
 const API_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
 const KEY_STORE="icone_gemini_key";
 let apiKey="", workingModel=null;
 function saveKey(k){ try{ localStorage.setItem(KEY_STORE,k); }catch(e){} }
 function loadKeyStored(){ try{ return localStorage.getItem(KEY_STORE)||""; }catch(e){ return ""; } }
-function hayKey(){ return !!apiKey; }
+function hayKey(){ return !!(loadKeyStored()||POOL.length); }
 
 let lastSources=[];
+/* Orquesta la rotación: la clave propia primero; si falla por cuota, las del taller
+   una tras otra. Solo cuando se agotan todas se le muestra el error al participante. */
 async function callGemini(userPrompt,systemInstruction,wantJson,grounded){
-  if(!apiKey) throw {fatal:true,msg:"Primero conecta tu clave de Google Gemini."};
+  const propia=loadKeyStored();
+  const cadena=propia?[propia].concat(POOL.slice(poolIdx())):POOL.slice(poolIdx());
+  if(!cadena.length) throw {fatal:true,msg:"Primero conecta tu clave de Google Gemini."};
+  let ultimo=null;
+  for(let i=0;i<cadena.length;i++){
+    apiKey=cadena[i];
+    try{
+      return await intentoGemini(userPrompt,systemInstruction,wantJson,grounded);
+    }catch(e){
+      ultimo=e;
+      if(!e||!e.cuota||i===cadena.length-1) throw e;
+      // esta clave se quedó sin cuota: pasamos a la siguiente del taller
+      if(!(propia&&i===0)) setPoolIdx(Math.min(POOL.length-1,poolIdx()+1));
+      workingModel=null;
+      if(propia&&i===0) toast("Tu clave se quedó sin cuota. Sigo con la del taller.","err");
+    }
+  }
+  throw ultimo||{fatal:true,msg:"No se pudo consultar."};
+}
+async function intentoGemini(userPrompt,systemInstruction,wantJson,grounded){
   lastSources=[];
   const body={contents:[{role:"user",parts:[{text:userPrompt}]}],
     generationConfig:{temperature:wantJson?0.4:0.7,maxOutputTokens:4096}};
@@ -907,13 +939,13 @@ async function callGemini(userPrompt,systemInstruction,wantJson,grounded){
         const txt=await res.text();
         // Si este modelo o esta clave no admiten búsqueda en Google, repetimos sin ella.
         if(grounded&&(res.status===400||res.status===403)){
-          const sinBusqueda=await callGemini(userPrompt,systemInstruction,wantJson,false);
+          const sinBusqueda=await intentoGemini(userPrompt,systemInstruction,wantJson,false);
           lastSources=[]; return sinBusqueda;
         }
         if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(txt))
           throw {fatal:true,msg:"Tu clave de Gemini no es válida. Revísala y vuelve a activarla."};
-        if(res.status===429)
-          throw {fatal:true,msg:"Alcanzaste el límite gratuito por ahora. Espera un momento e intenta de nuevo, o copia el prompt y ejecútalo en tu herramienta de IA."};
+        if(res.status===429||/RESOURCE_EXHAUSTED/i.test(txt))
+          throw {fatal:true,cuota:true,msg:"Se agotó la cuota gratuita de todas las claves disponibles por hoy. Se reinicia mañana. Mientras tanto copia el prompt y ejecútalo en tu herramienta de IA — la app sigue sirviendo igual."};
         if(res.status===403)
           throw {fatal:true,msg:"Tu clave no tiene permiso sobre la API de Gemini. Genera una nueva en aistudio.google.com/apikey."};
         lastErr="HTTP "+res.status+": "+txt.slice(0,140); continue;
@@ -1003,6 +1035,9 @@ function abrirKey(){
   document.getElementById("key-input").value=loadKeyStored()||"";
   document.getElementById("key-del").style.display=usaPropia()?"inline-flex":"none";
   document.getElementById("key-msg").innerHTML="";
+  document.getElementById("pool-info").textContent=
+    POOL.length>1?("Claves del taller en rotación: "+POOL.length+" · en uso la "+(poolIdx()+1)+". Cuando una agota su cuota diaria, la app pasa sola a la siguiente.")
+                 :"El taller tiene 1 clave compartida. Si se agota su cuota diaria, hay que esperar al día siguiente o poner la tuya.";
   document.getElementById("key-modal").classList.add("show");
   setTimeout(()=>document.getElementById("key-input").focus(),80);
 }
