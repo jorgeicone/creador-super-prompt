@@ -471,6 +471,9 @@ select.icone-input option{background:var(--navy2);color:#fff}
           <input class="icone-input" id="sug-senal" placeholder="Ej: en expansión, con alta rotación, certificándose">
         </div>
       </div>
+      <label class="flagbox on" style="margin-bottom:14px">
+        <input type="checkbox" id="sug-buscar" checked> 🔎 Buscar en internet antes de responder <span style="font-weight:400;color:var(--muted)">— más lento, pero devuelve hechos publicados en vez de suposiciones</span>
+      </label>
       <div class="btn-row">
         <button class="btn btn-primary" id="btn-sugerir" onclick="runSugerir()">⚡ Proponme candidatas</button>
         <button class="btn btn-outline btn-sm" onclick="copiarPromptSugerir()">📋 Copiar el prompt P1.5</button>
@@ -877,11 +880,16 @@ function saveKey(k){ try{ localStorage.setItem(KEY_STORE,k); }catch(e){} }
 function loadKeyStored(){ try{ return localStorage.getItem(KEY_STORE)||""; }catch(e){ return ""; } }
 function hayKey(){ return !!apiKey; }
 
-async function callGemini(userPrompt,systemInstruction,wantJson){
+let lastSources=[];
+async function callGemini(userPrompt,systemInstruction,wantJson,grounded){
   if(!apiKey) throw {fatal:true,msg:"Primero conecta tu clave de Google Gemini."};
+  lastSources=[];
   const body={contents:[{role:"user",parts:[{text:userPrompt}]}],
     generationConfig:{temperature:wantJson?0.4:0.7,maxOutputTokens:4096}};
-  if(wantJson) body.generationConfig.responseMimeType="application/json";
+  // La búsqueda en Google y el modo JSON no se pueden pedir a la vez:
+  // cuando buscamos, el modelo responde en texto delimitado y lo parseamos aparte.
+  if(grounded) body.tools=[{google_search:{}}];
+  else if(wantJson) body.generationConfig.responseMimeType="application/json";
   if(systemInstruction) body.systemInstruction={parts:[{text:systemInstruction}]};
   const models=workingModel?[workingModel]:MODEL_CANDIDATES;
   let lastErr="";
@@ -897,6 +905,11 @@ async function callGemini(userPrompt,systemInstruction,wantJson){
       }finally{ clearTimeout(to); }
       if(!res.ok){
         const txt=await res.text();
+        // Si este modelo o esta clave no admiten búsqueda en Google, repetimos sin ella.
+        if(grounded&&(res.status===400||res.status===403)){
+          const sinBusqueda=await callGemini(userPrompt,systemInstruction,wantJson,false);
+          lastSources=[]; return sinBusqueda;
+        }
         if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(txt))
           throw {fatal:true,msg:"Tu clave de Gemini no es válida. Revísala y vuelve a activarla."};
         if(res.status===429)
@@ -906,8 +919,12 @@ async function callGemini(userPrompt,systemInstruction,wantJson){
         lastErr="HTTP "+res.status+": "+txt.slice(0,140); continue;
       }
       const data=await res.json();
-      const text=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts||[]).map(p=>p.text).join("");
+      const cand=(data&&data.candidates&&data.candidates[0])||{};
+      const text=((cand.content&&cand.content.parts)||[]).map(p=>p.text).join("");
       if(!text){ lastErr="El modelo devolvió una respuesta vacía."; continue; }
+      const gm=cand.groundingMetadata||{};
+      lastSources=(gm.groundingChunks||[]).map(c=>c&&c.web).filter(w=>w&&w.uri)
+        .map(w=>({titulo:w.title||w.uri,url:w.uri}));
       workingModel=model; return text;
     }catch(e){
       if(e&&e.fatal) throw e;
@@ -923,6 +940,24 @@ function parseJson(txt){
   const a=t.indexOf("{"),b=t.lastIndexOf("}");
   if(a>=0&&b>a){ try{ return JSON.parse(t.slice(a,b+1)); }catch(e){} }
   return null;
+}
+/* Parser de filas delimitadas por | — se usa cuando pedimos búsqueda en Google,
+   porque ese modo no admite respuesta en JSON. */
+function parseFilas(txt,minCampos){
+  return String(txt||"").split("\n")
+    .map(l=>l.trim())
+    .filter(l=>l.includes("|")&&!/^[\s|:-]+$/.test(l))
+    .map(l=>l.replace(/^\||\|$/g,"").split("|").map(c=>c.trim()))
+    .filter(c=>c.length>=(minCampos||2)&&c.some(x=>x.length>1));
+}
+function bloqueFuentes(){
+  if(!lastSources.length) return "";
+  return `<div style="margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)">
+    <div class="ai-tag" style="margin-bottom:8px">Fuentes que consultó · ábrelas y confirma</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+    ${lastSources.slice(0,8).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener"
+      style="font-size:.78rem;color:var(--cyan);text-decoration:none;border-bottom:1px dashed rgba(0,212,255,.35);width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">↗ ${esc(f.titulo)}</a>`).join("")}
+    </div></div>`;
 }
 /* mini renderizador de markdown */
 function md2html(src){
@@ -1222,29 +1257,49 @@ async function runSugerir(){
   if(!v.sec||!v.ciu){ errBox("sug-msg","Dime al menos el sector y la ciudad. Sin eso la lista sale genérica y no sirve."); return; }
   if(!hayKey()){ abrirKey(); return; }
   errBox("sug-msg","");
-  setLoading("btn-sugerir",true,"Buscando…");
-  const extra=`\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
-{"empresas":[{"nombre":"...","senal":"...","entrada":"...","verificar":true}]}
-Máximo 8 elementos. "senal" en máximo 25 palabras: qué está pasando que la vuelve buen prospecto ahora. "entrada" en máximo 15 palabras: por qué área o cargo entrar. "verificar" es true SIEMPRE que no tengas certeza documentada de que esa empresa existe hoy con ese perfil y en esa ciudad; ante la duda, ponlo en true. Sin markdown.
+  const buscar=document.getElementById("sug-buscar").checked;
+  setLoading("btn-sugerir",true,buscar?"Buscando en internet…":"Pensando…");
+  const extra=buscar
+    ? `\n\nANTES DE RESPONDER, BUSCA EN INTERNET. No uses tu memoria: usa lo que encuentres publicado hoy. Si la búsqueda no respalda una empresa o una señal, no la incluyas.
 
-Procura que las 8 no sean todas del mismo subsector ni del mismo tamaño: mézclalas para que se puedan comparar entre sí.`;
+Devuelve SOLO filas separadas por el carácter |, una por empresa, sin encabezados, sin markdown, máximo 8 filas:
+nombre | señal encontrada (máx. 25 palabras) | por dónde entrar (máx. 15 palabras) | CONFIRMADO o SUPUESTO
+
+Pon CONFIRMADO solo si la señal viene de algo que acabas de encontrar publicado. Si la dedujiste del sector, pon SUPUESTO. Prefiero 3 filas confirmadas a 8 supuestas.
+Procura que no sean todas del mismo subsector ni del mismo tamaño.`
+    : `\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
+{"empresas":[{"nombre":"...","senal":"...","entrada":"...","verificar":true}]}
+Máximo 8 elementos. "verificar" es true SIEMPRE que no tengas certeza documentada de que esa empresa existe hoy con ese perfil y en esa ciudad; ante la duda, true. Sin markdown.
+Procura que no sean todas del mismo subsector ni del mismo tamaño.`;
   try{
-    const raw=await callGemini(promptSugerir(v)+extra,SYS_COMERCIAL,true);
-    const data=parseJson(raw);
-    const arr=data&&Array.isArray(data.empresas)?data.empresas.filter(e=>e&&e.nombre):null;
+    const raw=await callGemini(promptSugerir(v)+extra,SYS_COMERCIAL,!buscar,buscar);
+    let arr;
+    if(buscar){
+      arr=parseFilas(raw,3).map(c=>({nombre:c[0],senal:c[1],entrada:c[2],
+        verificar:!/CONFIRMADO/i.test(c[3]||""),confirmado:/CONFIRMADO/i.test(c[3]||"")}))
+        .filter(e=>e.nombre&&e.nombre.length>2).slice(0,8);
+    }else{
+      const data=parseJson(raw);
+      arr=data&&Array.isArray(data.empresas)?data.empresas.filter(e=>e&&e.nombre):null;
+    }
     if(!arr||!arr.length) throw {fatal:true,msg:"No devolvió candidatas legibles. Copia el prompt P1.5 y ejecútalo en tu herramienta de IA."};
-    SUGS=arr; renderSugerencias();
-    toast(arr.length+" candidatas. Los nombres pueden servir; las señales hay que comprobarlas.","ok");
+    SUGS=arr; busco=buscar&&lastSources.length>0; fuentesHTML=buscar?bloqueFuentes():"";
+    renderSugerencias();
+    const conf=arr.filter(e=>e.confirmado).length;
+    toast(arr.length+" candidatas"+(buscar?" · "+conf+" con señal confirmada":" · ninguna verificada"),"ok");
   }catch(e){
     errBox("sug-msg",(e&&e.msg)?e.msg:"No se pudo consultar.");
   }finally{ setLoading("btn-sugerir",false); }
 }
+let busco=false, fuentesHTML="";
 
 function renderSugerencias(){
   const libres=state.cuentas.filter((c,i)=>i<3&&!tieneDatos(c)).length;
   document.getElementById("sug-out").innerHTML=`
     <div class="callout orange" style="margin-top:16px">
-      <b>Esto es una hipótesis, no un directorio.</b> Aunque el nombre de la empresa sea real, <b>la señal casi nunca está verificada</b>: la IA la deduce del sector y la redacta con seguridad. Antes de invertirle 15 minutos a cualquiera de estas, comprueba dos cosas por separado — que la empresa exista hoy con ese perfil en tu ciudad, y que lo que dice la señal esté pasando de verdad. Si la señal no aguanta, el gancho se cae.
+      ${busco
+        ? '<b>Buscó en internet, pero la última palabra es tuya.</b> Lo marcado como <b>confirmado</b> salió de algo publicado que puedes abrir abajo. Lo marcado como <b>supuesto</b> lo dedujo del sector: eso no se le dice a un cliente. Abre las fuentes y comprueba antes de invertir 15 minutos en cualquiera.'
+        : '<b>Esto es una hipótesis, no un directorio.</b> Sin búsqueda activada, la IA responde de memoria: el nombre puede ser real y la señal estar inventada, redactada con toda seguridad. Activa «Buscar en internet» y vuelve a pedirlas, o comprueba cada una a mano antes de usarla.'}
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
     ${SUGS.map((s,i)=>`
@@ -1252,9 +1307,11 @@ function renderSugerencias(){
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
           <div style="flex:1;min-width:220px">
             <div style="font-weight:800;font-size:.95rem;margin-bottom:3px">${esc(s.nombre)}
-              ${s.verificar?'<span class="chip warn" style="margin-left:8px;padding:2px 9px;font-size:.65rem">¿existe?</span>':'<span class="chip" style="margin-left:8px;padding:2px 9px;font-size:.65rem">nombre plausible</span>'}</div>
+              ${s.confirmado?'<span class="chip live" style="margin-left:8px;padding:2px 9px;font-size:.65rem">confirmado</span>':'<span class="chip warn" style="margin-left:8px;padding:2px 9px;font-size:.65rem">supuesto</span>'}</div>
             <div style="font-size:.82rem;color:var(--muted);line-height:1.45">${esc(s.senal||"")}</div>
-            <div style="font-size:.7rem;color:var(--orange);margin-top:5px;font-weight:700">⚠ Señal sin confirmar — compruébala en su sala de prensa o LinkedIn antes de usarla como gancho</div>
+            ${s.confirmado
+              ? '<div style="font-size:.7rem;color:var(--green);margin-top:5px;font-weight:700">✓ Señal encontrada publicada — ábrela abajo y confírmala tú</div>'
+              : '<div style="font-size:.7rem;color:var(--orange);margin-top:5px;font-weight:700">⚠ Señal supuesta, no encontrada — compruébala antes de usarla como gancho</div>'}
             ${s.entrada?`<div style="font-size:.78rem;color:var(--cyan);margin-top:5px">→ ${esc(s.entrada)}</div>`:""}
           </div>
           <button class="btn ${libres?"btn-outline":"btn-ghost"} btn-sm" onclick="usarSugerencia(${i})">${libres?"Usar como cuenta":"Sin espacio libre"}</button>
@@ -1264,7 +1321,8 @@ function renderSugerencias(){
     <div class="btn-row" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm" onclick="runSugerir()">↻ Proponme otras</button>
       <span style="font-size:.78rem;color:var(--muted2);align-self:center">${libres} de 3 tarjetas libres · procura que las tres no sean del mismo sector, o la matriz no te enseñará nada</span>
-    </div>`;
+    </div>
+    ${fuentesHTML}`;
 }
 function usarSugerencia(i){
   const s=SUGS[i]; if(!s)return;
