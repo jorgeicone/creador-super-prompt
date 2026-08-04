@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero del Taller · Módulo 1 | ICONE ialabs</title>
+<style>
+:root{--navy:#050d1f;--cyan:#00d4ff;--purple:#7b2fff;--orange:#ff8c00;--green:#00d48a;--red:#ff4757;--yellow:#ffc542;
+--muted:rgba(255,255,255,.55);--muted2:rgba(255,255,255,.33);--card:rgba(255,255,255,.04);--bd:rgba(0,212,255,.18)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--navy);color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+background:radial-gradient(ellipse 70% 50% at 15% -5%,rgba(0,212,255,.13),transparent 60%),
+radial-gradient(ellipse 60% 50% at 90% 5%,rgba(123,47,255,.13),transparent 60%)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.gt{background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+header{padding:30px 0 22px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:28px}
+.logo{font-size:.7rem;font-weight:800;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase;margin-bottom:6px}
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-.02em}
+header p{font-size:.85rem;color:var(--muted2);margin-top:4px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:18px}
+.card h2{font-size:1.05rem;font-weight:700;margin-bottom:5px}
+.card .sub{font-size:.83rem;color:var(--muted);margin-bottom:16px}
+label{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.02em}
+input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,212,255,.22);border-radius:10px;
+padding:12px 15px;color:#fff;font-size:.92rem;font-family:inherit;outline:none;transition:.18s}
+input:focus{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,212,255,.14)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:12px 22px;
+font-size:.88rem;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;border:1.5px solid transparent}
+.btn-p{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;box-shadow:0 6px 22px rgba(0,212,255,.22)}
+.btn-p:hover{transform:translateY(-2px)}
+.btn-g{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.13);color:var(--muted)}
+.btn-g:hover{color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:18px;text-align:center}
+.stat .v{font-size:2rem;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;
+background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat .l{font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.3}
+table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:820px}
+th{text-align:left;padding:11px 9px;font-size:.65rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+color:var(--muted);border-bottom:1.5px solid rgba(0,212,255,.22)}
+td{padding:12px 9px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+tbody tr:hover{background:rgba(0,212,255,.04)}
+.scroll{overflow-x:auto}
+.scroll::-webkit-scrollbar{height:8px}.scroll::-webkit-scrollbar-thumb{background:rgba(0,212,255,.25);border-radius:8px}
+.pill{display:inline-block;padding:3px 9px;border-radius:50px;font-size:.72rem;font-weight:800;font-variant-numeric:tabular-nums}
+.up{background:rgba(0,212,138,.16);color:var(--green)}
+.flat{background:rgba(255,255,255,.08);color:var(--muted)}
+.down{background:rgba(255,71,87,.16);color:var(--red)}
+.bar{height:6px;border-radius:50px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.err{font-size:.84rem;color:var(--red);background:rgba(255,71,87,.08);border-left:3px solid var(--red);
+border-radius:0 9px 9px 0;padding:11px 15px;margin-top:12px}
+.callout{border-left:3px solid var(--cyan);background:rgba(0,212,255,.06);border-radius:0 11px 11px 0;
+padding:14px 18px;font-size:.85rem;color:rgba(255,255,255,.82);margin-bottom:16px}
+.callout b{color:#fff}
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;
+border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#login{max-width:420px;margin:40px auto}
+.hide{display:none}
+footer{padding:26px 0 40px;font-size:.75rem;color:var(--muted2);text-align:center}
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}h1{font-size:1.25rem}}
+@media print{body{background:#fff;color:#111}body::before{display:none}
+.card,.stat{background:#fff;border-color:#bbb}.gt,.stat .v{-webkit-text-fill-color:#111;color:#111}
+th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{color:#111}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">ICONE ialabs · Politécnico Grancolombiano</div>
+  <h1>Tablero del Taller <span class="gt">· Módulo 1</span></h1>
+  <p>Ver antes de vender · Reportes del equipo Comercial B2B-B2C</p>
+</div></header>
+
+<div class="wrap">
+  <div id="login">
+    <div class="card">
+      <h2>Acceso del facilitador</h2>
+      <p class="sub">Este tablero solo lo ve quien tenga la clave. Los participantes nunca llegan aquí.</p>
+      <label for="k">Clave</label>
+      <input id="k" type="password" placeholder="Clave del taller" onkeydown="if(event.key==='Enter')entrar()">
+      <div id="lmsg"></div>
+      <div class="row" style="margin-top:14px"><button class="btn btn-p" id="bl" onclick="entrar()">Entrar</button></div>
+    </div>
+  </div>
+
+  <div id="panel" class="hide">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:14px">
+        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">Uno por participante, en el cierre de la sesión.</p></div>
+        <div class="row">
+          <button class="btn btn-g" onclick="cargar()">↻ Actualizar</button>
+          <button class="btn btn-g" onclick="window.print()">🖨 Imprimir</button>
+          <button class="btn btn-g" onclick="csv()">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="scroll"><table id="tbl"></table></div>
+    </div>
+    <div class="card" id="lectura"></div>
+  </div>
+</div>
+
+<footer><div class="wrap">
+  Taller Habilidades Comerciales Potenciadas con IA · Diseño y facilitación: Jorge Hugo Pérez · ICONE ialabs
+</div></footer>
+
+<script>
+"use strict";
+const SB_URL="https://nvgkhdrrxqdgxktfkioa.supabase.co";
+const SB_KEY="sb_publishable_d1RrtE7S-9a8e8mGKRRjxQ_4HU_nkDl";
+let CLAVE="", DATOS=[];
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function num(v){return (v===null||v===undefined||v==="")?null:Number(v);}
+
+async function pedir(clave){
+  const r=await fetch(SB_URL+"/rest/v1/rpc/taller_poli_panel",{method:"POST",
+    headers:{"apikey":SB_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({p_clave:clave})});
+  if(!r.ok){ const t=await r.text(); throw new Error(/Clave incorrecta/.test(t)?"Clave incorrecta":"No se pudo conectar"); }
+  return r.json();
+}
+async function entrar(){
+  const v=document.getElementById("k").value.trim();
+  if(!v){ document.getElementById("lmsg").innerHTML='<div class="err">Escribe la clave.</div>'; return; }
+  const b=document.getElementById("bl"); b.innerHTML='<span class="spin"></span> Entrando…';
+  try{
+    DATOS=await pedir(v); CLAVE=v;
+    document.getElementById("login").classList.add("hide");
+    document.getElementById("panel").classList.remove("hide");
+    render();
+  }catch(e){
+    document.getElementById("lmsg").innerHTML='<div class="err">'+esc(e.message)+'</div>';
+  }finally{ b.textContent="Entrar"; }
+}
+async function cargar(){ try{ DATOS=await pedir(CLAVE); render(); }catch(e){ alert(e.message); } }
+
+function render(){
+  const d=DATOS.filter(x=>x.modulo===1);
+  const bases=d.map(x=>num(x.base_min)).filter(v=>v!==null&&v>0);
+  const talls=d.map(x=>num(x.taller_min)).filter(v=>v!==null&&v>0);
+  const pb=bases.length?bases.reduce((a,b)=>a+b,0)/bases.length:null;
+  const pt=talls.length?talls.reduce((a,b)=>a+b,0)/talls.length:null;
+  const dos=d.reduce((a,x)=>a+(num(x.dossiers_completos)||0),0);
+  const gan=d.reduce((a,x)=>a+(num(x.ganchos_listos)||0),0);
+  const delta=(pb&&pt)?Math.round((pb-pt)/pb*100):null;
+
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><div class="v">${d.length}</div><div class="l">Participantes que reportaron</div></div>
+    <div class="stat"><div class="v">${pb?Math.round(pb):"–"}<span style="font-size:.9rem">min</span></div><div class="l">Promedio por cuenta ANTES</div></div>
+    <div class="stat"><div class="v">${pt?Math.round(pt):"–"}<span style="font-size:.9rem">min</span></div><div class="l">Promedio por cuenta EN el taller</div></div>
+    <div class="stat"><div class="v">${delta!==null?(delta>0?"−"+delta+"%":"+"+Math.abs(delta)+"%"):"–"}</div><div class="l">Cambio en tiempo de investigación</div></div>`;
+
+  const T=document.getElementById("tbl");
+  if(!d.length){ T.innerHTML=""; document.getElementById("lectura").innerHTML=
+    '<div class="empty"><div style="font-size:2rem;margin-bottom:10px">📡</div><b>Todavía no hay reportes.</b><br>Aparecen aquí en cuanto los participantes le den a «Enviar mis números» al cierre de la sesión.</div>'; return; }
+
+  T.innerHTML=`<thead><tr>
+    <th style="min-width:130px">Comercial</th><th>Antes</th><th>Hoy</th><th>Cambio</th>
+    <th>Dossiers</th><th>Ganchos</th><th>Datos</th><th style="min-width:200px">Cuentas a contactar</th>
+    <th>Contacta</th><th>Meta</th></tr></thead><tbody>
+    ${d.map(x=>{
+      const b=num(x.base_min), t=num(x.taller_min);
+      const dl=(b&&t)?Math.round((b-t)/b*100):null;
+      const cls=dl===null?"flat":dl>=25?"up":dl>0?"flat":"down";
+      return `<tr>
+        <td><b>${esc(x.comercial)}</b><div style="font-size:.7rem;color:var(--muted2)">${new Date(x.creado_en).toLocaleString("es-CO",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div></td>
+        <td>${b?b+" min":"—"}</td>
+        <td>${t?t+" min":"—"}</td>
+        <td>${dl!==null?`<span class="pill ${cls}">${dl>0?"−"+dl+"%":"+"+Math.abs(dl)+"%"}</span>`:"—"}</td>
+        <td>${num(x.dossiers_completos)!==null?num(x.dossiers_completos)+"/3":"—"}
+            <div class="bar"><i style="width:${(num(x.dossiers_completos)||0)/3*100}%"></i></div></td>
+        <td>${num(x.ganchos_listos)!==null?num(x.ganchos_listos):"—"}</td>
+        <td>${num(x.semaforo_aciertos)!==null?num(x.semaforo_aciertos)+"/8":"—"}</td>
+        <td style="font-size:.8rem">${esc(x.cuentas||"—")}</td>
+        <td style="font-size:.8rem">${esc(x.fecha_contacto||"—")}</td>
+        <td>${num(x.meta_semana)!==null?num(x.meta_semana):"—"}</td>
+      </tr>`;}).join("")}</tbody>`;
+
+  // Lectura para la Dirección
+  const sinGancho=d.filter(x=>(num(x.ganchos_listos)||0)<3);
+  const sinFecha=d.filter(x=>!x.fecha_contacto);
+  const flojos=d.filter(x=>num(x.semaforo_aciertos)!==null&&num(x.semaforo_aciertos)<6);
+  let L=`<h2>Lectura para la Dirección</h2><p class="sub">Generada de los reportes de arriba.</p>`;
+  if(delta!==null){
+    L+=`<div class="callout"><b>Tiempo de investigación por cuenta: ${Math.round(pb)} → ${Math.round(pt)} minutos (${delta>0?"−"+delta+"%":"+"+Math.abs(delta)+"%"}).</b> `+
+      (delta>=40?"Por encima de la meta de −40% que fijamos en el diseño del taller."
+       :delta>0?"Va en la dirección correcta, aunque por debajo de la meta de −40%."
+       :"El tiempo no bajó. Vale la pena revisar si el laboratorio alcanzó o si hubo problemas técnicos.")+
+      `</div>`;
+  }
+  L+=`<div class="callout"><b>${dos} dossiers y ${gan} ganchos producidos en la sesión.</b> Son entregables reales, no apuntes: cada participante se llevó su PDF.</div>`;
+  if(sinGancho.length) L+=`<div class="callout"><b>Seguimiento:</b> ${sinGancho.map(x=>esc(x.comercial)).join(", ")} no completó los 3 ganchos. Conviene cerrarlo antes del Módulo 2.</div>`;
+  if(sinFecha.length) L+=`<div class="callout"><b>Sin fecha de contacto:</b> ${sinFecha.map(x=>esc(x.comercial)).join(", ")}. El compromiso sin fecha no se cumple.</div>`;
+  if(flojos.length) L+=`<div class="callout"><b>Regla de datos por debajo de 6/8:</b> ${flojos.map(x=>esc(x.comercial)).join(", ")}. Repasar los casos de datos personales y tarifas.</div>`;
+  L+=`<div class="callout"><b>Próximo hito:</b> repetir estas mismas cifras a las 4 semanas y el diagnóstico completo a las 6, con los mismos 25 ítems.</div>`;
+  document.getElementById("lectura").innerHTML=L;
+}
+
+function csv(){
+  const d=DATOS.filter(x=>x.modulo===1);
+  const cols=["creado_en","comercial","base_min","taller_min","dossiers_completos","ganchos_listos","semaforo_aciertos","cuentas","fecha_contacto","meta_semana"];
+  const esc2=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const t=[cols.join(",")].concat(d.map(r=>cols.map(c=>esc2(r[c])).join(","))).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["﻿"+t],{type:"text/csv;charset=utf-8"}));
+  a.download="taller-poli-modulo1.csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+</script>
+</body>
+</html>

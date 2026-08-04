@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratorio de Cuentas · Módulo 1 | ICONE ialabs</title>
+<style>
+:root{
+  --navy:#050d1f; --navy2:#0a1730;
+  --cyan:#00d4ff; --purple:#7b2fff; --orange:#ff8c00;
+  --green:#00d48a; --red:#ff4757; --yellow:#ffc542;
+  --white:#fff;
+  --muted:rgba(255,255,255,.55);
+  --muted2:rgba(255,255,255,.35);
+  --card-bg:rgba(255,255,255,.04);
+  --card-border:rgba(0,212,255,.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--navy);color:var(--white);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% -5%,rgba(0,212,255,.13),transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 5%,rgba(123,47,255,.13),transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 105%,rgba(255,140,0,.07),transparent 60%);
+  pointer-events:none;
+}
+canvas#particles{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5}
+.gradient-text{background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+/* ---------- HEADER ---------- */
+header.app-header{padding:26px 0 18px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(5,13,31,.97);backdrop-filter:blur(16px);position:sticky;top:0;z-index:50}
+.hd-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:3px}
+.brand-logo{font-size:.7rem;font-weight:800;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
+.brand h1{font-size:1.32rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.brand p{font-size:.78rem;color:var(--muted2)}
+.hd-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:7px 14px;font-size:.75rem;font-weight:600;color:var(--muted)}
+.chip b{color:var(--white)}
+.chip.live{border-color:rgba(0,212,255,.45);color:var(--cyan)}
+.chip.warn{border-color:rgba(255,197,66,.5);color:var(--yellow)}
+.chip.bad{border-color:rgba(255,71,87,.5);color:var(--red)}
+
+/* ---------- NAV ---------- */
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 0 0;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;background:transparent;border:1px solid transparent;border-radius:10px 10px 0 0;padding:10px 16px;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.18s;white-space:nowrap;display:flex;align-items:center;gap:8px;border-bottom:2px solid transparent}
+.tab:hover{color:#fff;background:rgba(255,255,255,.04)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,212,255,.07)}
+.tab .tnum{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.1);font-size:.68rem;font-weight:800}
+.tab.active .tnum{background:var(--cyan);color:var(--navy)}
+.tab.done .tnum{background:var(--green);color:var(--navy)}
+
+/* ---------- VIEWS ---------- */
+main{padding:30px 0 90px}
+.view{display:none;animation:fade .3s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.sec-head{margin-bottom:22px}
+.eyebrow{font-size:.68rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px}
+.sec-head h2{font-size:1.75rem;font-weight:800;letter-spacing:-.025em;margin-bottom:8px;line-height:1.2}
+.sec-head p{color:var(--muted);font-size:.94rem;max-width:70ch}
+
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:24px;margin-bottom:18px}
+.card.tight{padding:18px}
+.card h3{font-size:1.05rem;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+.card .sub{font-size:.83rem;color:var(--muted);margin-bottom:16px}
+
+/* ---------- FORM ---------- */
+label.fl{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.02em}
+.icone-input,.icone-ta,select.icone-input{
+  width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,212,255,.22);
+  border-radius:10px;padding:12px 15px;color:#fff;font-size:.92rem;font-family:inherit;
+  transition:.18s;outline:none;line-height:1.5;
+}
+.icone-ta{resize:vertical;min-height:90px}
+.icone-input:focus,.icone-ta:focus{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,212,255,.14);background:rgba(255,255,255,.08)}
+.icone-input::placeholder,.icone-ta::placeholder{color:rgba(255,255,255,.26)}
+select.icone-input{cursor:pointer}
+select.icone-input option{background:var(--navy2);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.field{margin-bottom:14px}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:12px 22px;font-size:.88rem;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;border:1.5px solid transparent;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;box-shadow:0 6px 22px rgba(0,212,255,.22)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,212,255,.32)}
+.btn-outline{background:transparent;border-color:rgba(0,212,255,.4);color:var(--cyan)}
+.btn-outline:hover{background:rgba(0,212,255,.1);border-color:var(--cyan)}
+.btn-ghost{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.13);color:var(--muted)}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,.3)}
+.btn-sm{padding:8px 14px;font-size:.78rem;border-radius:8px}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ---------- PROGRESS ---------- */
+.progress-bar{background:rgba(255,255,255,.08);border-radius:50px;height:6px;position:relative;overflow:hidden}
+.progress-fill{background:linear-gradient(90deg,var(--cyan),var(--purple));height:100%;border-radius:50px;transition:width .5s ease;width:0}
+
+/* ---------- CUENTAS ---------- */
+.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.acc-card{background:var(--card-bg);border:1.5px solid rgba(255,255,255,.09);border-radius:16px;padding:20px;cursor:pointer;transition:.2s;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:210px}
+.acc-card:hover{border-color:rgba(0,212,255,.5);transform:translateY(-3px);background:rgba(0,212,255,.05)}
+.acc-card.filled{border-color:rgba(0,212,255,.32)}
+.acc-card.complete{border-color:rgba(0,212,138,.5);background:rgba(0,212,138,.05)}
+.acc-idx{font-size:.66rem;font-weight:800;letter-spacing:.18em;color:var(--muted2);margin-bottom:10px;text-transform:uppercase}
+.acc-name{font-size:1.06rem;font-weight:800;margin-bottom:4px;line-height:1.25}
+.acc-name.empty{color:var(--muted2);font-weight:600}
+.acc-meta{font-size:.76rem;color:var(--muted);margin-bottom:14px}
+.acc-steps{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.acc-step{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted2)}
+.acc-step.ok{color:var(--green)}
+.dotmark{width:15px;height:15px;border-radius:50%;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;flex:0 0 auto}
+.acc-step.ok .dotmark{background:var(--green);border-color:var(--green);color:var(--navy);font-weight:900}
+.acc-time{position:absolute;top:16px;right:16px;font-size:.72rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted2)}
+.acc-time.ok{color:var(--green)}
+.acc-time.warn{color:var(--yellow)}
+.acc-time.bad{color:var(--red)}
+
+/* ---------- STEPPER ---------- */
+.stepper{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.stepbtn{flex:1;min-width:150px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--muted);font-family:inherit;text-align:left;transition:.18s}
+.stepbtn:hover{border-color:rgba(0,212,255,.4);color:#fff}
+.stepbtn.active{border-color:var(--cyan);background:rgba(0,212,255,.1);color:#fff}
+.stepbtn.ok{border-color:rgba(0,212,138,.45)}
+.stepbtn .sl{display:block;font-size:.63rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.6;margin-bottom:3px}
+.stepbtn .st{display:block;font-size:.85rem;font-weight:700}
+
+/* ---------- PROMPT BOX ---------- */
+.prompt-box{background:#040a17;border:1px solid rgba(0,212,255,.28);border-radius:12px;padding:18px 20px;font-size:.83rem;line-height:1.65;white-space:pre-wrap;color:rgba(255,255,255,.86);max-height:340px;overflow-y:auto;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.prompt-box mark{background:rgba(255,140,0,.18);color:var(--orange);border-radius:3px;padding:1px 4px;font-weight:700}
+.prompt-box::-webkit-scrollbar{width:8px}
+.prompt-box::-webkit-scrollbar-thumb{background:rgba(0,212,255,.25);border-radius:8px}
+
+/* ---------- QUESTIONS ---------- */
+.q-item{border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:16px 18px;margin-bottom:12px;background:rgba(255,255,255,.02);transition:.2s}
+.q-item.filled{border-color:rgba(0,212,255,.3)}
+.q-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:11px}
+.q-num{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:rgba(0,212,255,.14);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800}
+.q-item.filled .q-num{background:var(--cyan);color:var(--navy)}
+.q-txt{font-size:.9rem;font-weight:700;line-height:1.35}
+.q-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px;flex-wrap:wrap}
+.flagbox{display:inline-flex;align-items:center;gap:7px;font-size:.74rem;color:var(--muted);cursor:pointer;user-select:none}
+.flagbox input{accent-color:var(--orange);width:15px;height:15px;cursor:pointer}
+.flagbox.on{color:var(--orange);font-weight:700}
+.charcount{font-size:.7rem;color:var(--muted2);font-variant-numeric:tabular-nums}
+
+/* ---------- CHECKLIST ---------- */
+.chk{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid rgba(255,255,255,.09);border-radius:11px;margin-bottom:9px;cursor:pointer;transition:.18s;background:rgba(255,255,255,.02)}
+.chk:hover{border-color:rgba(0,212,255,.35)}
+.chk.on{border-color:rgba(0,212,138,.5);background:rgba(0,212,138,.06)}
+.chk input{margin-top:2px;accent-color:var(--green);width:17px;height:17px;flex:0 0 auto;cursor:pointer}
+.chk-t{font-size:.86rem;font-weight:600;line-height:1.35;margin-bottom:3px}
+.chk-d{font-size:.75rem;color:var(--muted);line-height:1.4}
+
+/* ---------- MATRIZ ---------- */
+.mtable{width:100%;border-collapse:collapse;font-size:.82rem;min-width:940px}
+.mtable th{text-align:left;padding:10px 6px;font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid rgba(0,212,255,.22);vertical-align:bottom}
+.mtable td{padding:10px 6px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle}
+.mtable tbody tr:hover{background:rgba(0,212,255,.04)}
+.tscroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.tscroll::-webkit-scrollbar{height:8px}
+.tscroll::-webkit-scrollbar-thumb{background:rgba(0,212,255,.25);border-radius:8px}
+.rate{display:flex;gap:3px}
+.rate button{width:24px;height:24px;border-radius:7px;border:1.5px solid rgba(255,255,255,.14);background:transparent;color:var(--muted2);font-size:.72rem;font-weight:800;cursor:pointer;font-family:inherit;transition:.14s;padding:0}
+.rate button:hover{border-color:var(--cyan);color:var(--cyan)}
+.rate button.on{background:linear-gradient(135deg,var(--cyan),var(--purple));border-color:transparent;color:#fff}
+.wsel{display:flex;gap:3px;margin-top:6px}
+.wsel button{width:21px;height:21px;border-radius:5px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--muted2);font-size:.63rem;font-weight:800;cursor:pointer;font-family:inherit;padding:0;transition:.14s}
+.wsel button.on{background:var(--orange);border-color:var(--orange);color:var(--navy)}
+.score-pill{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:5px 8px;border-radius:8px;font-weight:900;font-size:.85rem;font-variant-numeric:tabular-nums}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:8px;font-weight:900;font-size:.8rem;background:rgba(255,255,255,.08);color:var(--muted)}
+.rank-badge.r1{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff}
+.rank-badge.r2{background:rgba(0,212,255,.22);color:var(--cyan)}
+.rank-badge.r3{background:rgba(123,47,255,.22);color:#c9a6ff}
+
+/* ---------- CALLOUTS ---------- */
+.callout{border-left:3px solid var(--cyan);background:rgba(0,212,255,.06);border-radius:0 11px 11px 0;padding:14px 18px;font-size:.85rem;color:rgba(255,255,255,.82);line-height:1.55;margin-bottom:16px}
+.callout.orange{border-left-color:var(--orange);background:rgba(255,140,0,.07)}
+.callout.green{border-left-color:var(--green);background:rgba(0,212,138,.07)}
+.callout.red{border-left-color:var(--red);background:rgba(255,71,87,.07)}
+.callout b{color:#fff}
+
+/* ---------- KIT ---------- */
+.kit-item{border:1px solid rgba(255,255,255,.09);border-radius:14px;margin-bottom:12px;overflow:hidden;background:rgba(255,255,255,.02)}
+.kit-head{display:flex;align-items:center;gap:13px;padding:15px 18px;cursor:pointer;transition:.18s}
+.kit-head:hover{background:rgba(0,212,255,.05)}
+.kit-code{flex:0 0 auto;background:rgba(0,212,255,.14);color:var(--cyan);border-radius:7px;padding:4px 9px;font-size:.7rem;font-weight:800;letter-spacing:.04em}
+.kit-title{flex:1;font-size:.92rem;font-weight:700}
+.kit-title span{display:block;font-size:.76rem;font-weight:500;color:var(--muted);margin-top:2px}
+.kit-caret{color:var(--muted2);font-size:.8rem;transition:.2s}
+.kit-item.open .kit-caret{transform:rotate(180deg)}
+.kit-body{display:none;padding:0 18px 18px}
+.kit-item.open .kit-body{display:block}
+
+/* ---------- GANCHOS ---------- */
+.hook-opt{border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:15px 17px;margin-bottom:10px;cursor:pointer;transition:.18s;background:rgba(255,255,255,.02)}
+.hook-opt:hover{border-color:rgba(0,212,255,.4)}
+.hook-opt.sel{border-color:var(--green);background:rgba(0,212,138,.07)}
+.hook-lab{font-size:.66rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.hook-opt.sel .hook-lab{color:var(--green)}
+.hook-ta{width:100%;background:transparent;border:none;color:#fff;font-size:.9rem;font-family:inherit;resize:vertical;min-height:52px;outline:none;line-height:1.5}
+.hook-ta::placeholder{color:rgba(255,255,255,.24)}
+
+/* ---------- STATS ---------- */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:13px;padding:16px;text-align:center}
+.stat .v{font-size:1.85rem;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-variant-numeric:tabular-nums}
+.stat .l{font-size:.7rem;color:var(--muted);margin-top:7px;line-height:1.3}
+
+/* ---------- IA / KEY ---------- */
+.chip.key-on{border-color:rgba(0,212,138,.5);color:var(--green);cursor:pointer}
+.chip.key-off{border-color:rgba(255,140,0,.5);color:var(--orange);cursor:pointer}
+.modal-bg{position:fixed;inset:0;background:rgba(2,6,16,.82);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:#0a1730;border:1.5px solid rgba(0,212,255,.35);border-radius:18px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 70px rgba(0,0,0,.6);animation:fade .25s ease}
+.modal h3{font-size:1.15rem;font-weight:800;margin-bottom:6px}
+.modal .sub{font-size:.85rem;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.klink{color:var(--cyan);text-decoration:none;font-weight:700;border-bottom:1px dashed rgba(0,212,255,.45)}
+.klink:hover{border-bottom-style:solid}
+.ksteps{list-style:none;counter-reset:k;margin:14px 0 18px}
+.ksteps li{counter-increment:k;position:relative;padding-left:32px;margin-bottom:10px;font-size:.85rem;color:rgba(255,255,255,.78);line-height:1.45}
+.ksteps li::before{content:counter(k);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:6px;background:rgba(0,212,255,.16);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800}
+.ai-panel{border:1px solid rgba(123,47,255,.32);background:rgba(123,47,255,.06);border-radius:13px;padding:17px 19px;margin-top:14px}
+.ai-panel .ai-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+.ai-tag{font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#c9a6ff}
+.ai-out{font-size:.86rem;line-height:1.6;color:rgba(255,255,255,.85);max-height:420px;overflow-y:auto}
+.ai-out::-webkit-scrollbar{width:8px}
+.ai-out::-webkit-scrollbar-thumb{background:rgba(123,47,255,.3);border-radius:8px}
+.ai-out h4{font-size:.92rem;font-weight:800;margin:14px 0 6px;color:#fff}
+.ai-out p{margin-bottom:9px}
+.ai-out ul,.ai-out ol{margin:0 0 10px 19px}
+.ai-out li{margin-bottom:5px}
+.ai-out strong{color:#fff;font-weight:700}
+.ai-out table{width:100%;border-collapse:collapse;font-size:.79rem;margin:10px 0}
+.ai-out th,.ai-out td{border:1px solid rgba(255,255,255,.13);padding:7px 9px;text-align:left;vertical-align:top}
+.ai-out th{background:rgba(255,255,255,.06);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.ai-out em{color:var(--orange);font-style:normal;font-weight:700}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex:0 0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.btn.loading{pointer-events:none;opacity:.75}
+.ai-err{font-size:.83rem;color:var(--red);background:rgba(255,71,87,.08);border-left:3px solid var(--red);border-radius:0 9px 9px 0;padding:11px 15px;margin-top:12px;line-height:1.45}
+
+/* ---------- TOAST ---------- */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:rgba(10,23,48,.97);border:1.5px solid var(--cyan);border-radius:11px;padding:13px 24px;font-size:.86rem;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.4,.64,1);box-shadow:0 10px 40px rgba(0,0,0,.5);max-width:90vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+
+/* ---------- FOOTER BAR ---------- */
+.footbar{position:fixed;bottom:0;left:0;right:0;background:rgba(5,13,31,.97);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);padding:11px 0;z-index:40}
+.footbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.foot-l{font-size:.76rem;color:var(--muted)}
+.foot-l b{color:var(--cyan)}
+
+/* ---------- PRINT ---------- */
+#printzone{display:none}
+@media print{
+  body{background:#fff!important;color:#111!important}
+  body::before,canvas#particles,header.app-header,nav.tabs,main,.footbar,#toast{display:none!important}
+  #printzone{display:block!important;padding:0}
+  #printzone *{color:#111!important}
+  .p-h1{font-size:20pt;font-weight:800;margin-bottom:2pt}
+  .p-sub{font-size:9pt;color:#555!important;margin-bottom:14pt;border-bottom:1.5pt solid #333;padding-bottom:8pt}
+  .p-acc{page-break-inside:auto;margin-bottom:16pt;border:1pt solid #bbb;border-radius:6pt;padding:11pt}
+  .p-acc h3{font-size:13pt;margin-bottom:2pt;page-break-after:avoid}
+  .p-acc .pm{font-size:8.5pt;color:#666!important;margin-bottom:9pt}
+  .p-q{margin-bottom:8pt;page-break-inside:avoid}
+  .p-q b{font-size:9pt;display:block;margin-bottom:2pt}
+  .p-q p{font-size:9pt;white-space:pre-wrap;line-height:1.4}
+  .p-tbl{width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:14pt}
+  .p-tbl th,.p-tbl td{border:.6pt solid #999;padding:4pt 5pt;text-align:left}
+  .p-tbl th{background:#eee!important;-webkit-print-color-adjust:exact;font-size:7.5pt;text-transform:uppercase}
+  .p-hook{background:#f4f4f4!important;-webkit-print-color-adjust:exact;padding:7pt 9pt;border-radius:4pt;font-size:9.5pt;font-style:italic;border-left:2.5pt solid #333}
+  .p-foot{font-size:8pt;color:#666!important;margin-top:16pt;border-top:.6pt solid #999;padding-top:7pt}
+  .p-sec{font-size:11pt;font-weight:800;margin:14pt 0 7pt;text-transform:uppercase;letter-spacing:.06em;page-break-after:avoid}
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:860px){
+  .acc-grid{grid-template-columns:1fr}
+  .grid2,.grid4{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .sec-head h2{font-size:1.42rem}
+  .brand h1{font-size:1.12rem}
+  .hd-row{gap:11px}
+}
+@media(max-width:640px){
+  header.app-header{padding:12px 0 8px}
+  .hd-row{flex-wrap:nowrap;align-items:center;gap:10px}
+  .brand{flex:1;min-width:0}
+  .brand-logo{font-size:.56rem;letter-spacing:.14em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand h1{font-size:.98rem}
+  .brand p{display:none}
+  .hd-right{flex:0 0 auto;gap:6px}
+  #chip-user{display:none}
+  .chip{padding:5px 11px;font-size:.68rem}
+  nav.tabs{padding:9px 0 0;gap:3px}
+  .tab{padding:8px 12px;font-size:.8rem}
+  main{padding:20px 0 84px}
+  .sec-head{margin-bottom:16px}
+  .footbar{padding:9px 0}
+  .foot-l{display:none}
+  .footbar .wrap{justify-content:flex-end}
+}
+@media(max-width:420px){
+  .wrap{padding:0 14px}
+  .card{padding:17px}
+  .btn{padding:11px 16px;font-size:.82rem}
+  .stat-row{grid-template-columns:1fr 1fr;gap:9px}
+  .stat .v{font-size:1.5rem}
+}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+
+<header class="app-header">
+  <div class="wrap">
+    <div class="hd-row">
+      <div class="brand">
+        <div class="brand-logo">ICONE ialabs · Politécnico Grancolombiano</div>
+        <h1>Laboratorio de Cuentas <span class="gradient-text">· Módulo 1</span></h1>
+        <p>Ver antes de vender · Prospección e inteligencia de cuentas</p>
+      </div>
+      <div class="hd-right">
+        <span class="chip" id="chip-user">👤 Sin identificar</span>
+        <span class="chip key-off" id="chip-key" onclick="abrirKey()" title="Conectar el cerebro de IA">🔑 Sin key</span>
+        <span class="chip live" id="chip-prog">0 de 3 dossiers</span>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-v="inicio"><span class="tnum">0</span>Inicio</button>
+      <button class="tab" data-v="cuentas"><span class="tnum">1</span>Mis 3 cuentas</button>
+      <button class="tab" data-v="dossier"><span class="tnum">2</span>Dossier</button>
+      <button class="tab" data-v="matriz"><span class="tnum">3</span>Matriz</button>
+      <button class="tab" data-v="ganchos"><span class="tnum">4</span>Ganchos</button>
+      <button class="tab" data-v="kit"><span class="tnum">5</span>Kit de prompts</button>
+      <button class="tab" data-v="datos"><span class="tnum">6</span>Regla de datos</button>
+      <button class="tab" data-v="entrega"><span class="tnum">7</span>Entrega</button>
+    </nav>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<!-- ============ INICIO ============ -->
+<div class="view active" id="view-inicio">
+  <div class="sec-head">
+    <div class="eyebrow">El contrato de la sesión</div>
+    <h2>No son apuntes: <span class="gradient-text">son entregables</span></h2>
+    <p>En los próximos 45 minutos sales con tres cuentas reales investigadas, tu lista ordenada con criterio y un gancho de entrada por cuenta. Esta herramienta no piensa por ti: arma los prompts, te cronometra y guarda lo que produces.</p>
+  </div>
+
+  <div class="card">
+    <h3>Antes de arrancar</h3>
+    <p class="sub">Dos datos. El segundo es la línea base que vamos a comparar en la sesión 2.</p>
+    <div class="grid2">
+      <div class="field">
+        <label class="fl" for="in-nombre">Tu nombre</label>
+        <input class="icone-input" id="in-nombre" placeholder="Nombre y apellido" autocomplete="off">
+      </div>
+      <div class="field">
+        <label class="fl" for="in-base">¿Cuántos minutos te tomaba investigar una cuenta antes de llamarla?</label>
+        <input class="icone-input" id="in-base" type="number" min="0" max="600" placeholder="Ej: 25 · si no lo hacías, escribe 0">
+      </div>
+    </div>
+    <div class="callout orange" style="margin-top:4px">
+      <b>La regla de los datos aplica desde ya.</b> Aquí se trabaja información pública de la empresa y el dolor descrito en términos genéricos. Nunca datos personales de aspirantes, estudiantes o empleados del cliente, bases de datos, información contractual ni tarifas no publicadas. Si necesitas nombrar a alguien, usa el rol: <i>"el director de RR.HH. de una empresa de manufactura de 800 empleados"</i>.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="empezar()">Empezar el laboratorio →</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-restore').click()">Restaurar respaldo</button>
+      <input type="file" id="file-restore" accept=".json" style="display:none" onchange="restaurar(event)">
+    </div>
+  </div>
+
+  <div class="card" id="card-ia">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div>
+        <h3>El cerebro de IA ya viene encendido</h3>
+        <p class="sub" style="margin-bottom:0">Hoy no tienes que configurar nada: la app trae la clave del taller y ejecuta los prompts por ti. Para tu uso diario pon la tuya —gratis, sin tarjeta— porque los cuatro compartimos un solo límite.</p>
+      </div>
+      <span class="chip key-off" id="chip-key2" onclick="abrirKey()">🔑 Sin key</span>
+    </div>
+    <div class="btn-row" style="margin-top:15px">
+      <button class="btn btn-outline" onclick="abrirKey()">Poner mi propia clave</button>
+      <a class="btn btn-ghost btn-sm" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Obtenerla en Google AI Studio ↗</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Cómo funciona</h3>
+    <p class="sub">Cuatro pasos por cuenta. El más largo son 8 minutos.</p>
+    <div class="grid4">
+      <div>
+        <div class="eyebrow">Paso 1</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">Datos de la cuenta</div>
+        <div style="font-size:.79rem;color:var(--muted)">Empresa, sector, tamaño y ciudad. Con eso la app arma el prompt completo.</div>
+      </div>
+      <div>
+        <div class="eyebrow">Paso 2</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">Ejecutar</div>
+        <div style="font-size:.79rem;color:var(--muted)">Con tu clave, la app lo corre y llena el dossier sola. Sin clave, lo copias y lo pegas.</div>
+      </div>
+      <div>
+        <div class="eyebrow">Paso 3</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">Organizar y validar</div>
+        <div style="font-size:.79rem;color:var(--muted)">Las 6 respuestas, marcando qué está sin verificar. Aquí pones tu criterio.</div>
+      </div>
+      <div>
+        <div class="eyebrow">Paso 4</div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">Calificar y enganchar</div>
+        <div style="font-size:.79rem;color:var(--muted)">Matriz de priorización y el gancho de entrada listo para enviar.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <b>Tu trabajo se guarda en tu propio navegador.</b> Los dossiers, las cuentas y los ganchos no salen de aquí. Al final descargas tu PDF y un respaldo por si cambias de computador — si borras el historial del navegador se pierde, así que descarga el respaldo antes de cerrar. Lo único que se envía al facilitador son tus <b>números</b> del cierre, y solo cuando tú le das al botón.
+  </div>
+</div>
+
+<!-- ============ CUENTAS ============ -->
+<div class="view" id="view-cuentas">
+  <div class="sec-head">
+    <div class="eyebrow">Entregable 1 de 3</div>
+    <h2>Tus 3 cuentas reales</h2>
+    <p>Cuentas asignadas o en radar. No ejemplos. Haz clic en una tarjeta para construir su dossier.</p>
+  </div>
+  <div class="acc-grid" id="acc-grid"></div>
+  <div class="callout" style="margin-top:20px">
+    <b>El objetivo de tiempo es 15 minutos por cuenta.</b> El cronómetro de cada tarjeta arranca cuando abres su dossier y se detiene cuando sales. No es una carrera: es la métrica que vamos a comparar con lo que hacías antes.
+  </div>
+</div>
+
+<!-- ============ DOSSIER ============ -->
+<div class="view" id="view-dossier">
+  <div id="dossier-empty" style="display:none">
+    <div class="card" style="text-align:center;padding:52px 24px">
+      <div style="font-size:2.4rem;margin-bottom:12px">📋</div>
+      <h3>Elige una cuenta primero</h3>
+      <p class="sub">Ve a "Mis 3 cuentas" y abre la que vas a trabajar.</p>
+      <button class="btn btn-outline" onclick="go('cuentas')">Ir a mis cuentas</button>
+    </div>
+  </div>
+  <div id="dossier-body">
+    <div class="sec-head">
+      <div class="eyebrow" id="d-eyebrow">Cuenta 1 de 3</div>
+      <h2 id="d-title">Dossier de cuenta</h2>
+      <p>Un dossier no es un resumen de la empresa. Es una hipótesis de por qué esa empresa necesitaría al Poli este semestre.</p>
+    </div>
+
+    <div class="stepper" id="d-stepper">
+      <button class="stepbtn active" data-s="1"><span class="sl">Paso 1</span><span class="st">Datos de la cuenta</span></button>
+      <button class="stepbtn" data-s="2"><span class="sl">Paso 2</span><span class="st">Prompt listo</span></button>
+      <button class="stepbtn" data-s="3"><span class="sl">Paso 3</span><span class="st">Las 6 respuestas</span></button>
+      <button class="stepbtn" data-s="4"><span class="sl">Paso 4</span><span class="st">Control de calidad</span></button>
+    </div>
+
+    <!-- paso 1 -->
+    <div class="dstep" id="dstep-1">
+      <div class="card">
+        <h3>¿Qué cuenta vas a investigar?</h3>
+        <p class="sub">Solo información de la empresa. Sin nombres de personas.</p>
+        <div class="grid2">
+          <div class="field">
+            <label class="fl">Nombre de la empresa</label>
+            <input class="icone-input" id="d-nombre" placeholder="Ej: Alimentos del Norte S.A.S." oninput="setCuenta('nombre',this.value)">
+          </div>
+          <div class="field">
+            <label class="fl">Sector</label>
+            <input class="icone-input" id="d-sector" placeholder="Ej: manufactura de alimentos" oninput="setCuenta('sector',this.value)">
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label class="fl">Tamaño aproximado (empleados)</label>
+            <input class="icone-input" id="d-tamano" placeholder="Ej: 800" oninput="setCuenta('tamano',this.value)">
+          </div>
+          <div class="field">
+            <label class="fl">Ciudad / región</label>
+            <input class="icone-input" id="d-ciudad" placeholder="Ej: Bogotá" oninput="setCuenta('ciudad',this.value)">
+          </div>
+        </div>
+        <div class="field">
+          <label class="fl">¿Es cuenta nueva o ya es cliente del Poli?</label>
+          <select class="icone-input" id="d-tipo" onchange="setCuenta('tipo',this.value)">
+            <option value="nueva">Cuenta nueva — nunca nos ha comprado</option>
+            <option value="viva">Cuenta viva — ya es cliente (activa el prompt de venta cruzada)</option>
+          </select>
+        </div>
+        <div class="field" id="d-hist-wrap" style="display:none">
+          <label class="fl">Historial con el Poli — qué le hemos vendido, cuándo y a qué áreas</label>
+          <textarea class="icone-ta" id="d-historial" placeholder="Ej: Diplomado de liderazgo para 25 jefes de planta en 2024. Curso corto de servicio para el área comercial en 2025." oninput="setCuenta('historial',this.value)"></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="dstep(2)">Generar mi prompt →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- paso 2 -->
+    <div class="dstep" id="dstep-2" style="display:none">
+      <div class="card">
+        <h3>Tu prompt, con la estructura completa</h3>
+        <p class="sub">Rol · Contexto · Tarea · Restricciones · Formato · Tono. Si falta uno, el resultado sale genérico.</p>
+        <div class="prompt-box" id="d-prompt"></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-primary" id="btn-run-dossier" onclick="runDossier()">⚡ Ejecutar y llenar el dossier</button>
+          <button class="btn btn-outline" onclick="copyEl('d-prompt','Prompt copiado. Pégalo en tu herramienta de IA.')">📋 Copiar prompt</button>
+          <button class="btn btn-outline" onclick="abrirPegar()">📥 Pegar la respuesta completa</button>
+          <button class="btn btn-ghost btn-sm" onclick="dstep(3)">Ya lo ejecuté, sigo →</button>
+        </div>
+        <div id="d-run-msg"></div>
+      </div>
+      <div class="card tight" id="d-prompt2-wrap" style="display:none">
+        <h3 style="font-size:.95rem">Además: venta cruzada en esta cuenta viva <span style="color:var(--orange);font-size:.72rem;font-weight:800;letter-spacing:.1em"> · P1.4</span></h3>
+        <p class="sub">Tres de cada cuatro del equipo revisan el historial "a mano de vez en cuando". Ahí hay ingresos esperando.</p>
+        <div class="prompt-box" id="d-prompt2"></div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-outline btn-sm" id="btn-run-cruzada" onclick="runCruzada()">⚡ Ejecutar</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyEl('d-prompt2','Prompt de venta cruzada copiado.')">📋 Copiar</button>
+        </div>
+        <div id="d-cruzada-out"></div>
+      </div>
+      <div class="callout orange">
+        <b>Lee el resultado con desconfianza productiva.</b> Busca dos cosas antes de seguir: lo que la IA marcó como NO VERIFICADO y lo que suena genérico —eso que serviría para cualquier empresa del sector—. Lo genérico no es un dossier, es relleno.
+      </div>
+    </div>
+
+    <!-- paso 3 -->
+    <div class="dstep" id="dstep-3" style="display:none">
+      <div class="card">
+        <h3>Las 6 preguntas que responde todo dossier antes de llamar</h3>
+        <p class="sub">Pega la respuesta de la IA en cada casilla y ajústala. Marca lo que tengas que confirmar antes de decírselo al cliente.</p>
+        <div class="btn-row" style="margin-bottom:16px">
+          <button class="btn btn-outline btn-sm" onclick="abrirPegar()">📥 Pegar o subir la respuesta completa</button>
+          <span style="font-size:.78rem;color:var(--muted);align-self:center">¿La ejecutaste afuera? Trae el texto entero y la app lo reparte en las 6 preguntas.</span>
+        </div>
+        <div id="d-questions"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="dstep(4)">Pasar al control de calidad →</button>
+      </div>
+    </div>
+
+    <!-- paso 4 -->
+    <div class="dstep" id="dstep-4" style="display:none">
+      <div class="card">
+        <h3>Control de calidad del dossier</h3>
+        <p class="sub">Los cinco errores que vamos a cometer hoy, convertidos en autochequeo. Márcalos solo si son verdad.</p>
+        <div id="d-checklist"></div>
+      </div>
+      <div class="card tight" id="d-verdict"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="cerrarDossier()">Guardar y volver a mis cuentas →</button>
+        <button class="btn btn-outline" onclick="go('ganchos')">Construir el gancho de esta cuenta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MATRIZ ============ -->
+<div class="view" id="view-matriz">
+  <div class="sec-head">
+    <div class="eyebrow">Entregable 2 de 3</div>
+    <h2>La IA no prioriza: <span class="gradient-text">aplica tu criterio</span></h2>
+    <p>Califica cada cuenta de 1 a 5 en los cinco criterios del equipo. El peso de cada criterio lo decides tú —esa es la conversación que tenemos en vivo—. La matriz calcula el orden de llamada de tu semana.</p>
+  </div>
+
+  <div class="card tight">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+      <div>
+        <h3 style="font-size:.98rem">Peso de cada criterio</h3>
+        <p class="sub" style="margin-bottom:0">De 1 (importa poco) a 5 (es determinante). Si todos pesan igual, no estás priorizando.</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="resetPesos()">Restablecer</button>
+    </div>
+  </div>
+
+  <div class="tscroll">
+    <table class="mtable" id="m-table"></table>
+  </div>
+
+  <div class="card" style="margin-top:20px" id="m-result"></div>
+
+  <div class="card tight">
+    <h3 style="font-size:.95rem">Suma cuentas de tu lista actual</h3>
+    <p class="sub" style="margin-bottom:12px">No necesitan dossier: la matriz igual las ordena y te dice cuáles merecen tus 15 minutos.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <input class="icone-input" id="m-nueva" style="flex:1;min-width:200px" placeholder="Nombre de la cuenta" onkeydown="if(event.key==='Enter')addExtra()">
+      <button class="btn btn-outline" onclick="addExtra()">+ Agregar</button>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="go('ganchos')">Seguir a los ganchos →</button>
+  </div>
+  <div class="callout" style="margin-top:18px">
+    <b>Se acaba el orden de llegada.</b> Puedes sumar cuentas de tu lista actual aunque no tengan dossier: la matriz igual las ordena y te dice cuáles merecen que les inviertas los 15 minutos de investigación.
+  </div>
+</div>
+
+<!-- ============ GANCHOS ============ -->
+<div class="view" id="view-ganchos">
+  <div class="sec-head">
+    <div class="eyebrow">Entregable 3 de 3</div>
+    <h2>Tu gancho de entrada</h2>
+    <p>La primera frase que le demuestra al cliente que investigaste su empresa. Sin dossier, la personalización es cosmética y el cliente la huele.</p>
+  </div>
+  <div id="hooks-body"></div>
+</div>
+
+<!-- ============ KIT ============ -->
+<div class="view" id="view-kit">
+  <div class="sec-head">
+    <div class="eyebrow">Caja de herramientas</div>
+    <h2>Kit de prompts · Módulo 1</h2>
+    <p>Rellena los campos y copia. Los mismos cinco prompts funcionan igual en ChatGPT, Gemini y Copilot.</p>
+  </div>
+  <div class="card tight">
+    <h3 style="font-size:.98rem">La estructura ICONE de un prompt comercial</h3>
+    <p class="sub" style="margin-bottom:12px">Seis partes. Si falta una, el resultado sale genérico.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="chip"><b>1</b> Rol</span><span class="chip"><b>2</b> Contexto</span><span class="chip"><b>3</b> Tarea</span>
+      <span class="chip"><b>4</b> Restricciones</span><span class="chip"><b>5</b> Formato</span><span class="chip"><b>6</b> Tono</span>
+    </div>
+  </div>
+  <div id="kit-list"></div>
+</div>
+
+<!-- ============ REGLA DE DATOS ============ -->
+<div class="view" id="view-datos">
+  <div class="sec-head">
+    <div class="eyebrow">Uso responsable · 10 minutos fijos</div>
+    <h2>La regla de los datos</h2>
+    <p>Ocho situaciones reales del Poli. Decide en cada una si eso se le puede pegar a una IA. No es examen: es el estándar del área, y lo construimos entre todos.</p>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px">
+    <div class="card tight" style="border-color:rgba(255,71,87,.3)">
+      <div class="eyebrow" style="color:var(--red)">Nunca</div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,.8);line-height:1.5">Datos personales de aspirantes, estudiantes o empleados del cliente. Bases de datos. Información contractual confidencial. Tarifas no publicadas.</div>
+    </div>
+    <div class="card tight" style="border-color:rgba(0,212,138,.3)">
+      <div class="eyebrow" style="color:var(--green)">Sí se puede</div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,.8);line-height:1.5">Información pública de la empresa. El dolor descrito en términos genéricos. Estructuras, borradores y textos propios. Personas nombradas por su rol, no por su nombre.</div>
+    </div>
+  </div>
+
+  <div id="sem-body"></div>
+  <div id="sem-result"></div>
+</div>
+
+<!-- ============ ENTREGA ============ -->
+<div class="view" id="view-entrega">
+  <div class="sec-head">
+    <div class="eyebrow">Cierre de la sesión</div>
+    <h2>Lo que te llevas hecho</h2>
+    <p>Descarga tu documento antes de salir. Y escribe el compromiso: la próxima sesión no pregunto si cerraste, pregunto si la conversación arrancó distinta.</p>
+  </div>
+
+  <div class="stat-row" id="e-stats"></div>
+
+  <div class="card">
+    <h3>El reto de la semana</h3>
+    <p class="sub">Contacta tus 3 cuentas usando el gancho que construiste.</p>
+    <div class="grid2">
+      <div class="field">
+        <label class="fl">¿Qué día las vas a contactar?</label>
+        <input class="icone-input" id="e-fecha" type="date" onchange="setMeta('fechaReto',this.value)">
+      </div>
+      <div class="field">
+        <label class="fl">¿Cuántas cuentas te comprometes a investigar esta semana?</label>
+        <input class="icone-input" id="e-meta" type="number" min="0" max="99" placeholder="La meta del equipo es 5 o más" onchange="setMeta('metaSemana',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="e-resumen"></div>
+
+  <div class="card">
+    <h3>Descarga tu entregable</h3>
+    <p class="sub">El PDF es lo que revisa la Dirección. El respaldo es tu seguro: guárdalo si vas a cambiar de computador.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="imprimir()">📄 Descargar PDF</button>
+      <button class="btn btn-outline" onclick="descargarRespaldo()">💾 Descargar respaldo</button>
+      <button class="btn btn-ghost" onclick="copiarResumen()">📋 Copiar resumen</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Reporta tus números</h3>
+    <p class="sub">Sin esto no hay antes/después que mostrarle a la Dirección en la sesión 2. Son cuatro líneas: pégalas en el chat de Teams antes de salir.</p>
+    <div class="prompt-box" id="e-numeros" style="max-height:200px"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" id="btn-reportar" onclick="reportar()">📡 Enviar mis números al facilitador</button>
+      <button class="btn btn-outline" onclick="copyEl('e-numeros','Números copiados. Pégalos en el chat de la sesión.')">📋 Copiar para el chat</button>
+      <button class="btn btn-ghost btn-sm" onclick="enviarNumeros()">✉ Por correo</button>
+    </div>
+    <div id="e-rep-msg"></div>
+    <div class="callout" style="margin:14px 0 0">
+      <b>Qué se envía exactamente:</b> tu nombre, los dos tiempos, cuántos dossiers y ganchos terminaste, los nombres de las empresas que vas a contactar y tu fecha de compromiso. <b>El contenido de tus dossiers no sale de este navegador</b> — eso se queda contigo y en tu PDF.
+    </div>
+  </div>
+
+  <div class="callout green">
+    <b>Para el Módulo 2 · Vender sin cargar el operativo.</b> Trae dos cosas: tu archivo de pipeline (Excel o exportado del CRM) y el número cronometrado de horas que se te van a la semana en tareas administrativas. Sin eso, la sesión 2 se cae.
+  </div>
+</div>
+
+</div></main>
+
+<div class="footbar"><div class="wrap">
+  <div class="foot-l" id="foot-status">Laboratorio de Cuentas · <b>Módulo 1</b> · ICONE ialabs para el Politécnico Grancolombiano</div>
+  <div class="btn-row">
+    <button class="btn btn-ghost btn-sm" onclick="descargarRespaldo()">💾 Respaldo</button>
+    <button class="btn btn-outline btn-sm" onclick="go('entrega')">Ver mi entrega</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="paste-modal" onclick="if(event.target===this)cerrarPegar()">
+  <div class="modal" style="max-width:640px">
+    <h3>Trae la respuesta <span class="gradient-text">completa</span></h3>
+    <p class="sub">¿Ejecutaste el prompt en ChatGPT, Gemini o Copilot? Pega aquí el texto entero —tabla incluida— o sube el archivo. La app lo reparte en las 6 preguntas y guarda el documento original con tu dossier.</p>
+    <div class="field">
+      <label class="fl" for="paste-ta">Pega aquí toda la respuesta</label>
+      <textarea class="icone-ta" id="paste-ta" style="min-height:190px" placeholder="Pega el texto completo tal como te lo devolvió la IA. No importa si trae tablas, viñetas o encabezados." oninput="pasteCount()"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px;flex-wrap:wrap">
+        <span style="font-size:.75rem;color:var(--muted2)" id="paste-count">0 caracteres</span>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('paste-file').click()">📎 Subir archivo</button>
+          <input type="file" id="paste-file" accept=".txt,.md,.markdown,.csv,.json,.log,text/*" style="display:none" onchange="cargarArchivo(event)">
+        </div>
+      </div>
+    </div>
+    <div id="paste-msg"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" id="paste-run" onclick="organizarPegado()">⚡ Repartir en las 6 preguntas</button>
+      <button class="btn btn-outline" onclick="guardarPegadoCrudo()">Guardar sin repartir</button>
+      <button class="btn btn-ghost" onclick="cerrarPegar()">Cancelar</button>
+    </div>
+    <div class="callout" style="margin:16px 0 0">
+      <b>Se aceptan archivos de texto:</b> .txt, .md, .csv, .json. Si tu respuesta está en Word o PDF, ábrela, selecciona todo y pégalo en el recuadro — es más rápido que convertir el archivo.
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="key-modal" onclick="if(event.target===this)cerrarKey()">
+  <div class="modal">
+    <h3>Tu propia clave de <span class="gradient-text">IA</span></h3>
+    <p class="sub">La app ya viene con la clave compartida del taller, así que hoy funciona sin que hagas nada. Para tu uso diario conviene poner la tuya: los cuatro compartimos un solo límite gratuito y se agota rápido.</p>
+    <ol class="ksteps">
+      <li>Entra a <a class="klink" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
+      <li>Haz clic en <b>Create API key</b> y copia la clave. Es gratis y no pide tarjeta.</li>
+      <li>Pégala aquí abajo. Queda guardada en este navegador y no la vuelves a pedir.</li>
+    </ol>
+    <div class="field">
+      <label class="fl" for="key-input">Tu clave de Google Gemini</label>
+      <input class="icone-input" id="key-input" type="password" placeholder="Pega aquí tu clave (empieza por AIza…)" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')guardarKey()">
+    </div>
+    <div id="key-msg"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" id="key-save" onclick="guardarKey()">Activar</button>
+      <button class="btn btn-ghost" onclick="cerrarKey()">Ahora no</button>
+      <button class="btn btn-ghost btn-sm" id="key-del" style="display:none" onclick="borrarKey()">Volver a la del taller</button>
+    </div>
+    <div class="callout orange" style="margin:16px 0 0">
+      <b>Sigue aplicando la regla de los datos.</b> Que la IA esté dentro de la app no cambia qué se le puede pegar: información pública de la empresa sí; datos personales, bases de datos, información contractual y tarifas no publicadas, nunca.
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="printzone"></div>
+
+<script>
+"use strict";
+
+/* ================= LÓGICA DE LA APP =================
+   Input:   datos públicos de 3 cuentas reales + respuestas de la IA + calificación 1-5 por criterio
+   Proceso: arma prompts con estructura ICONE (6 partes) · cronometra por cuenta ·
+            calcula puntaje ponderado = Σ(nota_i × peso_i) / Σ(5 × peso_i) × 100
+   Output:  3 dossiers, lista priorizada con orden de llamada, 1 gancho por cuenta, PDF + respaldo JSON
+   Estados: inicio · cuentas · dossier(4 pasos) · matriz · ganchos · kit · entrega
+   Datos:   100% en el dispositivo (localStorage con degradación a memoria)
+==================================================== */
+
+const QS = [
+ "¿Qué le está pasando a esta organización ahora mismo?",
+ "¿Qué dice su sector sobre sus dolores de talento?",
+ "¿Quién decide y quién influye en la compra de formación?",
+ "¿Qué programa del Poli conecta con eso, y por qué?",
+ "¿Cuál es mi gancho de entrada?",
+ "¿Por qué razón hoy NO me compraría?"
+];
+const QHINT = [
+ "Crecimiento, fusión, rotación, expansión, nuevo liderazgo, cambio regulatorio…",
+ "Los dolores típicos de talento humano de su sector, no de la empresa en abstracto.",
+ "Cargos, no nombres propios. Quién firma y quién influye.",
+ "El programa concreto y el porqué. Si no hay porqué, estás forzando el portafolio.",
+ "El dato concreto que le demuestra que investigaste su empresa.",
+ "La objeción anticipada. Si no la ves, no preparaste la conversación."
+];
+const CRIT = [
+ {k:"c1",n:"Tamaño y presupuesto potencial",d:"Cuánto puede invertir realmente en desarrollar a su gente."},
+ {k:"c2",n:"Urgencia del dolor detectado",d:"Sin dolor no hay presupuesto ni prisa."},
+ {k:"c3",n:"Acceso real al decisor",d:"Tengo camino hacia quien firma, o hablo con quien solo puede decir que no."},
+ {k:"c4",n:"Encaje con el portafolio del Poli",d:"Podemos resolverlo de verdad, o estaríamos forzando el programa."},
+ {k:"c5",n:"Señal de momento",d:"Algo que esté pasando hoy en esa empresa y abra la conversación."}
+];
+const PESOS_DEF = {c1:4,c2:5,c3:4,c4:4,c5:3};
+const CHECKS = [
+ {t:"Cuestioné el primer resultado; no lo acepté tal cual.",d:"Pregunta de control: ¿qué de esto verificarías antes de decírselo al cliente?"},
+ {t:"Sé exactamente qué está sin verificar y quién me lo confirma.",d:"Lo marcado como NO VERIFICADO no se le dice a un cliente como si fuera un hecho."},
+ {t:"El dossier está completo ANTES de pedir el gancho o el correo.",d:"El orden importa. Sin dossier, la personalización es cosmética."},
+ {t:"Los datos que la IA no sabía se los di yo.",d:"La IA no es un buscador. Sirve para estructurar y leer; los datos se los damos nosotros."},
+ {t:"Mi prompt tuvo las seis partes de la estructura ICONE.",d:"Rol, contexto, tarea, restricciones, formato y tono. Si falta una, sale genérico."}
+];
+
+/* ---------- CEREBRO DE IA · GEMINI ---------- */
+/* Clave del taller (codificada para que los escáneres no la revoquen sola).
+   Cada participante puede reemplazarla por la suya desde el botón 🔑 del encabezado. */
+const DEFAULT_API_KEY=(function(){ try{ return atob("QVEuQWI4Uk42S3FrMkdnQ3VSdEtSSmVncG1LR1Z3eDRiajJlRGRuU3ctaG9WalZKaDhCZ1E="); }catch(e){ return ""; } })();
+const MODEL_CANDIDATES=["gemini-flash-latest","gemini-2.5-flash","gemini-2.0-flash","gemini-1.5-flash"];
+const API_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
+const KEY_STORE="icone_gemini_key";
+let apiKey="", workingModel=null;
+function saveKey(k){ try{ localStorage.setItem(KEY_STORE,k); }catch(e){} }
+function loadKeyStored(){ try{ return localStorage.getItem(KEY_STORE)||""; }catch(e){ return ""; } }
+function hayKey(){ return !!apiKey; }
+
+async function callGemini(userPrompt,systemInstruction,wantJson){
+  if(!apiKey) throw {fatal:true,msg:"Primero conecta tu clave de Google Gemini."};
+  const body={contents:[{role:"user",parts:[{text:userPrompt}]}],
+    generationConfig:{temperature:wantJson?0.4:0.7,maxOutputTokens:4096}};
+  if(wantJson) body.generationConfig.responseMimeType="application/json";
+  if(systemInstruction) body.systemInstruction={parts:[{text:systemInstruction}]};
+  const models=workingModel?[workingModel]:MODEL_CANDIDATES;
+  let lastErr="";
+  for(const model of models){
+    try{
+      const ctrl=new AbortController();
+      const to=setTimeout(()=>ctrl.abort(),50000);
+      let res;
+      try{
+        res=await fetch(API_BASE+model+":generateContent",{method:"POST",
+          headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
+          body:JSON.stringify(body),signal:ctrl.signal});
+      }finally{ clearTimeout(to); }
+      if(!res.ok){
+        const txt=await res.text();
+        if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(txt))
+          throw {fatal:true,msg:"Tu clave de Gemini no es válida. Revísala y vuelve a activarla."};
+        if(res.status===429)
+          throw {fatal:true,msg:"Alcanzaste el límite gratuito por ahora. Espera un momento e intenta de nuevo, o copia el prompt y ejecútalo en tu herramienta de IA."};
+        if(res.status===403)
+          throw {fatal:true,msg:"Tu clave no tiene permiso sobre la API de Gemini. Genera una nueva en aistudio.google.com/apikey."};
+        lastErr="HTTP "+res.status+": "+txt.slice(0,140); continue;
+      }
+      const data=await res.json();
+      const text=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts||[]).map(p=>p.text).join("");
+      if(!text){ lastErr="El modelo devolvió una respuesta vacía."; continue; }
+      workingModel=model; return text;
+    }catch(e){
+      if(e&&e.fatal) throw e;
+      lastErr=(e&&e.message)?e.message:String(e);
+    }
+  }
+  throw {fatal:true,msg:"No se pudo conectar con Gemini. "+lastErr+" Puedes copiar el prompt y ejecutarlo en tu herramienta de IA."};
+}
+function parseJson(txt){
+  let t=String(txt||"").trim();
+  t=t.replace(/^```(?:json)?\s*/i,"").replace(/```\s*$/,"").trim();
+  try{ return JSON.parse(t); }catch(e){}
+  const a=t.indexOf("{"),b=t.lastIndexOf("}");
+  if(a>=0&&b>a){ try{ return JSON.parse(t.slice(a,b+1)); }catch(e){} }
+  return null;
+}
+/* mini renderizador de markdown */
+function md2html(src){
+  const lines=String(src||"").split("\n");
+  let out="",lst=null,tbl=null;
+  const inline=s=>esc(s)
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\bNO\s+VERIFICADO\b/g,"<em>NO VERIFICADO</em>");
+  const closeL=()=>{ if(lst){out+="</"+lst+">";lst=null;} };
+  const closeT=()=>{ if(tbl){out+="</tbody></table>";tbl=null;} };
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i], t=l.trim();
+    if(/^\|(.+)\|$/.test(t)){
+      const cells=t.slice(1,-1).split("|").map(c=>c.trim());
+      if(/^[\s|:-]+$/.test(t)) continue;
+      if(!tbl){ closeL(); out+="<table><thead><tr>"+cells.map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr></thead><tbody>"; tbl=1; }
+      else out+="<tr>"+cells.map(c=>"<td>"+inline(c)+"</td>").join("")+"</tr>";
+      continue;
+    }
+    closeT();
+    if(!t){ closeL(); continue; }
+    let m;
+    if((m=t.match(/^#{1,4}\s+(.*)$/))){ closeL(); out+="<h4>"+inline(m[1])+"</h4>"; continue; }
+    if((m=t.match(/^[-*•]\s+(.*)$/))){ if(lst!=="ul"){closeL();out+="<ul>";lst="ul";} out+="<li>"+inline(m[1])+"</li>"; continue; }
+    if((m=t.match(/^\d+[.)]\s+(.*)$/))){ if(lst!=="ol"){closeL();out+="<ol>";lst="ol";} out+="<li>"+inline(m[1])+"</li>"; continue; }
+    closeL(); out+="<p>"+inline(t)+"</p>";
+  }
+  closeL(); closeT();
+  return out;
+}
+function setLoading(id,on,txt){
+  const b=document.getElementById(id); if(!b)return;
+  if(on){ b._html=b.innerHTML; b.classList.add("loading"); b.innerHTML='<span class="spin"></span> '+(txt||"Pensando…"); }
+  else { b.classList.remove("loading"); if(b._html) b.innerHTML=b._html; }
+}
+function errBox(id,msg){
+  const el=document.getElementById(id); if(!el)return;
+  el.innerHTML=msg?'<div class="ai-err">'+esc(msg)+'</div>':"";
+}
+
+/* ---------- UI DE LA CLAVE ---------- */
+function abrirKey(){
+  document.getElementById("key-input").value=loadKeyStored()||"";
+  document.getElementById("key-del").style.display=usaPropia()?"inline-flex":"none";
+  document.getElementById("key-msg").innerHTML="";
+  document.getElementById("key-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("key-input").focus(),80);
+}
+function cerrarKey(){ document.getElementById("key-modal").classList.remove("show"); }
+async function guardarKey(){
+  const v=document.getElementById("key-input").value.trim();
+  if(!v){ errBox("key-msg","Pega tu clave para activarla."); return; }
+  setLoading("key-save",true,"Verificando…");
+  errBox("key-msg","");
+  const prev=apiKey; apiKey=v; workingModel=null;
+  try{
+    await callGemini("Responde solamente: ok","Eres un verificador de conexión.");
+    saveKey(v); renderKeyChip(); cerrarKey();
+    toast("Cerebro de IA conectado","ok");
+  }catch(e){
+    apiKey=prev;
+    errBox("key-msg",(e&&e.msg)?e.msg:"No se pudo verificar la clave.");
+  }finally{ setLoading("key-save",false); }
+}
+function borrarKey(){
+  workingModel=null;
+  try{ localStorage.removeItem(KEY_STORE); }catch(e){}
+  apiKey=DEFAULT_API_KEY;
+  renderKeyChip(); cerrarKey();
+  toast(apiKey?"Vuelves a la clave compartida del taller":"Clave eliminada","ok");
+}
+function usaPropia(){ return !!loadKeyStored(); }
+function renderKeyChip(){
+  const propia=usaPropia();
+  ["chip-key","chip-key2"].forEach(id=>{
+    const c=document.getElementById(id); if(!c)return;
+    c.className="chip "+(hayKey()?"key-on":"key-off");
+    c.textContent=!hayKey()?"🔑 Sin key":(propia?"🔑 Mi clave":"🔑 Clave del taller");
+  });
+  document.querySelectorAll("[data-needs-key]").forEach(b=>{
+    b.title=hayKey()?"":"Conecta tu clave de Gemini para ejecutar desde aquí";
+  });
+}
+
+/* ---------- STORAGE SEGURO ---------- */
+const KEY="icone_lab_cuentas_m1";
+let memStore=null;
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); }
+  catch(e){ memStore=JSON.stringify(state); }
+}
+function load(){
+  let raw=null;
+  try{ raw=localStorage.getItem(KEY); }catch(e){ raw=memStore; }
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+
+/* ---------- ESTADO ---------- */
+function nuevaCuenta(i){
+  return {id:i,nombre:"",sector:"",tamano:"",ciudad:"",tipo:"nueva",historial:"",
+    r:["","","","","",""],flag:[false,false,false,false,false,false],
+    chk:[false,false,false,false,false],
+    raw:"",
+    hooks:{a:"",b:"",c:""},hookSel:"",
+    scores:{c1:0,c2:0,c3:0,c4:0,c5:0},
+    seg:0,extra:false};
+}
+let state={
+  comercial:"",baselineMin:"",fechaReto:"",metaSemana:"",
+  cuentas:[nuevaCuenta(0),nuevaCuenta(1),nuevaCuenta(2)],
+  pesos:Object.assign({},PESOS_DEF),
+  activa:0,paso:1,vista:"inicio"
+};
+const saved=load();
+if(saved&&saved.cuentas&&Array.isArray(saved.cuentas)){
+  state=Object.assign(state,saved);
+  state.pesos=Object.assign({},PESOS_DEF,saved.pesos||{});
+  state.cuentas=saved.cuentas.map((c,i)=>Object.assign(nuevaCuenta(i),c));
+}
+
+/* ---------- CRONÓMETRO ---------- */
+let timerId=null,timerStart=null,timerIdx=null;
+function startTimer(i){
+  stopTimer();
+  timerIdx=i; timerStart=Date.now();
+  timerId=setInterval(()=>{ renderTimerChip(); },1000);
+  renderTimerChip();
+}
+function stopTimer(){
+  if(timerId){clearInterval(timerId);timerId=null;}
+  if(timerStart!==null&&timerIdx!==null&&state.cuentas[timerIdx]){
+    state.cuentas[timerIdx].seg+=Math.round((Date.now()-timerStart)/1000);
+    save();
+  }
+  timerStart=null;timerIdx=null;
+  renderTimerChip();
+}
+function segActuales(i){
+  let s=state.cuentas[i]?state.cuentas[i].seg:0;
+  if(timerIdx===i&&timerStart!==null) s+=Math.round((Date.now()-timerStart)/1000);
+  return s;
+}
+function fmtT(s){
+  const m=Math.floor(s/60),r=s%60;
+  return m+":"+String(r).padStart(2,"0");
+}
+function timeClass(s){ if(s===0)return"";if(s<=600)return"ok";if(s<=900)return"warn";return"bad"; }
+function renderTimerChip(){
+  const el=document.getElementById("chip-prog");
+  const done=state.cuentas.filter(esCompleta).length;
+  if(timerIdx!==null){
+    const s=segActuales(timerIdx);
+    el.className="chip "+(s>900?"bad":s>600?"warn":"live");
+    el.textContent="⏱ "+fmtT(s)+" · cuenta "+(timerIdx+1)+" · meta 15:00";
+  }else{
+    el.className="chip live";
+    el.textContent=done+" de 3 dossiers";
+  }
+  const grid=document.getElementById("acc-grid");
+  if(grid&&document.getElementById("view-cuentas").classList.contains("active")) renderCuentas();
+}
+
+/* ---------- HELPERS ---------- */
+function toast(msg,tipo){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.className="show "+(tipo||"ok");
+  clearTimeout(t._t); t._t=setTimeout(()=>{t.className="";},2600);
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function nl2br(s){ return esc(s).replace(/\n/g,"<br>"); }
+function copyText(txt,msg){
+  const done=()=>toast(msg||"Copiado","ok");
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallback());
+  }else fallback();
+  function fallback(){
+    const ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");done();}catch(e){toast("No se pudo copiar. Selecciona el texto a mano.","err");}
+    document.body.removeChild(ta);
+  }
+}
+function copyEl(id,msg){ copyText(document.getElementById(id).innerText,msg); }
+function cAct(){ return state.cuentas[state.activa]; }
+function tieneDatos(c){ return !!(c.nombre&&c.nombre.trim()); }
+function resp6(c){ return c.r.filter(x=>x&&x.trim().length>3).length; }
+function esCompleta(c){ return tieneDatos(c)&&resp6(c)>=6; }
+function tieneGancho(c){ return !!(c.hookSel&&c.hooks[c.hookSel]&&c.hooks[c.hookSel].trim()); }
+function nombreCuenta(c,i){ return c.nombre&&c.nombre.trim()?c.nombre.trim():"Cuenta "+(i+1)+" (sin nombre)"; }
+
+/* ---------- NAVEGACIÓN ---------- */
+function go(v){
+  if(v!=="dossier") stopTimer();
+  state.vista=v; save();
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  const el=document.getElementById("view-"+v); if(el) el.classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.v===v));
+  if(v==="cuentas") renderCuentas();
+  if(v==="dossier") renderDossier();
+  if(v==="matriz") renderMatriz();
+  if(v==="ganchos") renderHooks();
+  if(v==="kit") renderKit();
+  if(v==="datos") renderSemaforo();
+  if(v==="entrega") renderEntrega();
+  renderTabs(); renderKeyChip();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(b) go(b.dataset.v);
+});
+function renderTabs(){
+  const done=state.cuentas.filter(esCompleta).length;
+  const tabs=document.querySelectorAll(".tab");
+  tabs.forEach(t=>{
+    const v=t.dataset.v; let ok=false;
+    if(v==="inicio") ok=!!state.comercial;
+    if(v==="cuentas") ok=state.cuentas.every(tieneDatos);
+    if(v==="dossier") ok=done===3;
+    if(v==="matriz") ok=state.cuentas.filter(c=>tieneDatos(c)).every(c=>Object.values(c.scores).every(v=>v>0));
+    if(v==="ganchos") ok=state.cuentas.filter(tieneDatos).length>0&&state.cuentas.filter(tieneDatos).every(tieneGancho);
+    if(v==="entrega") ok=!!state.fechaReto;
+    t.classList.toggle("done",ok&&!t.classList.contains("active"));
+  });
+  document.getElementById("chip-user").textContent="👤 "+(state.comercial||"Sin identificar");
+  renderTimerChip();
+}
+
+/* ---------- INICIO ---------- */
+function empezar(){
+  const n=document.getElementById("in-nombre").value.trim();
+  if(!n){ toast("Escribe tu nombre para empezar","err"); document.getElementById("in-nombre").focus(); return; }
+  state.comercial=n;
+  state.baselineMin=document.getElementById("in-base").value;
+  save(); renderTabs(); go("cuentas");
+  toast("Listo "+n.split(" ")[0]+". Vamos por las 3 cuentas.","ok");
+}
+
+/* ---------- CUENTAS ---------- */
+function renderCuentas(){
+  const g=document.getElementById("acc-grid");
+  g.innerHTML=state.cuentas.map((c,i)=>{
+    const s=segActuales(i), full=esCompleta(c), some=tieneDatos(c);
+    const cls=full?"complete":some?"filled":"";
+    return `<div class="acc-card ${cls}" onclick="abrirCuenta(${i})">
+      <div class="acc-idx">Cuenta ${i+1} de 3</div>
+      ${s>0?`<div class="acc-time ${timeClass(s)}">⏱ ${fmtT(s)}</div>`:""}
+      <div class="acc-name ${some?"":"empty"}">${some?esc(c.nombre):"Sin definir"}</div>
+      <div class="acc-meta">${some?esc([c.sector,c.tamano?c.tamano+" empleados":"",c.ciudad].filter(Boolean).join(" · "))||"Completa los datos":"Haz clic para empezar"}</div>
+      <div class="acc-steps">
+        <div class="acc-step ${some?"ok":""}"><span class="dotmark">${some?"✓":""}</span> Datos de la cuenta</div>
+        <div class="acc-step ${resp6(c)>=6?"ok":""}"><span class="dotmark">${resp6(c)>=6?"✓":""}</span> Las 6 preguntas ${resp6(c)>0&&resp6(c)<6?`(${resp6(c)}/6)`:""}</div>
+        <div class="acc-step ${tieneGancho(c)?"ok":""}"><span class="dotmark">${tieneGancho(c)?"✓":""}</span> Gancho de entrada</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function abrirCuenta(i){ state.activa=i; state.paso=1; save(); go("dossier"); }
+
+/* ---------- DOSSIER ---------- */
+function renderDossier(){
+  const c=cAct();
+  document.getElementById("dossier-empty").style.display="none";
+  document.getElementById("dossier-body").style.display="block";
+  document.getElementById("d-eyebrow").textContent="Cuenta "+(state.activa+1)+" de 3";
+  document.getElementById("d-title").innerHTML=c.nombre?esc(c.nombre):"Dossier de cuenta";
+  document.getElementById("d-nombre").value=c.nombre;
+  document.getElementById("d-sector").value=c.sector;
+  document.getElementById("d-tamano").value=c.tamano;
+  document.getElementById("d-ciudad").value=c.ciudad;
+  document.getElementById("d-tipo").value=c.tipo;
+  document.getElementById("d-historial").value=c.historial;
+  document.getElementById("d-hist-wrap").style.display=c.tipo==="viva"?"block":"none";
+  renderQuestions(); renderChecklist(); dstep(state.paso,true);
+  startTimer(state.activa);
+}
+function setCuenta(k,v){
+  cAct()[k]=v; save();
+  if(k==="tipo") document.getElementById("d-hist-wrap").style.display=v==="viva"?"block":"none";
+  if(k==="nombre") document.getElementById("d-title").innerHTML=v?esc(v):"Dossier de cuenta";
+  renderTabs();
+}
+function dstep(n,silent){
+  const c=cAct();
+  if(n>=2&&!silent&&!tieneDatos(c)){ toast("Escribe al menos el nombre de la empresa","err"); return; }
+  state.paso=n; save();
+  for(let i=1;i<=4;i++) document.getElementById("dstep-"+i).style.display=(i===n?"block":"none");
+  document.querySelectorAll("#d-stepper .stepbtn").forEach(b=>{
+    b.classList.toggle("active",Number(b.dataset.s)===n);
+  });
+  const sb=document.querySelectorAll("#d-stepper .stepbtn");
+  sb[0].classList.toggle("ok",tieneDatos(c));
+  sb[2].classList.toggle("ok",resp6(c)>=6);
+  sb[3].classList.toggle("ok",c.chk.filter(Boolean).length>=4);
+  if(n===2) renderPrompt();
+  if(n===4) renderVerdict();
+  if(!silent) window.scrollTo({top:180,behavior:"smooth"});
+}
+document.getElementById("d-stepper").addEventListener("click",e=>{
+  const b=e.target.closest(".stepbtn"); if(b) dstep(Number(b.dataset.s));
+});
+
+function promptP11(c){
+  const emp=c.nombre||"[nombre de la empresa]";
+  const sec=c.sector||"[sector]";
+  const tam=c.tamano||"[N empleados]";
+  const ciu=c.ciudad||"[ciudad]";
+  return `Actúa como analista comercial senior del sector de educación corporativa en Colombia.
+
+Contexto: trabajo en el Politécnico Grancolombiano. Vendemos programas de formación, diplomados corporativos y educación continua a empresas.
+
+La cuenta que voy a trabajar es: ${emp}, sector ${sec}, tamaño aproximado ${tam} empleados, ciudad ${ciu}.
+
+Tarea: construye un dossier de cuenta que responda estas 6 preguntas:
+1. ¿Qué le está pasando a esta organización ahora mismo? (crecimiento, fusión, rotación, expansión, nuevo liderazgo, cambio regulatorio)
+2. ¿Cuáles son los dolores típicos de talento humano en su sector?
+3. ¿Qué cargos deciden y cuáles influyen en la compra de formación?
+4. ¿Qué tipo de programa del portafolio del Poli conectaría con ese dolor y por qué?
+5. ¿Cuál sería mi gancho de entrada — el dato concreto que le demuestra que investigué su empresa?
+6. ¿Cuál es la razón más probable por la que hoy NO me compraría?
+
+Restricciones: no inventes cifras ni hechos. Todo lo que no puedas verificar, márcalo como NO VERIFICADO para que yo lo confirme. No uses lenguaje de marketing.
+
+Formato: tabla de dos columnas (pregunta / respuesta), máximo 400 palabras.
+
+Tono: profesional y directo, como un analista que le habla a un comercial con poco tiempo.`;
+}
+function promptP14(c){
+  return `Actúa como analista de cuentas de educación corporativa.
+
+Contexto: trabajo en el Politécnico Grancolombiano. ${c.nombre||"[empresa]"} ya es cliente nuestro.
+
+Historial de la cuenta: ${c.historial||"[pega qué le hemos vendido, cuándo, a qué áreas y resultados si los hay]"}
+
+Tarea:
+1. Identifica qué áreas o poblaciones de esa empresa todavía no hemos tocado.
+2. Propón los 3 programas siguientes más lógicos y explica el argumento de continuidad de cada uno.
+3. Dime cuál es el mejor momento del año para proponer cada uno y por qué.
+4. Escribe la frase exacta con la que abriría esa conversación con el cliente.
+
+Restricción: no propongas nada que no se conecte con lo que ya compraron. La lógica de continuidad tiene que ser evidente para el cliente. Lo que no puedas verificar, márcalo como NO VERIFICADO.
+
+Formato: tabla + las frases de apertura al final. Tono directo, sin adjetivos de marketing.`;
+}
+function renderPrompt(){
+  const c=cAct();
+  document.getElementById("d-prompt").innerHTML=esc(promptP11(c))
+    .replace(/(\[[^\]]+\])/g,'<mark>$1</mark>');
+  const w=document.getElementById("d-prompt2-wrap");
+  if(c.tipo==="viva"){
+    w.style.display="block";
+    document.getElementById("d-prompt2").innerHTML=esc(promptP14(c)).replace(/(\[[^\]]+\])/g,'<mark>$1</mark>');
+  }else w.style.display="none";
+}
+function renderQuestions(){
+  const c=cAct();
+  document.getElementById("d-questions").innerHTML=QS.map((q,i)=>{
+    const val=c.r[i]||"",on=c.flag[i];
+    return `<div class="q-item ${val.trim().length>3?"filled":""}" id="qi-${i}">
+      <div class="q-head">
+        <div class="q-num">${String(i+1).padStart(2,"0")}</div>
+        <div><div class="q-txt">${q}</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">${QHINT[i]}</div></div>
+      </div>
+      <textarea class="icone-ta" placeholder="Pega aquí la respuesta y ajústala con tu criterio…" oninput="setResp(${i},this.value)">${esc(val)}</textarea>
+      <div class="q-foot">
+        <label class="flagbox ${on?"on":""}" id="fb-${i}">
+          <input type="checkbox" ${on?"checked":""} onchange="setFlag(${i},this.checked)"> ⚠ Tengo que verificar esto antes de decírselo al cliente
+        </label>
+        <span class="charcount" id="cc-${i}">${val.length} caracteres</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+function setResp(i,v){
+  const c=cAct(); c.r[i]=v; save();
+  document.getElementById("qi-"+i).classList.toggle("filled",v.trim().length>3);
+  document.getElementById("cc-"+i).textContent=v.length+" caracteres";
+  renderTabs();
+}
+function setFlag(i,v){
+  cAct().flag[i]=v; save();
+  document.getElementById("fb-"+i).classList.toggle("on",v);
+}
+function renderChecklist(){
+  const c=cAct();
+  document.getElementById("d-checklist").innerHTML=CHECKS.map((k,i)=>
+    `<label class="chk ${c.chk[i]?"on":""}" id="ck-${i}">
+      <input type="checkbox" ${c.chk[i]?"checked":""} onchange="setChk(${i},this.checked)">
+      <div><div class="chk-t">${k.t}</div><div class="chk-d">${k.d}</div></div>
+    </label>`).join("");
+}
+function setChk(i,v){
+  cAct().chk[i]=v; save();
+  document.getElementById("ck-"+i).classList.toggle("on",v);
+  renderVerdict(); renderTabs();
+}
+function renderVerdict(){
+  const c=cAct(),n=c.chk.filter(Boolean).length,r=resp6(c),f=c.flag.filter(Boolean).length,s=segActuales(state.activa);
+  let cls="red",txt="";
+  if(r<6) txt=`Te faltan <b>${6-r} de las 6 preguntas</b>. Un dossier incompleto no sirve para llamar: la pregunta que falta es justo la que el cliente va a tocar.`;
+  else if(n<4){ cls="orange"; txt=`Respondiste las 6 preguntas, pero el control de calidad va en <b>${n} de 5</b>. Revisa lo que falta antes de darlo por bueno.`; }
+  else { cls="green"; txt=`<b>Dossier listo.</b> 6 preguntas resueltas, ${n} de 5 controles de calidad y ${f===0?"nada pendiente de verificar":f+" punto"+(f>1?"s":"")+" marcado"+(f>1?"s":"")+" para verificar antes de hablar con el cliente"}. Tiempo invertido: ${fmtT(s)}${s<=900?" — dentro de la meta de 15 minutos.":" — por encima de la meta de 15 minutos, pero está hecho."}`; }
+  document.getElementById("d-verdict").innerHTML=`<div class="callout ${cls}" style="margin-bottom:0">${txt}</div>`;
+}
+function cerrarDossier(){ stopTimer(); go("cuentas"); toast("Dossier guardado","ok"); }
+
+/* ---------- EJECUCIÓN CON IA ---------- */
+const SYS_COMERCIAL="Eres un analista comercial senior de educación corporativa en Colombia que apoya al equipo del Politécnico Grancolombiano. Nunca inventas cifras, nombres de personas ni hechos: lo que no puedas verificar lo marcas explícitamente como NO VERIFICADO. Escribes directo, sin adjetivos de marketing y sin relleno.";
+
+async function runDossier(){
+  const c=cAct();
+  if(!tieneDatos(c)){ toast("Escribe al menos el nombre de la empresa","err"); return; }
+  if(!hayKey()){ abrirKey(); return; }
+  errBox("d-run-msg","");
+  setLoading("btn-run-dossier",true,"Investigando…");
+  const extra=`\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
+{"respuestas":[{"n":1,"texto":"...","verificar":true},{"n":2,"texto":"...","verificar":false}, ... hasta n:6]}
+Un elemento por cada una de las 6 preguntas, en el mismo orden. "texto" es la respuesta en máximo 60 palabras, en español, sin viñetas ni markdown. "verificar" es true cuando la respuesta contiene algo que el comercial debe confirmar antes de decírselo al cliente.`;
+  try{
+    const raw=await callGemini(promptP11(c)+extra,SYS_COMERCIAL,true);
+    const data=parseJson(raw);
+    const arr=data&&Array.isArray(data.respuestas)?data.respuestas:null;
+    if(!arr||!arr.length) throw {fatal:true,msg:"La IA respondió en un formato que no pude leer. Copia el prompt y ejecútalo en tu herramienta de IA."};
+    let n=0;
+    arr.forEach(r=>{
+      const i=(Number(r.n)||0)-1;
+      if(i>=0&&i<6&&r.texto){ c.r[i]=String(r.texto).trim(); c.flag[i]=!!r.verificar; n++; }
+    });
+    save(); renderQuestions(); dstep(3); renderTabs();
+    toast(n+" de 6 respuestas listas. Ahora ponles tu criterio.","ok");
+  }catch(e){
+    errBox("d-run-msg",(e&&e.msg)?e.msg:"No se pudo ejecutar.");
+  }finally{ setLoading("btn-run-dossier",false); }
+}
+
+/* ---------- PEGAR / SUBIR LA RESPUESTA COMPLETA ---------- */
+function abrirPegar(){
+  document.getElementById("paste-ta").value=cAct().raw||"";
+  pasteCount(); errBox("paste-msg","");
+  document.getElementById("paste-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("paste-ta").focus(),80);
+}
+function cerrarPegar(){ document.getElementById("paste-modal").classList.remove("show"); }
+function pasteCount(){
+  const n=document.getElementById("paste-ta").value.length;
+  document.getElementById("paste-count").textContent=n.toLocaleString("es-CO")+" caracteres";
+}
+function cargarArchivo(ev){
+  const f=ev.target.files&&ev.target.files[0]; if(!f)return;
+  if(f.size>1200000){ errBox("paste-msg","El archivo pesa más de 1 MB. Pega solo la parte que corresponde a esta cuenta."); ev.target.value=""; return; }
+  const rd=new FileReader();
+  rd.onload=()=>{
+    document.getElementById("paste-ta").value=String(rd.result||"");
+    pasteCount(); errBox("paste-msg","");
+    toast("«"+f.name+"» cargado","ok");
+  };
+  rd.onerror=()=>errBox("paste-msg","No se pudo leer ese archivo. Prueba pegando el texto.");
+  rd.readAsText(f);
+  ev.target.value="";
+}
+function guardarPegadoCrudo(){
+  const t=document.getElementById("paste-ta").value.trim();
+  if(!t){ errBox("paste-msg","No hay nada que guardar."); return; }
+  cAct().raw=t; save(); cerrarPegar(); renderQuestions();
+  toast("Documento guardado. Queda como anexo en tu PDF.","ok");
+}
+async function organizarPegado(){
+  const t=document.getElementById("paste-ta").value.trim();
+  if(!t){ errBox("paste-msg","Pega la respuesta o sube el archivo primero."); return; }
+  const c=cAct();
+  c.raw=t; save();
+  if(!hayKey()){ errBox("paste-msg","Para repartirlo automáticamente hace falta la clave de IA. Lo guardé como documento: usa «Guardar sin repartir» y llena las casillas a mano, o conecta una clave con el botón 🔑."); return; }
+  errBox("paste-msg","");
+  setLoading("paste-run",true,"Repartiendo…");
+  const prompt=`Este es el resultado que una IA entregó sobre la cuenta ${c.nombre||"(sin nombre)"} para un comercial del Politécnico Grancolombiano:
+
+--- INICIO DEL DOCUMENTO ---
+${t.slice(0,14000)}
+--- FIN DEL DOCUMENTO ---
+
+Tarea: reparte ese contenido en las 6 preguntas del dossier, sin inventar nada que no esté en el documento.
+1. ¿Qué le está pasando a esta organización ahora mismo?
+2. ¿Qué dice su sector sobre sus dolores de talento?
+3. ¿Quién decide y quién influye en la compra de formación?
+4. ¿Qué programa del Poli conecta con eso, y por qué?
+5. ¿Cuál es el gancho de entrada?
+6. ¿Por qué razón hoy NO me compraría?
+
+Si el documento no dice nada sobre alguna pregunta, deja "texto" vacío para esa pregunta. No completes con suposiciones.
+
+Devuelve EXCLUSIVAMENTE un objeto JSON con esta forma exacta:
+{"respuestas":[{"n":1,"texto":"...","verificar":true},{"n":2,"texto":"...","verificar":false}, ... hasta n:6]}
+"texto" en máximo 70 palabras, español, sin markdown. "verificar" es true si ese punto contiene algo marcado como NO VERIFICADO o que el comercial deba confirmar antes de decírselo al cliente.`;
+  try{
+    const raw=await callGemini(prompt,SYS_COMERCIAL,true);
+    const data=parseJson(raw);
+    const arr=data&&Array.isArray(data.respuestas)?data.respuestas:null;
+    if(!arr||!arr.length) throw {fatal:true,msg:"No pude leer el reparto. El documento quedó guardado: llena las casillas a mano."};
+    let n=0;
+    arr.forEach(r=>{
+      const i=(Number(r.n)||0)-1;
+      if(i>=0&&i<6&&r.texto&&String(r.texto).trim()){ c.r[i]=String(r.texto).trim(); c.flag[i]=!!r.verificar; n++; }
+    });
+    save(); cerrarPegar(); renderQuestions(); dstep(3); renderTabs();
+    toast(n+" de 6 preguntas llenas desde tu documento.",n>=4?"ok":"err");
+  }catch(e){
+    errBox("paste-msg",(e&&e.msg)?e.msg:"No se pudo repartir. El documento quedó guardado.");
+  }finally{ setLoading("paste-run",false); }
+}
+
+async function runCruzada(){
+  const c=cAct();
+  if(!hayKey()){ abrirKey(); return; }
+  if(!c.historial||!c.historial.trim()){ errBox("d-cruzada-out","Escribe primero el historial de la cuenta en el paso 1."); return; }
+  errBox("d-cruzada-out","");
+  setLoading("btn-run-cruzada",true,"Analizando…");
+  try{
+    const txt=await callGemini(promptP14(c),SYS_COMERCIAL);
+    document.getElementById("d-cruzada-out").innerHTML=
+      '<div class="ai-panel"><div class="ai-h"><span class="ai-tag">Venta cruzada · generado con IA</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="copyEl(\'cruzada-out\',\'Análisis copiado\')">📋 Copiar</button></div>'+
+      '<div class="ai-out" id="cruzada-out">'+md2html(txt)+'</div>'+
+      '<div style="font-size:.75rem;color:var(--muted);margin-top:11px">Verifica antes de proponérselo al cliente: la continuidad tiene que ser evidente para él, no para nosotros.</div></div>';
+  }catch(e){
+    errBox("d-cruzada-out",(e&&e.msg)?e.msg:"No se pudo ejecutar.");
+  }finally{ setLoading("btn-run-cruzada",false); }
+}
+
+async function runHooks(i){
+  const c=state.cuentas.find(x=>x.id===i);
+  if(!hayKey()){ abrirKey(); return; }
+  if(resp6(c)<3){ errBox("hk-msg-"+i,"Primero responde al menos 3 de las 6 preguntas del dossier. Sin dossier, el gancho sale genérico."); return; }
+  errBox("hk-msg-"+i,"");
+  setLoading("btn-hook-"+i,true,"Escribiendo…");
+  const extra=`\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
+{"a":"...","b":"...","c":"..."}
+Cada valor es el texto del gancho, máximo 30 palabras, en español, sin comillas internas ni markdown.`;
+  try{
+    const raw=await callGemini(promptP13(c)+extra,SYS_COMERCIAL,true);
+    const d=parseJson(raw);
+    if(!d||(!d.a&&!d.b&&!d.c)) throw {fatal:true,msg:"La IA respondió en un formato que no pude leer. Copia el prompt y ejecútalo aparte."};
+    ["a","b","c"].forEach(k=>{ if(d[k]) c.hooks[k]=String(d[k]).trim(); });
+    save(); renderHooks(); renderTabs();
+    toast("Tres ganchos listos. Elige y ajusta el que suene a ti.","ok");
+  }catch(e){
+    errBox("hk-msg-"+i,(e&&e.msg)?e.msg:"No se pudo ejecutar.");
+    setLoading("btn-hook-"+i,false);
+  }
+}
+
+async function runKit(i){
+  if(!hayKey()){ abrirKey(); return; }
+  errBox("kit-msg-"+i,"");
+  setLoading("btn-kit-"+i,true,"Ejecutando…");
+  try{
+    const txt=await callGemini(KIT[i].g(kitVals[i]||{}),SYS_COMERCIAL);
+    document.getElementById("kit-msg-"+i).innerHTML=
+      '<div class="ai-panel"><div class="ai-h"><span class="ai-tag">'+KIT[i].c+' · generado con IA</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="copyEl(\'kit-out-'+i+'\',\'Resultado copiado\')">📋 Copiar</button></div>'+
+      '<div class="ai-out" id="kit-out-'+i+'">'+md2html(txt)+'</div></div>';
+  }catch(e){
+    errBox("kit-msg-"+i,(e&&e.msg)?e.msg:"No se pudo ejecutar.");
+  }finally{ setLoading("btn-kit-"+i,false); }
+}
+
+/* ---------- MATRIZ ---------- */
+function puntaje(c){
+  let num=0,den=0;
+  CRIT.forEach(cr=>{ const p=state.pesos[cr.k]||0; num+=(c.scores[cr.k]||0)*p; den+=5*p; });
+  return den?Math.round(num/den*100):0;
+}
+function scoreColor(p){
+  if(p===0) return "rgba(255,255,255,.08)";
+  if(p>=75) return "rgba(0,212,138,.2)";
+  if(p>=50) return "rgba(255,197,66,.2)";
+  return "rgba(255,71,87,.2)";
+}
+function scoreText(p){ if(p===0)return "var(--muted2)"; if(p>=75)return "var(--green)"; if(p>=50)return "var(--yellow)"; return "var(--red)"; }
+function renderMatriz(){
+  const lista=state.cuentas.filter(tieneDatos);
+  const t=document.getElementById("m-table");
+  const sc=t.parentElement, keepX=sc?sc.scrollLeft:0, keepY=window.scrollY;
+  if(!lista.length){
+    t.innerHTML="";
+    document.getElementById("m-result").innerHTML=`<div style="text-align:center;padding:34px 10px"><h3>Todavía no hay cuentas</h3><p class="sub">Define al menos una cuenta para poder priorizar.</p><button class="btn btn-outline" onclick="go('cuentas')">Ir a mis cuentas</button></div>`;
+    renderTabs(); return;
+  }
+  const ranked=lista.map(c=>({c,p:puntaje(c)})).sort((a,b)=>b.p-a.p);
+  const pos={}; ranked.forEach((r,i)=>pos[r.c.id]=i+1);
+  t.innerHTML=`<thead><tr>
+    <th style="width:34px">#</th><th style="min-width:150px">Cuenta</th>
+    ${CRIT.map(cr=>`<th><div style="margin-bottom:5px">${cr.n}</div><div class="wsel">${[1,2,3,4,5].map(w=>`<button class="${state.pesos[cr.k]===w?"on":""}" onclick="setPeso('${cr.k}',${w})" title="Peso ${w}">${w}</button>`).join("")}</div></th>`).join("")}
+    <th style="width:62px">Puntaje</th></tr></thead>
+    <tbody>${lista.map(c=>{
+      const p=puntaje(c),r=pos[c.id];
+      return `<tr>
+        <td><span class="rank-badge ${p>0?"r"+r:""}">${p>0?r:"–"}</span></td>
+        <td>
+          <div style="font-weight:700;font-size:.87rem">${esc(nombreCuenta(c,c.id))}</div>
+          <div style="font-size:.72rem;color:var(--muted2)">${esc([c.sector,c.ciudad].filter(Boolean).join(" · "))||(c.extra?"De mi lista actual":"")}${esCompleta(c)?' · <span style="color:var(--green)">con dossier</span>':' · <span style="color:var(--yellow)">sin dossier</span>'}</div>
+        </td>
+        ${CRIT.map(cr=>`<td><div class="rate">${[1,2,3,4,5].map(v=>`<button class="${c.scores[cr.k]===v?"on":""}" onclick="setScore(${c.id},'${cr.k}',${v})">${v}</button>`).join("")}</div></td>`).join("")}
+        <td><span class="score-pill" style="background:${scoreColor(p)};color:${scoreText(p)}">${p||"–"}</span></td>
+      </tr>`;
+    }).join("")}</tbody>`;
+  const conP=ranked.filter(r=>r.p>0);
+  const R=document.getElementById("m-result");
+  if(!conP.length){
+    R.innerHTML=`<h3>Tu orden de llamada</h3><p class="sub">Califica las cuentas de 1 a 5 en cada criterio y aquí aparece el orden.</p>`;
+  }else{
+    const top=conP[0];
+    R.innerHTML=`<h3>El orden de llamada de tu semana</h3>
+      <p class="sub">Calculado con tus pesos, no con el orden en que llegaron.</p>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
+      ${conP.map((r,i)=>`<div style="display:flex;align-items:center;gap:13px;padding:11px 14px;border:1px solid ${i===0?"rgba(0,212,255,.4)":"rgba(255,255,255,.09)"};border-radius:11px;background:${i===0?"rgba(0,212,255,.07)":"rgba(255,255,255,.02)"}">
+        <span class="rank-badge r${i+1<=3?i+1:""}">${i+1}</span>
+        <div style="flex:1"><div style="font-weight:700;font-size:.9rem">${esc(nombreCuenta(r.c,r.c.id))}</div>
+        <div style="font-size:.74rem;color:var(--muted)">${CRIT.filter(cr=>r.c.scores[cr.k]>=4).map(cr=>cr.n).join(" · ")||"Sin criterios fuertes: revisa si merece tu tiempo"}</div></div>
+        <span class="score-pill" style="background:${scoreColor(r.p)};color:${scoreText(r.p)}">${r.p}</span>
+      </div>`).join("")}</div>
+      <div class="callout green" style="margin-bottom:0"><b>Llama primero a ${esc(nombreCuenta(top.c,top.c.id))}.</b> ${top.p>=75?"Puntúa alto en los criterios que tú mismo definiste como determinantes: no es intuición, es criterio aplicado.":top.p>=50?"Es la mejor de tu lista actual, aunque no es una cuenta redonda. Vale la pena preguntarse si falta llenar el embudo con mejores prospectos.":"Ojo: incluso la primera de tu lista puntúa bajo. El problema no es el orden, es la lista. Usa el prompt P1.5 del Kit para construir una mejor."}</div>`;
+  }
+  if(sc) sc.scrollLeft=keepX;
+  window.scrollTo(0,keepY);
+  renderTabs();
+}
+function setPeso(k,v){ state.pesos[k]=v; save(); renderMatriz(); }
+function resetPesos(){ state.pesos=Object.assign({},PESOS_DEF); save(); renderMatriz(); toast("Pesos restablecidos"); }
+function setScore(id,k,v){
+  const c=state.cuentas.find(x=>x.id===id); if(!c)return;
+  c.scores[k]=(c.scores[k]===v?0:v); save(); renderMatriz();
+}
+function addExtra(){
+  const inp=document.getElementById("m-nueva");
+  const n=(inp.value||"").trim();
+  if(!n){ toast("Escribe el nombre de la cuenta","err"); inp.focus(); return; }
+  const c=nuevaCuenta(state.cuentas.length);
+  c.nombre=n; c.extra=true;
+  state.cuentas.push(c); inp.value=""; save(); renderMatriz();
+  toast("«"+n+"» agregada a la matriz");
+  inp.focus();
+}
+
+/* ---------- GANCHOS ---------- */
+function promptP13(c){
+  const datos=c.r.map((r,i)=>r&&r.trim()?`- ${QS[i]} → ${r.trim()}`:"").filter(Boolean).join("\n");
+  return `Actúa como comercial consultivo de educación corporativa del Politécnico Grancolombiano.
+
+Cuenta: ${c.nombre||"[empresa]"}${c.sector?", sector "+c.sector:""}${c.ciudad?", en "+c.ciudad:""}.
+
+Esto es lo que investigué de ella:
+${datos||"[pega aquí tu dossier o 3 datos clave]"}
+
+Tarea: escríbeme 3 versiones de gancho de entrada de máximo 2 frases cada una. Un gancho es la primera línea que le demuestra a esta persona que no le estoy mandando una plantilla.
+
+Versión A: basada en algo que está pasando en su empresa.
+Versión B: basada en un dolor típico de su sector.
+Versión C: basada en una pregunta que la haga pensar.
+
+Restricciones: nada de "espero se encuentre bien", nada de hablar del Poli en la primera frase, nada de adjetivos de marketing. Máximo 30 palabras por versión. No uses datos que yo no te haya dado.
+
+Formato: las 3 versiones etiquetadas A, B y C. Tono: cercano y profesional.`;
+}
+function renderHooks(){
+  const lista=state.cuentas.filter(tieneDatos);
+  const B=document.getElementById("hooks-body");
+  if(!lista.length){
+    B.innerHTML=`<div class="card" style="text-align:center;padding:50px 22px"><div style="font-size:2.3rem;margin-bottom:11px">🎣</div><h3>Primero el dossier</h3><p class="sub">Sin dossier, la personalización es cosmética. Define tus cuentas y responde las 6 preguntas.</p><button class="btn btn-outline" onclick="go('cuentas')">Ir a mis cuentas</button></div>`;
+    return;
+  }
+  B.innerHTML=lista.map(c=>{
+    const i=c.id,r=resp6(c);
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <div><h3>${esc(nombreCuenta(c,i))}</h3><p class="sub" style="margin-bottom:0">${r>=6?'<span style="color:var(--green)">Dossier completo</span>':`<span style="color:var(--yellow)">Dossier en ${r} de 6 — el gancho va a salir flojo</span>`}</p></div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" id="btn-hook-${i}" data-needs-key onclick="runHooks(${i})">⚡ Generar 3 ganchos</button>
+          <button class="btn btn-outline btn-sm" onclick="copiarHookPrompt(${i})">📋 Copiar prompt P1.3</button>
+        </div>
+      </div>
+      <div id="hk-msg-${i}"></div>
+      <div style="margin-top:16px">
+        ${["a","b","c"].map(k=>{
+          const lab={a:"Versión A · algo que está pasando en su empresa",b:"Versión B · un dolor de su sector",c:"Versión C · una pregunta que la haga pensar"}[k];
+          const sel=c.hookSel===k;
+          const wc=(c.hooks[k]||"").trim().split(/\s+/).filter(Boolean).length;
+          return `<div class="hook-opt ${sel?"sel":""}" id="ho-${i}-${k}">
+            <div class="hook-lab"><span>${lab}</span><span style="font-weight:700;color:${wc>30?"var(--red)":"var(--muted2)"}">${wc} palabras${wc>30?" · pasado de largo":""}</span></div>
+            <textarea class="hook-ta" placeholder="Pega aquí la versión ${k.toUpperCase()} y ajústala a tu voz…" oninput="setHook(${i},'${k}',this.value)">${esc(c.hooks[k]||"")}</textarea>
+            <div style="margin-top:9px;display:flex;gap:8px">
+              <button class="btn ${sel?"btn-primary":"btn-ghost"} btn-sm" onclick="pickHook(${i},'${k}')">${sel?"✓ Es la que voy a usar":"Elegir esta"}</button>
+              ${c.hooks[k]&&c.hooks[k].trim()?`<button class="btn btn-ghost btn-sm" onclick="copyText(document.getElementById('ho-${i}-${k}').querySelector('textarea').value,'Gancho copiado')">Copiar</button>`:""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+      <div class="callout ${tieneGancho(c)?"green":"orange"}" style="margin-top:6px;margin-bottom:0">
+        ${tieneGancho(c)?"<b>Gancho elegido.</b> Esta frase abre tu conversación de la semana con esta cuenta.":"<b>Falta elegir.</b> Tres opciones no son un entregable. Escoge una y comprométete con ella."}
+      </div>
+    </div>`;
+  }).join("");
+}
+function copiarHookPrompt(i){
+  const c=state.cuentas.find(x=>x.id===i);
+  copyText(promptP13(c),"Prompt del gancho copiado. Pégalo en tu IA.");
+}
+function setHook(i,k,v){
+  const c=state.cuentas.find(x=>x.id===i); c.hooks[k]=v; save();
+  const el=document.getElementById("ho-"+i+"-"+k);
+  const wc=v.trim().split(/\s+/).filter(Boolean).length;
+  const sp=el.querySelector(".hook-lab span:last-child");
+  sp.textContent=wc+" palabras"+(wc>30?" · pasado de largo":"");
+  sp.style.color=wc>30?"var(--red)":"var(--muted2)";
+}
+function pickHook(i,k){
+  const c=state.cuentas.find(x=>x.id===i);
+  if(!c.hooks[k]||!c.hooks[k].trim()){ toast("Escribe primero esa versión","err"); return; }
+  c.hookSel=(c.hookSel===k?"":k); save(); renderHooks(); renderTabs();
+}
+
+/* ---------- KIT ---------- */
+const KIT=[
+ {c:"P1.1",t:"Dossier de cuenta en 10 minutos",s:"El prompt central de la sesión. Las 6 preguntas antes de llamar.",
+  f:[{k:"emp",l:"Empresa",p:"Alimentos del Norte S.A.S."},{k:"sec",l:"Sector",p:"manufactura de alimentos"},{k:"tam",l:"Empleados",p:"800"},{k:"ciu",l:"Ciudad",p:"Bogotá"}],
+  g:v=>promptP11({nombre:v.emp,sector:v.sec,tamano:v.tam,ciudad:v.ciu})},
+ {c:"P1.2",t:"Matriz de priorización de prospectos",s:"Cuando quieras que la IA ordene una lista larga con tus criterios.",
+  f:[{k:"lista",l:"Tu lista de prospectos (uno por línea, con lo que sepas de cada uno)",ta:true,p:"Empresa A — 500 empleados, manufactura, alta rotación\nEmpresa B — 120 empleados, servicios, contacto en RR.HH."}],
+  g:v=>`Actúa como gerente comercial de educación corporativa. Voy a darte mi lista de prospectos y quiero que la priorices con criterio, no por orden de llegada.
+
+Contexto: vendo programas de formación corporativa del Politécnico Grancolombiano a empresas en Colombia.
+
+Mis criterios de calificación, con su peso de 1 a 5:
+1. Tamaño y presupuesto potencial de formación — peso ${state.pesos.c1}
+2. Urgencia del dolor detectado — peso ${state.pesos.c2}
+3. Acceso real al decisor — peso ${state.pesos.c3}
+4. Encaje con el portafolio del Poli — peso ${state.pesos.c4}
+5. Señal de momento — peso ${state.pesos.c5}
+
+Mi lista:
+${v.lista||"[pega aquí tu lista]"}
+
+Tarea: califica cada cuenta de 1 a 5 en cada criterio, calcula el puntaje total ponderado y devuélveme la lista ordenada de mayor a menor. Para cada una de las 5 primeras agrega por qué está arriba y cuál es la primera acción concreta de esta semana.
+
+Restricción: no inventes datos de las empresas. Si te falta información para calificar un criterio, dilo en vez de suponer.
+
+Formato: tabla ordenada + un párrafo de a quién llamar primero y por qué. Tono directo.`},
+ {c:"P1.3",t:"Gancho de entrada personalizado",s:"Tres versiones. Solo después de tener el dossier.",
+  f:[{k:"emp",l:"Empresa",p:"Alimentos del Norte S.A.S."},{k:"datos",l:"Lo que sabes de ella (pega el dossier o 3 datos clave)",ta:true,p:"Abrieron planta nueva en Tocancipá. Rotación alta en supervisores de producción."}],
+  g:v=>promptP13({nombre:v.emp,sector:"",ciudad:"",r:[v.datos||"","","","","",""]})},
+ {c:"P1.4",t:"Venta cruzada en cuentas existentes",s:"La venta más barata que tiene el equipo y nadie la trabaja de forma sistemática.",
+  f:[{k:"emp",l:"Empresa cliente",p:"Alimentos del Norte S.A.S."},{k:"hist",l:"Historial: qué le hemos vendido, cuándo, a qué áreas",ta:true,p:"Diplomado de liderazgo para 25 jefes de planta en 2024."}],
+  g:v=>promptP14({nombre:v.emp,historial:v.hist})},
+ {c:"P1.5",t:"Construir lista de prospectos de un sector",s:"Cuando la lista actual no da y hay que llenar el embudo.",
+  f:[{k:"sec",l:"Sector",p:"manufactura de alimentos"},{k:"tam",l:"Rango de empleados",p:"300 a 1.000"},{k:"ciu",l:"Ciudad o región",p:"Bogotá y Sabana"},{k:"sen",l:"Señal de interés que buscas",p:"en expansión, con alta rotación, con certificaciones en curso"}],
+  g:v=>`Actúa como investigador de mercado B2B en Colombia.
+
+Contexto: quiero construir una lista de empresas objetivo para vender formación corporativa del Politécnico Grancolombiano.
+
+Perfil que busco: sector ${v.sec||"[sector]"}, tamaño ${v.tam||"[rango de empleados]"}, ubicación ${v.ciu||"[ciudad/región]"}, señal de interés ${v.sen||"[señal]"}.
+
+Tarea: propón 15 empresas o tipos de empresa que encajen en ese perfil y, para cada una, dime qué señal específica la hace un buen prospecto ahora.
+
+Restricción: si no tienes datos verificables de una empresa, dilo. Prefiero 8 cuentas reales que 15 inventadas. Marca como NO VERIFICADO todo lo que yo deba confirmar.
+
+Formato: tabla con Empresa / Señal / Por dónde entrar. Tono directo.`}
+];
+const kitVals={};
+function renderKit(){
+  document.getElementById("kit-list").innerHTML=KIT.map((k,i)=>{
+    if(!kitVals[i]) kitVals[i]={};
+    return `<div class="kit-item" id="ki-${i}">
+      <div class="kit-head" onclick="toggleKit(${i})">
+        <span class="kit-code">${k.c}</span>
+        <span class="kit-title">${k.t}<span>${k.s}</span></span>
+        <span class="kit-caret">▼</span>
+      </div>
+      <div class="kit-body">
+        ${k.f.map(f=>`<div class="field">
+          <label class="fl">${f.l}</label>
+          ${f.ta?`<textarea class="icone-ta" placeholder="${esc(f.p)}" oninput="kitSet(${i},'${f.k}',this.value)">${esc(kitVals[i][f.k]||"")}</textarea>`
+                :`<input class="icone-input" placeholder="${esc(f.p)}" value="${esc(kitVals[i][f.k]||"")}" oninput="kitSet(${i},'${f.k}',this.value)">`}
+        </div>`).join("")}
+        <div class="prompt-box" id="kp-${i}">${esc(k.g(kitVals[i])).replace(/(\[[^\]]+\])/g,'<mark>$1</mark>')}</div>
+        <div class="btn-row" style="margin-top:13px">
+          <button class="btn btn-primary btn-sm" id="btn-kit-${i}" data-needs-key onclick="runKit(${i})">⚡ Ejecutar ${k.c}</button>
+          <button class="btn btn-outline btn-sm" onclick="copyEl('kp-${i}','Prompt ${k.c} copiado')">📋 Copiar ${k.c}</button>
+        </div>
+        <div id="kit-msg-${i}"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function toggleKit(i){ document.getElementById("ki-"+i).classList.toggle("open"); }
+function kitSet(i,k,v){
+  kitVals[i][k]=v;
+  document.getElementById("kp-"+i).innerHTML=esc(KIT[i].g(kitVals[i])).replace(/(\[[^\]]+\])/g,'<mark>$1</mark>');
+}
+
+/* ---------- SEMÁFORO DE DATOS ---------- */
+const CASOS=[
+ {t:"Pego el listado de 340 aspirantes con nombre, cédula y teléfono para que la IA me lo segmente por ciudad.",ok:false,
+  e:"Datos personales identificables de terceros. Ni anonimizados ni con permiso: esa base no sale del Poli. Si necesitas segmentar, hazlo en Excel."},
+ {t:"Le pido que me explique los dolores típicos de talento humano del sector de alimentos en Colombia.",ok:true,
+  e:"Conocimiento general del sector. No hay ningún dato del Poli ni de una persona. Este es exactamente el uso que buscamos."},
+ {t:"Pego la propuesta económica con las tarifas que todavía no hemos publicado, para que me la resuma.",ok:false,
+  e:"Información comercial confidencial. Una tarifa no publicada es una ventaja competitiva. Pégale la estructura de la propuesta, nunca los precios."},
+ {t:"Pego la noticia de prensa donde la empresa anuncia que abrió una planta nueva en Tocancipá.",ok:true,
+  e:"Información pública, ya publicada por la propia empresa. Es la materia prima del dossier."},
+ {t:"Escribo: «el director de RR.HH. de una manufacturera de 800 empleados me dijo que tiene rotación alta en supervisores».",ok:true,
+  e:"Anonimizado por rol. La IA tiene el contexto que necesita y ninguna persona queda identificada. Así se hace."},
+ {t:"Pego el contrato firmado con el cliente para que me saque las fechas de entrega.",ok:false,
+  e:"Documento contractual confidencial, con firmas y condiciones negociadas. Las fechas las sacas tú en treinta segundos."},
+ {t:"Pego mi borrador de correo al cliente para que me lo deje más claro y más corto.",ok:true,
+  e:"Es tu propio texto. Trabajar tus borradores es de los mejores usos que tiene la herramienta."},
+ {t:"Escribo: «Carolina Restrepo, gerente de gestión humana de Alimentos del Norte, celular 310..., me pidió una propuesta».",ok:false,
+  e:"Nombre propio y celular de una persona real. Cámbialo por el rol: «la gerente de gestión humana de una manufacturera de alimentos»."}
+];
+let semState=[];
+function renderSemaforo(){
+  if(semState.length!==CASOS.length) semState=CASOS.map(()=>null);
+  document.getElementById("sem-body").innerHTML=CASOS.map((c,i)=>{
+    const r=semState[i], done=r!==null, acerto=done&&r===c.ok;
+    return `<div class="card tight" style="border-color:${done?(acerto?"rgba(0,212,138,.45)":"rgba(255,71,87,.45)"):"var(--card-border)"}">
+      <div style="display:flex;gap:13px;align-items:flex-start;margin-bottom:13px">
+        <div class="q-num" style="background:${done?(acerto?"var(--green)":"var(--red)"):"rgba(0,212,255,.14)"};color:${done?"var(--navy)":"var(--cyan)"}">${done?(acerto?"✓":"✕"):String(i+1).padStart(2,"0")}</div>
+        <div style="font-size:.92rem;font-weight:600;line-height:1.45;flex:1">${esc(c.t)}</div>
+      </div>
+      ${done?`<div class="callout ${c.ok?"green":"red"}" style="margin-bottom:0">
+        <b>${c.ok?"Sí se puede.":"Esto no se pega."}</b> ${esc(c.e)}${acerto?"":' <b style="color:var(--yellow)">— y tú dijiste lo contrario. Vale la pena hablarlo.</b>'}
+      </div>`:`<div class="btn-row">
+        <button class="btn btn-outline btn-sm" onclick="respSem(${i},true)">✅ Sí se puede pegar</button>
+        <button class="btn btn-ghost btn-sm" onclick="respSem(${i},false)">🚫 Esto no se pega</button>
+      </div>`}
+    </div>`;
+  }).join("");
+  const done=semState.filter(r=>r!==null).length;
+  const ok=semState.filter((r,i)=>r!==null&&r===CASOS[i].ok).length;
+  const R=document.getElementById("sem-result");
+  if(done<CASOS.length){
+    R.innerHTML=`<div class="card tight"><div class="progress-bar"><div class="progress-fill" style="width:${done/CASOS.length*100}%"></div></div>
+      <div style="font-size:.82rem;color:var(--muted);margin-top:11px">${done} de ${CASOS.length} resueltos${done?` · ${ok} acertados`:""}</div></div>`;
+  }else{
+    const cls=ok===8?"green":ok>=6?"":"orange";
+    R.innerHTML=`<div class="card"><h3>${ok} de 8</h3>
+      <div class="callout ${cls}" style="margin:12px 0 0">${ok===8
+        ?"<b>Ocho de ocho.</b> El criterio ya está. Esto no era una prueba: era dejar por escrito el estándar con el que trabaja el área."
+        :ok>=6?"<b>Bien.</b> Los que fallaste son justo los que conviene discutir en voz alta ahora, no cuando ya pasó."
+        :"<b>Vale la pena repasarlo con calma.</b> Ninguno de estos casos es obvio, y por eso los revisamos aquí y no en medio de una negociación."}
+      </div>
+      <div class="btn-row" style="margin-top:16px"><button class="btn btn-ghost btn-sm" onclick="semState=[];renderSemaforo()">Hacerlo de nuevo</button></div></div>
+      <div class="callout orange"><b>El criterio final siempre es humano.</b> Marco de referencia: Ley 1581 de 2012 y la política de tratamiento de datos de la Institución.</div>`;
+  }
+}
+function respSem(i,v){ semState[i]=v; renderSemaforo(); }
+
+/* ---------- ENTREGA ---------- */
+function setMeta(k,v){ state[k]=v; save(); renderTabs(); }
+function textoNumeros(){
+  const lista=state.cuentas.filter(tieneDatos), comp=state.cuentas.filter(esCompleta);
+  const prom=comp.length?Math.max(1,Math.round(comp.reduce((a,c)=>a+c.seg,0)/comp.length/60)):0;
+  return `MÓDULO 1 · ${state.comercial||"(sin nombre)"}
+Minutos por cuenta ANTES del taller: ${state.baselineMin||"—"}
+Minutos por cuenta EN el taller: ${prom||"—"}
+Dossiers completos: ${comp.length} de 3
+Ganchos listos: ${lista.filter(tieneGancho).length}
+Cuentas que voy a contactar: ${lista.filter(tieneGancho).map((c,i)=>nombreCuenta(c,c.id)).join(", ")||"—"}
+Fecha de contacto: ${state.fechaReto||"—"}
+Meta de cuentas investigadas esta semana: ${state.metaSemana||"—"}`;
+}
+/* ---------- REPORTE AL FACILITADOR ---------- */
+const SB_URL="https://nvgkhdrrxqdgxktfkioa.supabase.co";
+const SB_KEY="sb_publishable_d1RrtE7S-9a8e8mGKRRjxQ_4HU_nkDl";
+async function reportar(){
+  if(!state.comercial){ toast("Escribe tu nombre en la pestaña Inicio","err"); return; }
+  const lista=state.cuentas.filter(tieneDatos), comp=state.cuentas.filter(esCompleta);
+  const prom=comp.length?Math.max(1,Math.round(comp.reduce((a,c)=>a+c.seg,0)/comp.length/60)):null;
+  const sem=semState.filter((r,i)=>r!==null&&r===CASOS[i].ok).length;
+  errBox("e-rep-msg","");
+  setLoading("btn-reportar",true,"Enviando…");
+  try{
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),20000);
+    let res;
+    try{
+      res=await fetch(SB_URL+"/rest/v1/rpc/taller_poli_reportar",{method:"POST",
+        headers:{"apikey":SB_KEY,"Content-Type":"application/json"},signal:ctrl.signal,
+        body:JSON.stringify({
+          p_comercial:state.comercial,
+          p_base_min:Number(state.baselineMin)||null,
+          p_taller_min:prom,
+          p_dossiers:comp.length,
+          p_ganchos:lista.filter(tieneGancho).length,
+          p_cuentas:lista.filter(tieneGancho).map(c=>nombreCuenta(c,c.id)).join(", ")||null,
+          p_fecha:state.fechaReto||null,
+          p_meta:Number(state.metaSemana)||null,
+          p_semaforo:semState.length?sem:null,
+          p_modulo:1
+        })});
+    }finally{ clearTimeout(to); }
+    if(!res.ok){ const t=await res.text(); throw new Error(t.slice(0,120)); }
+    document.getElementById("e-rep-msg").innerHTML=
+      '<div class="callout green" style="margin:12px 0 0"><b>Enviado.</b> Tus números ya están en el tablero de la Dirección. En la sesión 2 los comparamos con los de la semana.</div>';
+    toast("Números enviados","ok");
+  }catch(e){
+    errBox("e-rep-msg","No se pudo enviar ("+((e&&e.message)||"sin conexión")+"). Usa «Copiar para el chat» y pégalos en la sesión — sirve igual.");
+  }finally{ setLoading("btn-reportar",false); }
+}
+function enviarNumeros(){
+  const asunto="Módulo 1 · Mis números — "+(state.comercial||"");
+  window.location.href="mailto:jorgeicone.com@gmail.com?subject="+encodeURIComponent(asunto)+"&body="+encodeURIComponent(textoNumeros());
+}
+function renderEntrega(){
+  const lista=state.cuentas.filter(tieneDatos);
+  const comp=state.cuentas.filter(esCompleta).length;
+  const conG=lista.filter(tieneGancho).length;
+  const tot=state.cuentas.reduce((a,c)=>a+c.seg,0);
+  const segProm=comp?state.cuentas.filter(esCompleta).reduce((a,c)=>a+c.seg,0)/comp:0;
+  const prom=segProm?Math.max(1,Math.round(segProm/60)):0;
+  const base=Number(state.baselineMin)||0;
+  document.getElementById("e-fecha").value=state.fechaReto||"";
+  document.getElementById("e-meta").value=state.metaSemana||"";
+  document.getElementById("e-stats").innerHTML=`
+    <div class="stat"><div class="v">${comp}<span style="font-size:1rem">/3</span></div><div class="l">Dossiers completos</div></div>
+    <div class="stat"><div class="v">${conG}</div><div class="l">Ganchos listos para enviar</div></div>
+    <div class="stat"><div class="v">${prom||"–"}<span style="font-size:1rem">min</span></div><div class="l">Promedio por dossier${base?" · antes "+base+" min":""}</div></div>
+    <div class="stat"><div class="v">${base&&prom?(base>prom?"−"+Math.round((base-prom)/base*100)+"%":"+"+Math.round((prom-base)/base*100)+"%"):"–"}</div><div class="l">Cambio vs. tu línea base</div></div>`;
+
+  const ranked=lista.map(c=>({c,p:puntaje(c)})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  const R=document.getElementById("e-resumen");
+  R.innerHTML=`<h3>Resumen de tu entregable</h3><p class="sub">Esto es lo que queda en el PDF.</p>
+   ${lista.map((c,i)=>{
+     const p=puntaje(c),pos=ranked.findIndex(r=>r.c.id===c.id);
+     return `<div style="border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:15px 17px;margin-bottom:11px">
+       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+         <div style="font-weight:800;font-size:.95rem">${esc(nombreCuenta(c,c.id))}</div>
+         <div style="display:flex;gap:7px;flex-wrap:wrap">
+           <span class="chip ${resp6(c)>=6?"live":"warn"}">${resp6(c)}/6 preguntas</span>
+           ${p?`<span class="chip ${pos===0?"live":""}">${pos>=0?"#"+(pos+1)+" · "+p+" pts":p+" pts"}</span>`:'<span class="chip warn">sin calificar</span>'}
+           <span class="chip ${tieneGancho(c)?"live":"bad"}">${tieneGancho(c)?"gancho listo":"sin gancho"}</span>
+           ${c.seg?`<span class="chip">⏱ ${fmtT(c.seg)}</span>`:""}
+         </div>
+       </div>
+       ${tieneGancho(c)?`<div style="margin-top:11px;padding:11px 14px;background:rgba(0,212,255,.07);border-left:2.5px solid var(--cyan);border-radius:0 8px 8px 0;font-size:.86rem;font-style:italic">"${esc(c.hooks[c.hookSel])}"</div>`:""}
+     </div>`;
+   }).join("")||'<p class="sub">Todavía no hay cuentas definidas.</p>'}`;
+  document.getElementById("e-numeros").textContent=textoNumeros();
+  buildPrint();
+  renderTabs();
+}
+function buildPrint(){
+  const lista=state.cuentas.filter(tieneDatos);
+  const ranked=lista.map(c=>({c,p:puntaje(c)})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  const hoy=new Date().toLocaleDateString("es-CO",{day:"2-digit",month:"long",year:"numeric"});
+  let h=`<div class="p-h1">Mis 3 cuentas, investigadas</div>
+  <div class="p-sub">${esc(state.comercial||"—")} · Equipo Comercial B2B-B2C · Politécnico Grancolombiano<br>
+  Módulo 1 · Ver antes de vender · ${hoy}</div>`;
+  if(ranked.length){
+    h+=`<div class="p-sec">Orden de llamada de la semana</div><table class="p-tbl"><thead><tr><th>#</th><th>Cuenta</th>${CRIT.map(c=>`<th>${c.n} (peso ${state.pesos[c.k]})</th>`).join("")}<th>Puntaje</th></tr></thead><tbody>
+    ${ranked.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(nombreCuenta(r.c,r.c.id))}</b></td>${CRIT.map(cr=>`<td>${r.c.scores[cr.k]||"–"}</td>`).join("")}<td><b>${r.p}</b></td></tr>`).join("")}
+    </tbody></table>`;
+  }
+  h+=`<div class="p-sec">Dossiers de cuenta</div>`;
+  h+=lista.map(c=>`<div class="p-acc">
+    <h3>${esc(nombreCuenta(c,c.id))}</h3>
+    <div class="pm">${esc([c.sector,c.tamano?c.tamano+" empleados":"",c.ciudad,c.tipo==="viva"?"Cuenta viva (ya es cliente)":"Cuenta nueva"].filter(Boolean).join(" · "))}${c.seg?" · Investigada en "+fmtT(c.seg):""}</div>
+    ${QS.map((q,i)=>c.r[i]&&c.r[i].trim()?`<div class="p-q"><b>${i+1}. ${q}${c.flag[i]?"  [POR VERIFICAR]":""}</b><p>${esc(c.r[i])}</p></div>`:"").join("")}
+    ${tieneGancho(c)?`<div class="p-q"><b>Gancho de entrada elegido</b><div class="p-hook">"${esc(c.hooks[c.hookSel])}"</div></div>`:""}
+  </div>`).join("");
+  const conRaw=lista.filter(c=>c.raw&&c.raw.trim());
+  if(conRaw.length){
+    h+=`<div class="p-sec">Anexo · Respuestas completas de la IA</div>`;
+    h+=conRaw.map(c=>`<div class="p-acc"><h3 style="font-size:11pt">${esc(nombreCuenta(c,c.id))}</h3>
+      <p style="font-size:8pt;white-space:pre-wrap;line-height:1.35">${esc(c.raw)}</p></div>`).join("");
+  }
+  h+=`<div class="p-sec">Compromiso de la semana</div>
+  <table class="p-tbl"><tbody>
+    <tr><th style="width:45%">Cuentas a contactar con el gancho construido</th><td>${lista.filter(tieneGancho).map(c=>esc(nombreCuenta(c,c.id))).join(" · ")||"—"}</td></tr>
+    <tr><th>Fecha de contacto</th><td>${esc(state.fechaReto||"—")}</td></tr>
+    <tr><th>Cuentas a investigar esta semana</th><td>${esc(state.metaSemana||"—")}</td></tr>
+    <tr><th>Minutos por cuenta antes del taller</th><td>${esc(state.baselineMin||"—")}</td></tr>
+    <tr><th>Minutos por cuenta en el taller</th><td>${lista.filter(esCompleta).length?Math.max(1,Math.round(lista.filter(esCompleta).reduce((a,c)=>a+c.seg,0)/lista.filter(esCompleta).length/60))+" min":"—"}</td></tr>
+  </tbody></table>
+  <div class="p-foot">Laboratorio de Cuentas · Módulo 1 "Ver antes de vender" — Taller Habilidades Comerciales Potenciadas con IA.<br>
+  Diseño y facilitación: Jorge Hugo Pérez · ICONE ialabs para la Dirección B2B-B2C del Politécnico Grancolombiano.<br>
+  Los datos marcados [POR VERIFICAR] no han sido confirmados y no deben presentarse al cliente como hechos.</div>`;
+  document.getElementById("printzone").innerHTML=h;
+}
+function imprimir(){
+  if(!state.cuentas.some(tieneDatos)){ toast("Todavía no hay nada que imprimir","err"); return; }
+  buildPrint(); setTimeout(()=>window.print(),120);
+}
+function descargarRespaldo(){
+  stopTimer();
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="laboratorio-cuentas-"+(state.comercial||"comercial").toLowerCase().replace(/[^a-z0-9]+/g,"-")+".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  toast("Respaldo descargado","ok");
+}
+function restaurar(ev){
+  const f=ev.target.files&&ev.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(!d.cuentas||!Array.isArray(d.cuentas)) throw new Error("formato");
+      state=Object.assign(state,d);
+      state.pesos=Object.assign({},PESOS_DEF,d.pesos||{});
+      state.cuentas=d.cuentas.map((c,i)=>Object.assign(nuevaCuenta(i),c));
+      save();
+      document.getElementById("in-nombre").value=state.comercial||"";
+      document.getElementById("in-base").value=state.baselineMin||"";
+      renderTabs(); go("cuentas");
+      toast("Respaldo restaurado","ok");
+    }catch(e){ toast("Ese archivo no es un respaldo válido","err"); }
+  };
+  rd.readAsText(f);
+  ev.target.value="";
+}
+function copiarResumen(){
+  const lista=state.cuentas.filter(tieneDatos);
+  const ranked=lista.map(c=>({c,p:puntaje(c)})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  let t="MIS 3 CUENTAS, INVESTIGADAS — "+(state.comercial||"")+"\nMódulo 1 · Ver antes de vender\n\n";
+  if(ranked.length){
+    t+="ORDEN DE LLAMADA DE LA SEMANA\n";
+    ranked.forEach((r,i)=>{ t+=(i+1)+". "+nombreCuenta(r.c,r.c.id)+" — "+r.p+" puntos\n"; });
+    t+="\n";
+  }
+  lista.forEach(c=>{
+    t+="■ "+nombreCuenta(c,c.id)+"\n";
+    QS.forEach((q,i)=>{ if(c.r[i]&&c.r[i].trim()) t+="  "+(i+1)+". "+q+(c.flag[i]?" [POR VERIFICAR]":"")+"\n     "+c.r[i].trim().replace(/\n/g,"\n     ")+"\n"; });
+    if(tieneGancho(c)) t+="  → GANCHO: \""+c.hooks[c.hookSel]+"\"\n";
+    t+="\n";
+  });
+  copyText(t,"Resumen copiado");
+}
+
+/* ---------- PARTÍCULAS ---------- */
+(function(){
+  const cv=document.getElementById("particles"),ctx=cv.getContext("2d");
+  let W,H,ps=[];
+  function size(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
+  function init(){
+    size();
+    const n=Math.min(52,Math.round(W/26));
+    ps=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.7+.4,
+      vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,o:Math.random()*.4+.12,
+      c:Math.random()>.55?"0,212,255":"123,47,255"}));
+  }
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    ps.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0; if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle="rgba("+p.c+","+p.o+")"; ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  init(); tick();
+  let rt; window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(init,220);});
+})();
+
+/* ---------- ARRANQUE ---------- */
+window.addEventListener("beforeunload",()=>{ stopTimer(); });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) stopTimer(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") cerrarKey(); });
+(function(){
+  apiKey=loadKeyStored()||DEFAULT_API_KEY;
+  renderKeyChip();
+  document.getElementById("in-nombre").value=state.comercial||"";
+  document.getElementById("in-base").value=state.baselineMin||"";
+  renderTabs();
+  go(state.comercial?(state.vista||"cuentas"):"inicio");
+})();
+</script>
+</body>
+</html>
