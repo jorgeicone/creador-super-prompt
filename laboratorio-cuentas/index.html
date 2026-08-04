@@ -1225,14 +1225,16 @@ async function runSugerir(){
   setLoading("btn-sugerir",true,"Buscando…");
   const extra=`\n\nDevuelve la respuesta EXCLUSIVAMENTE como un objeto JSON con esta forma exacta:
 {"empresas":[{"nombre":"...","senal":"...","entrada":"...","verificar":true}]}
-Máximo 8 elementos. "senal" en máximo 25 palabras: qué está pasando que la vuelve buen prospecto ahora. "entrada" en máximo 15 palabras: por qué área o cargo entrar. "verificar" es true cuando no tengas certeza de que la empresa exista con ese perfil. Sin markdown.`;
+Máximo 8 elementos. "senal" en máximo 25 palabras: qué está pasando que la vuelve buen prospecto ahora. "entrada" en máximo 15 palabras: por qué área o cargo entrar. "verificar" es true SIEMPRE que no tengas certeza documentada de que esa empresa existe hoy con ese perfil y en esa ciudad; ante la duda, ponlo en true. Sin markdown.
+
+Procura que las 8 no sean todas del mismo subsector ni del mismo tamaño: mézclalas para que se puedan comparar entre sí.`;
   try{
     const raw=await callGemini(promptSugerir(v)+extra,SYS_COMERCIAL,true);
     const data=parseJson(raw);
     const arr=data&&Array.isArray(data.empresas)?data.empresas.filter(e=>e&&e.nombre):null;
     if(!arr||!arr.length) throw {fatal:true,msg:"No devolvió candidatas legibles. Copia el prompt P1.5 y ejecútalo en tu herramienta de IA."};
     SUGS=arr; renderSugerencias();
-    toast(arr.length+" candidatas. Ahora verifícalas.","ok");
+    toast(arr.length+" candidatas. Los nombres pueden servir; las señales hay que comprobarlas.","ok");
   }catch(e){
     errBox("sug-msg",(e&&e.msg)?e.msg:"No se pudo consultar.");
   }finally{ setLoading("btn-sugerir",false); }
@@ -1242,7 +1244,7 @@ function renderSugerencias(){
   const libres=state.cuentas.filter((c,i)=>i<3&&!tieneDatos(c)).length;
   document.getElementById("sug-out").innerHTML=`
     <div class="callout orange" style="margin-top:16px">
-      <b>Esto es una hipótesis, no un directorio.</b> La IA puede proponer empresas que no existan o que no encajen. Antes de invertirle 15 minutos a cualquiera de estas, confirma en su página o en LinkedIn que existe, que está en tu ciudad y que tiene el tamaño que dice. Lo marcado en naranja es lo que ella misma no pudo verificar.
+      <b>Esto es una hipótesis, no un directorio.</b> Aunque el nombre de la empresa sea real, <b>la señal casi nunca está verificada</b>: la IA la deduce del sector y la redacta con seguridad. Antes de invertirle 15 minutos a cualquiera de estas, comprueba dos cosas por separado — que la empresa exista hoy con ese perfil en tu ciudad, y que lo que dice la señal esté pasando de verdad. Si la señal no aguanta, el gancho se cae.
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
     ${SUGS.map((s,i)=>`
@@ -1250,8 +1252,9 @@ function renderSugerencias(){
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
           <div style="flex:1;min-width:220px">
             <div style="font-weight:800;font-size:.95rem;margin-bottom:3px">${esc(s.nombre)}
-              ${s.verificar?'<span class="chip warn" style="margin-left:8px;padding:2px 9px;font-size:.65rem">por verificar</span>':''}</div>
+              ${s.verificar?'<span class="chip warn" style="margin-left:8px;padding:2px 9px;font-size:.65rem">¿existe?</span>':'<span class="chip" style="margin-left:8px;padding:2px 9px;font-size:.65rem">nombre plausible</span>'}</div>
             <div style="font-size:.82rem;color:var(--muted);line-height:1.45">${esc(s.senal||"")}</div>
+            <div style="font-size:.7rem;color:var(--orange);margin-top:5px;font-weight:700">⚠ Señal sin confirmar — compruébala en su sala de prensa o LinkedIn antes de usarla como gancho</div>
             ${s.entrada?`<div style="font-size:.78rem;color:var(--cyan);margin-top:5px">→ ${esc(s.entrada)}</div>`:""}
           </div>
           <button class="btn ${libres?"btn-outline":"btn-ghost"} btn-sm" onclick="usarSugerencia(${i})">${libres?"Usar como cuenta":"Sin espacio libre"}</button>
@@ -1260,7 +1263,7 @@ function renderSugerencias(){
     </div>
     <div class="btn-row" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm" onclick="runSugerir()">↻ Proponme otras</button>
-      <span style="font-size:.78rem;color:var(--muted2);align-self:center">${libres} de 3 tarjetas libres</span>
+      <span style="font-size:.78rem;color:var(--muted2);align-self:center">${libres} de 3 tarjetas libres · procura que las tres no sean del mismo sector, o la matriz no te enseñará nada</span>
     </div>`;
 }
 function usarSugerencia(i){
