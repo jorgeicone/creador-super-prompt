@@ -471,8 +471,8 @@ select.icone-input option{background:var(--navy2);color:#fff}
           <input class="icone-input" id="sug-senal" placeholder="Ej: en expansión, con alta rotación, certificándose">
         </div>
       </div>
-      <label class="flagbox on" style="margin-bottom:14px">
-        <input type="checkbox" id="sug-buscar" checked> 🔎 Buscar en internet antes de responder <span style="font-weight:400;color:var(--muted)">— más lento, pero devuelve hechos publicados en vez de suposiciones</span>
+      <label class="flagbox" style="margin-bottom:14px">
+        <input type="checkbox" id="sug-buscar"> 🔎 Buscar en internet antes de responder <span style="font-weight:400;color:var(--muted)">— si tu clave lo permite. Si no, responde igual sin búsqueda.</span>
       </label>
       <div class="btn-row">
         <button class="btn btn-primary" id="btn-sugerir" onclick="runSugerir()">⚡ Proponme candidatas</button>
@@ -876,7 +876,10 @@ const CHECKS = [
    y esa siempre tiene prioridad sobre las del taller.
    Para agregar más: base64 de la clave, una por línea en este arreglo. */
 const POOL_B64=[
-  "QVEuQWI4Uk42S3FrMkdnQ3VSdEtSSmVncG1LR1Z3eDRiajJlRGRuU3ctaG9WalZKaDhCZ1E="
+  "QVEuQWI4Uk42S3FrMkdnQ3VSdEtSSmVncG1LR1Z3eDRiajJlRGRuU3ctaG9WalZKaDhCZ1E=",
+  "QVEuQWI4Uk42TDV0VXpGOGtKSnJsaTE1ZTJ0QS1MN1Yxbld0MEZOZFFhdlJpYVVaaHI0Y3c=",
+  "QVEuQWI4Uk42SzRtV1d2WFhvaThEdXVJM19pb1ZTV0xTdlFWdGtoZjFrTU56cW1GaHB6OGc=",
+  "QVEuQWI4Uk42TDJOWm00LUdQc1pIbjU3bzJlZEtlT1lNb0V4Vm92QVV2NWFULUR3SlpoYnc="
 ];
 const POOL=POOL_B64.map(b=>{ try{ return atob(b); }catch(e){ return ""; } }).filter(Boolean);
 const DEFAULT_API_KEY=POOL[0]||"";
@@ -938,7 +941,7 @@ async function intentoGemini(userPrompt,systemInstruction,wantJson,grounded){
       if(!res.ok){
         const txt=await res.text();
         // Si este modelo o esta clave no admiten búsqueda en Google, repetimos sin ella.
-        if(grounded&&(res.status===400||res.status===403)){
+        if(grounded&&(res.status===400||res.status===403||res.status===429)){
           const sinBusqueda=await intentoGemini(userPrompt,systemInstruction,wantJson,false);
           lastSources=[]; return sinBusqueda;
         }
