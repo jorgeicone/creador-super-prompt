@@ -332,7 +332,7 @@
 const CONFIG = {
   EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
   PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // (opcional) URL del Worker si usas proxy
-  MODEL: "gemini-3.5-flash-lite"  // modelo por defecto (el Worker tiene respaldo si se jubila)
+  MODEL: "gemini-flash-lite-latest"  // 0,8 s y responde; el Worker tiene respaldo si se jubila
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
@@ -487,7 +487,9 @@ async function callOnce({system,user,max_tokens,json}){
       // El Worker ya sabe si agotó TODO el pool de claves (quota) o si fue
       // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
       err.quota = data.quota===true || isQuota(emsg,status);
-      err.transient = data.quota===true ? false
+      // rate:true = freno por IP del Worker. Reintentar solo empeora la
+      // situación, así que tampoco cuenta como saturación pasajera.
+      err.transient = (data.quota===true || data.rate===true) ? false
                     : (data.transient===true || isTransient(emsg,status));
       throw err;
     }
