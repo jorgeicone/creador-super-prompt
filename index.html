@@ -85,7 +85,7 @@
   .card-head h2{font-size:1.2rem;margin:0}
   .card-head p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
 
-  label{display:block;font-size:.76rem;color:var(--muted);margin:0 0 7px;font-weight:700;
+  label,.label{display:block;font-size:.76rem;color:var(--muted);margin:0 0 7px;font-weight:700;
     text-transform:uppercase;letter-spacing:.7px}
   input[type=text],input[type=password],textarea,select{
     width:100%;background:rgba(6,14,30,.75);border:1px solid var(--border);color:var(--txt);
@@ -104,6 +104,9 @@
   .type:hover .ico{transform:scale(1.15)}
   .type.active{border-color:var(--cyan);background:rgba(0,212,255,.12);box-shadow:var(--glow-cyan)}
   .type.active .ico{transform:scale(1.1)}
+  /* El foco tiene que verse: sobre este fondo oscuro el contorno por
+     defecto del navegador es casi invisible. */
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
 
   .btn{cursor:pointer;border:none;border-radius:13px;padding:14px 26px;font-size:1rem;
     font-weight:700;font-family:inherit;color:#04101f;position:relative;overflow:hidden;
@@ -231,7 +234,7 @@
     <div style="margin-top:18px">
       <div class="settings">
         <div>
-          <label>Tu API Key gratis de Google Gemini</label>
+          <label for="apiKey">Tu API Key gratis de Google Gemini</label>
           <div class="keyrow">
             <input type="password" id="apiKey" class="grow" placeholder="AIza..." autocomplete="off" />
             <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
@@ -239,7 +242,7 @@
           </div>
         </div>
         <div>
-          <label>Modelo</label>
+          <label for="model">Modelo</label>
           <select id="model">
             <option value="gemini-flash-lite-latest">Flash-Lite más reciente · rápido</option>
             <option value="gemini-3.6-flash">Gemini 3.6 Flash · más potente</option>
@@ -259,14 +262,14 @@
       <div class="step-num">1</div>
       <div><h2>Ingresa tu idea</h2><p>Elige el tipo y descríbela con tus propias palabras.</p></div>
     </div>
-    <label>Tipo de prompt</label>
-    <div class="types" id="types">
-      <div class="type active" data-type="Redacción"><span class="ico">✍️</span>Redacción</div>
-      <div class="type" data-type="Código"><span class="ico">💻</span>Código</div>
-      <div class="type" data-type="Análisis"><span class="ico">📊</span>Análisis</div>
-      <div class="type" data-type="General"><span class="ico">✨</span>General</div>
+    <span class="label" id="labelTipo">Tipo de prompt</span>
+    <div class="types" id="types" role="radiogroup" aria-labelledby="labelTipo">
+      <div class="type active" data-type="Redacción" role="radio" aria-checked="true"  tabindex="0"><span class="ico" aria-hidden="true">✍️</span>Redacción</div>
+      <div class="type"        data-type="Código"    role="radio" aria-checked="false" tabindex="-1"><span class="ico" aria-hidden="true">💻</span>Código</div>
+      <div class="type"        data-type="Análisis"  role="radio" aria-checked="false" tabindex="-1"><span class="ico" aria-hidden="true">📊</span>Análisis</div>
+      <div class="type"        data-type="General"   role="radio" aria-checked="false" tabindex="-1"><span class="ico" aria-hidden="true">✨</span>General</div>
     </div>
-    <label>¿Qué necesitas?</label>
+    <label for="idea">¿Qué necesitas?</label>
     <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para LinkedIn sobre inteligencia artificial para emprendedores..."></textarea>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="genQuestions">Generar preguntas →</button>
@@ -275,7 +278,7 @@
   </section>
 
   <!-- Paso 2 -->
-  <section class="card locked" id="card2">
+  <section class="card locked" id="card2" inert>
     <div class="card-head">
       <div class="step-num">2</div>
       <div><h2>Cuéntame un poco más</h2><p>Con estos 3 detalles dejamos tu prompt a tu medida.</p></div>
@@ -288,7 +291,7 @@
   </section>
 
   <!-- Paso 3 -->
-  <section class="card locked" id="card3">
+  <section class="card locked" id="card3" inert>
     <div class="card-head">
       <div class="step-num">3</div>
       <div><h2>Tu Super Prompt <span class="pill">listo para usar</span></h2><p>Rol experto · contexto · restricciones · formato de salida.</p></div>
@@ -301,7 +304,7 @@
     </div>
 
     <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
-      <label>💬 Chat de ajuste continuo</label>
+      <label for="chatInput">💬 Chat de ajuste continuo</label>
       <div class="chatlog" id="chatlog"></div>
       <div class="row">
         <input type="text" id="chatInput" class="grow" placeholder='"hazlo más corto", "cambia el tono a divertido", "en inglés"...' />
@@ -350,6 +353,11 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
 /* ============ FONDO: red neuronal + partículas discretas ============ */
 (function neuralBG(){
   const c=document.getElementById("neural"), x=c.getContext("2d");
+  /* La media query de CSS apagaba las animaciones declarativas, pero esta
+     red seguía moviéndose a 60 fps: para quien tiene sensibilidad al
+     movimiento eso es justo lo que molesta. Aquí se dibuja un solo
+     fotograma quieto, sin perder el fondo. */
+  const quieto=matchMedia("(prefers-reduced-motion:reduce)");
   let W,H,nodes=[],parts=[],mouse={x:-999,y:-999};
   const CY="0,212,255", PU="123,47,255";
   function resize(){
@@ -409,9 +417,11 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
       x.beginPath();x.arc(p.x,p.y,p.size,0,Math.PI*2);
       x.fillStyle=`rgba(${p.c},${p.a*tw})`;x.fill();
     }
-    requestAnimationFrame(frame);
+    if(!quieto.matches) requestAnimationFrame(frame);
   }
   resize();frame();
+  // Si el usuario quita la preferencia, la animación vuelve sola.
+  quieto.addEventListener("change",e=>{ if(!e.matches) frame(); });
 })();
 
 /* ============ LÓGICA DE LA APP (Google Gemini) ============ */
@@ -480,11 +490,32 @@ function ofrecerClavePropia(motivo){
   $("cfg").scrollIntoView({behavior:"smooth",block:"center"});
 }
 
-// selector de tipo
+/* Selector de tipo. Son divs, no radios, así que el teclado hay que
+   dárselo a mano: un solo tabulador entra al grupo (tabindex móvil) y
+   las flechas cambian de opción, como en un grupo de radios de verdad. */
+const tipos=[...document.querySelectorAll(".type")];
+function elegirTipo(t,conFoco){
+  tipos.forEach(x=>{
+    const activo = x===t;
+    x.classList.toggle("active",activo);
+    x.setAttribute("aria-checked",activo?"true":"false");
+    x.tabIndex = activo ? 0 : -1;
+  });
+  state.type=t.dataset.type;
+  if(conFoco) t.focus();
+}
 $("types").addEventListener("click",e=>{
+  const t=e.target.closest(".type"); if(t) elegirTipo(t,false);
+});
+$("types").addEventListener("keydown",e=>{
   const t=e.target.closest(".type"); if(!t)return;
-  document.querySelectorAll(".type").forEach(x=>x.classList.remove("active"));
-  t.classList.add("active"); state.type=t.dataset.type;
+  if(e.key===" "||e.key==="Enter"){e.preventDefault();elegirTipo(t,true);return;}
+  const i=tipos.indexOf(t); let j=-1;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown") j=(i+1)%tipos.length;
+  if(e.key==="ArrowLeft" ||e.key==="ArrowUp")   j=(i-1+tipos.length)%tipos.length;
+  if(e.key==="Home") j=0;
+  if(e.key==="End")  j=tipos.length-1;
+  if(j>=0){e.preventDefault();elegirTipo(tipos[j],true);}
 });
 
 // progreso
@@ -622,7 +653,10 @@ function extractJSON(txt){
   return null;
 }
 function setStatus(el,msg,kind){el.className="status"+(kind?(" "+kind):"");el.innerHTML=kind==="loading"?'<span class="spin"></span>'+msg:msg;}
-function unlock(id){$(id).classList.remove("locked");}
+/* inert saca la tarjeta del orden de tabulacion y del lector de
+   pantalla. pointer-events:none solo frenaba al raton: con Tab se podia
+   escribir en los pasos 2 y 3 antes de tiempo. */
+function unlock(id){const c=$(id);c.classList.remove("locked");c.removeAttribute("inert");}
 
 // Paso 1 -> preguntas
 $("genQuestions").addEventListener("click",async()=>{
@@ -650,8 +684,8 @@ $("genQuestions").addEventListener("click",async()=>{
 });
 function renderQuestions(){
   $("questions").innerHTML=state.questions.map((q,i)=>`
-    <div class="q"><label>${i+1}. ${q.replace(/</g,"&lt;")}</label>
-    <input type="text" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" /></div>`).join("");
+    <div class="q"><label for="qa${i}">${i+1}. ${q.replace(/</g,"&lt;")}</label>
+    <input type="text" id="qa${i}" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" /></div>`).join("");
 }
 
 // Paso 2 -> prompt
@@ -682,7 +716,8 @@ $("copyBtn").addEventListener("click",async()=>{
 $("restartBtn").addEventListener("click",()=>{
   state.questions=[];state.currentPrompt="";
   $("idea").value="";$("questions").innerHTML="";$("result").textContent="";$("chatlog").innerHTML="";
-  $("card2").classList.add("locked");$("card3").classList.add("locked");
+  ["card2","card3"].forEach(id=>{$(id).classList.add("locked");$(id).setAttribute("inert","");});
+  elegirTipo(tipos[0],false);   // el tipo tambien vuelve al inicio
   ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
   setStep(1); window.scrollTo({top:0,behavior:"smooth"});
 });
