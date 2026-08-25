@@ -358,57 +358,120 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
      movimiento eso es justo lo que molesta. Aquí se dibuja un solo
      fotograma quieto, sin perder el fondo. */
   const quieto=matchMedia("(prefers-reduced-motion:reduce)");
+
+  /* Sin tope, un móvil con DPR 3 renderiza 9 veces el área de píxeles de
+     la pantalla. A partir de 2 la diferencia no se ve y sí se paga.
+     Se recalcula al medir, no una sola vez al cargar: el DPR cambia si la
+     ventana se mueve a otro monitor o el usuario cambia el zoom. */
+  let DPR=1, LINK=0, LINK2=0, LINK_M=0, LINK_M2=0;
+  function escala(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    LINK=150*DPR; LINK2=LINK*LINK; LINK_M=LINK*1.4; LINK_M2=LINK_M*LINK_M;
+  }
+
   let W,H,nodes=[],parts=[],mouse={x:-999,y:-999};
   const CY="0,212,255", PU="123,47,255";
-  function resize(){
-    W=c.width=innerWidth*devicePixelRatio; H=c.height=innerHeight*devicePixelRatio;
+
+  /* shadowBlur es de lo más caro del Canvas 2D y aquí se pagaba una vez
+     por nodo y por fotograma. El mismo halo, dibujado una sola vez en un
+     lienzo aparte y reutilizado con drawImage, sale casi gratis. */
+  function halo(rgb){
+    const r=32, s=document.createElement("canvas"); s.width=s.height=r*2;
+    const g=s.getContext("2d"), grad=g.createRadialGradient(r,r,0,r,r,r);
+    // Núcleo sólido y caída rápida: con una caída suave los nodos salían
+    // como manchas y perdían el punto nítido del diseño original.
+    grad.addColorStop(0,   `rgba(${rgb},1)`);
+    grad.addColorStop(.17, `rgba(${rgb},1)`);
+    grad.addColorStop(.30, `rgba(${rgb},.45)`);
+    grad.addColorStop(.62, `rgba(${rgb},.12)`);
+    grad.addColorStop(1,   `rgba(${rgb},0)`);
+    g.fillStyle=grad; g.fillRect(0,0,r*2,r*2);
+    return s;
+  }
+  const HALO={[CY]:halo(CY),[PU]:halo(PU)};
+
+  function medir(){
+    escala();
+    W=c.width=Math.round(innerWidth*DPR); H=c.height=Math.round(innerHeight*DPR);
     c.style.width=innerWidth+"px"; c.style.height=innerHeight+"px";
-    const area=innerWidth*innerHeight;
-    const N=Math.min(70,Math.max(34,Math.round(area/26000)));
+  }
+  function poblar(){
+    const area=innerWidth*innerHeight, movil=innerWidth<768;
+    // En móvil menos nodos: el bucle de enlaces es O(n²) y ahí duele.
+    const N=movil ? Math.min(40,Math.max(22,Math.round(area/30000)))
+                  : Math.min(70,Math.max(34,Math.round(area/26000)));
     nodes=Array.from({length:N},()=>({
       x:Math.random()*W, y:Math.random()*H,
-      vx:(Math.random()-.5)*.28*devicePixelRatio, vy:(Math.random()-.5)*.28*devicePixelRatio,
-      r:(Math.random()*1.6+1.1)*devicePixelRatio, c:Math.random()>.5?CY:PU,
+      vx:(Math.random()-.5)*.28*DPR, vy:(Math.random()-.5)*.28*DPR,
+      r:(Math.random()*1.6+1.1)*DPR, c:Math.random()>.5?CY:PU,
       pulse:Math.random()*Math.PI*2
     }));
-    const P=Math.min(60,Math.max(28,Math.round(area/30000)));
+    const P=movil ? Math.min(26,Math.max(14,Math.round(area/44000)))
+                  : Math.min(60,Math.max(28,Math.round(area/30000)));
     parts=Array.from({length:P},()=>newPart());
   }
   function newPart(){return{x:Math.random()*W,y:Math.random()*H,
-    vy:-(Math.random()*.3+.1)*devicePixelRatio, size:(Math.random()*1.3+.4)*devicePixelRatio,
+    vy:-(Math.random()*.3+.1)*DPR, size:(Math.random()*1.3+.4)*DPR,
     a:Math.random()*.5+.15, c:Math.random()>.5?CY:PU, tw:Math.random()*Math.PI*2};}
-  addEventListener("resize",resize);
-  addEventListener("mousemove",e=>{mouse.x=e.clientX*devicePixelRatio;mouse.y=e.clientY*devicePixelRatio;});
+
+  function resize(rehacer){
+    medir();
+    if(rehacer) poblar();
+    // Al cambiar el tamaño el lienzo queda en blanco: si no hay animación
+    // corriendo, hay que repintar a mano o el fondo desaparece.
+    if(quieto.matches) frame();
+  }
+
+  /* El resize venía sin freno: un giro de pantalla disparaba decenas de
+     reconstrucciones. Y en móvil la barra de direcciones lo dispara con
+     solo hacer scroll, cambiando únicamente el alto: eso reajusta el
+     lienzo, pero no merece rehacer las partículas. */
+  let temporizador, anchoPrevio=innerWidth;
+  addEventListener("resize",()=>{
+    clearTimeout(temporizador);
+    temporizador=setTimeout(()=>{
+      const rehacer = innerWidth!==anchoPrevio;
+      anchoPrevio=innerWidth;
+      resize(rehacer);
+    },160);
+  });
+
+  addEventListener("mousemove",e=>{mouse.x=e.clientX*DPR;mouse.y=e.clientY*DPR;},{passive:true});
   addEventListener("mouseleave",()=>{mouse.x=mouse.y=-999;});
-  const LINK=150*devicePixelRatio;
   function frame(){
     x.clearRect(0,0,W,H);
-    for(let i=0;i<nodes.length;i++){
+    const n=nodes.length;
+    x.lineWidth=DPR;
+    for(let i=0;i<n;i++){
       const a=nodes[i];
-      for(let j=i+1;j<nodes.length;j++){
-        const b=nodes[j], dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
-        if(d<LINK){
-          const op=(1-d/LINK)*.5;
-          x.strokeStyle=`rgba(${a.c},${op})`; x.lineWidth=1*devicePixelRatio;
-          x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
-        }
+      for(let j=i+1;j<n;j++){
+        const b=nodes[j];
+        // Descartar por ejes y comparar distancias al cuadrado evita una
+        // raíz cuadrada en la inmensa mayoría de los pares.
+        const dx=a.x-b.x; if(dx>LINK||dx<-LINK) continue;
+        const dy=a.y-b.y; if(dy>LINK||dy<-LINK) continue;
+        const d2=dx*dx+dy*dy; if(d2>=LINK2) continue;
+        const op=(1-Math.sqrt(d2)/LINK)*.5;
+        x.strokeStyle=`rgba(${a.c},${op})`;
+        x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
       }
-      const mdx=a.x-mouse.x, mdy=a.y-mouse.y, md=Math.hypot(mdx,mdy);
-      if(md<LINK*1.4){
-        x.strokeStyle=`rgba(${CY},${(1-md/(LINK*1.4))*.6})`;x.lineWidth=1.2*devicePixelRatio;
+      const mdx=a.x-mouse.x, mdy=a.y-mouse.y, md2=mdx*mdx+mdy*mdy;
+      if(md2<LINK_M2){
+        x.strokeStyle=`rgba(${CY},${(1-Math.sqrt(md2)/LINK_M)*.6})`;x.lineWidth=1.2*DPR;
         x.beginPath();x.moveTo(a.x,a.y);x.lineTo(mouse.x,mouse.y);x.stroke();
+        x.lineWidth=DPR;
       }
     }
     for(const a of nodes){
       a.x+=a.vx;a.y+=a.vy;a.pulse+=.03;
       if(a.x<0||a.x>W)a.vx*=-1; if(a.y<0||a.y>H)a.vy*=-1;
-      const mdx=mouse.x-a.x, mdy=mouse.y-a.y, md=Math.hypot(mdx,mdy);
-      if(md<LINK){a.x+=mdx*.0015;a.y+=mdy*.0015;}
+      const mdx=mouse.x-a.x, mdy=mouse.y-a.y, md2=mdx*mdx+mdy*mdy;
+      if(md2<LINK2){a.x+=mdx*.0015;a.y+=mdy*.0015;}
       const glow=(Math.sin(a.pulse)*.4+.6);
-      x.beginPath();x.arc(a.x,a.y,a.r*(1+glow*.3),0,Math.PI*2);
-      x.fillStyle=`rgba(${a.c},${.5+glow*.4})`;
-      x.shadowBlur=12*devicePixelRatio;x.shadowColor=`rgba(${a.c},.9)`;
-      x.fill();x.shadowBlur=0;
+      const lado=a.r*(1+glow*.3)*6;      // el halo ocupa más que el punto
+      x.globalAlpha=.5+glow*.4;
+      x.drawImage(HALO[a.c], a.x-lado/2, a.y-lado/2, lado, lado);
+      x.globalAlpha=1;
     }
     for(const p of parts){
       p.y+=p.vy;p.tw+=.04;
@@ -419,7 +482,7 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
     }
     if(!quieto.matches) requestAnimationFrame(frame);
   }
-  resize();frame();
+  medir(); poblar(); frame();
   // Si el usuario quita la preferencia, la animación vuelve sola.
   quieto.addEventListener("change",e=>{ if(!e.matches) frame(); });
 })();
