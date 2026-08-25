@@ -233,9 +233,9 @@
         <div>
           <label>Modelo</label>
           <select id="model">
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite · rápido</option>
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite · rápido</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-flash-lite-latest">Siempre el más reciente</option>
           </select>
         </div>
       </div>
@@ -332,7 +332,7 @@
 const CONFIG = {
   EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
   PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // (opcional) URL del Worker si usas proxy
-  MODEL: "gemini-2.5-flash-lite"  // modelo por defecto
+  MODEL: "gemini-3.5-flash-lite"  // modelo por defecto (el Worker tiene respaldo si se jubila)
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
@@ -455,8 +455,18 @@ function setStep(n){
   document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
 }
 
+// ¿la cuota se agotó de verdad? Entonces reintentar NO sirve de nada:
+// no es una saturación pasajera, es que no queda saldo/cuota hasta mañana.
+function isQuota(msg,status){
+  const m=(msg||"").toLowerCase();
+  return status===429&&(
+    m.includes("resource_exhausted")||m.includes("quota")||m.includes("cuota")||
+    m.includes("credits are depleted")||m.includes("billing"));
+}
+
 // ¿es un error temporal de saturación? (reintentable)
 function isTransient(msg,status){
+  if(isQuota(msg,status))return false;          // cuota agotada ≠ saturación
   const m=(msg||"").toLowerCase();
   return status===429||status===500||status===503||
     m.includes("high demand")||m.includes("overload")||m.includes("unavailable")||
@@ -473,7 +483,13 @@ async function callOnce({system,user,max_tokens,json}){
     if(!res.ok||data.error){
       const status=data.status||res.status;
       const emsg=data.error||("Error "+status);
-      const err=new Error(emsg); err.status=status; err.transient=isTransient(emsg,status); throw err;
+      const err=new Error(emsg); err.status=status;
+      // El Worker ya sabe si agotó TODO el pool de claves (quota) o si fue
+      // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
+      err.quota = data.quota===true || isQuota(emsg,status);
+      err.transient = data.quota===true ? false
+                    : (data.transient===true || isTransient(emsg,status));
+      throw err;
     }
     if(!data.text){const err=new Error("La IA no devolvió texto. Intenta de nuevo.");err.transient=true;throw err;}
     return data.text;
@@ -491,7 +507,11 @@ async function callOnce({system,user,max_tokens,json}){
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
     if(res.status===400&&/API key/i.test(detail))throw new Error("API Key inválida o restringida.");
-    const err=new Error("Error "+res.status+": "+detail); err.status=res.status; err.transient=isTransient(detail,res.status); throw err;
+    const agotada=isQuota(detail,res.status);
+    // Sin exponer el detalle crudo de Google (que incluye datos de facturación).
+    const err=new Error(agotada?"Tu clave agotó su cuota gratuita por hoy.":("Error "+res.status+": "+detail));
+    err.status=res.status; err.quota=agotada; err.transient=agotada?false:isTransient(detail,res.status);
+    throw err;
   }
   const data=await res.json();
   const parts=data.candidates?.[0]?.content?.parts||[];
@@ -507,12 +527,15 @@ async function callAI({system,user,max_tokens=1500,json=false}){
     try{
       return await callOnce({system,user,max_tokens,json});
     }catch(err){
+      // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
+      // decimos la verdad, en vez de 7 segundos de spinner y "espera un momento".
+      if(err.quota||isQuota(err.message,err.status||0)) throw err;
+
       const reintentable = err.transient || isTransient(err.message,err.status||0);
       if(reintentable && intento<MAX){
         await sleep(900*intento + Math.random()*500);   // espera creciente
         continue;
       }
-      if(err.status===429) throw new Error("Se alcanzó el límite gratuito por ahora. Intenta de nuevo en un momento.");
       if(reintentable) throw new Error("El servicio de IA está muy solicitado ahora mismo. Espera unos segundos e inténtalo de nuevo.");
       throw err;
     }
