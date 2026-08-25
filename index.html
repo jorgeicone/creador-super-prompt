@@ -192,6 +192,8 @@
   .free-banner .fico{font-size:1.5rem}
   .free-banner b{color:var(--ok)}
   .free-banner span{font-size:.86rem;color:var(--muted)}
+  .free-banner .privacidad{display:inline-block;margin-top:7px;font-size:.79rem;line-height:1.45;
+    color:var(--muted);opacity:.92}
   /* aviso cuando la IA gratis no puede atender y se ofrece la clave propia */
   .cfg-aviso{display:flex;align-items:flex-start;gap:11px;padding:13px 16px;border-radius:12px;
     background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.45);
@@ -251,7 +253,12 @@
   <!-- Banner cuando la IA viene incluida gratis -->
   <div class="free-banner hidden" id="freeBanner">
     <span class="fico">🎁</span>
-    <div><b>IA incluida · totalmente gratis</b><br><span>No necesitas configurar nada. Solo escribe tu idea y crea tu Super Prompt.</span></div>
+    <div><b>IA incluida · totalmente gratis</b><br><span>No necesitas configurar nada. Solo escribe tu idea y crea tu Super Prompt.</span>
+      <!-- El aviso de privacidad estaba dentro del panel de configuración,
+           que en modo gratis está oculto. Pero es justo en este modo cuando
+           el texto del usuario sale del navegador, así que aquí va visible. -->
+      <br><span class="privacidad">🔒 Tu idea viaja a nuestro servidor y de ahí a Google (Gemini) solo para generar el prompt. No la guardamos ni la usamos para nada más. Lo que escribas queda en esta pestaña y se borra al cerrarla.</span>
+    </div>
   </div>
 
   <!-- Configuración (solo visible si NO hay key incluida) -->
@@ -279,7 +286,7 @@
       </div>
       <label style="margin-top:14px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">
         <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la key en este navegador</label>
-      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. La key se usa solo desde tu navegador; no se envía a ningún servidor.</p>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu clave se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas.</p>
     </div>
   </details>
 
@@ -779,7 +786,16 @@ function extractJSON(txt){
   const m=clean.match(/\{[\s\S]*\}/); if(m){try{return JSON.parse(m[0]);}catch(e){}}
   return null;
 }
-function setStatus(el,msg,kind){el.className="status"+(kind?(" "+kind):"");el.innerHTML=kind==="loading"?'<span class="spin"></span>'+msg:msg;}
+/* El mensaje puede venir de un error de la IA, así que entra como texto y
+   no como HTML. Lo único que se construye es el spinner. */
+function setStatus(el,msg,kind){
+  el.className="status"+(kind?(" "+kind):"");
+  el.textContent="";
+  if(kind==="loading"){
+    const s=document.createElement("span"); s.className="spin"; el.appendChild(s);
+  }
+  el.appendChild(document.createTextNode(msg||""));
+}
 /* inert saca la tarjeta del orden de tabulacion y del lector de
    pantalla. pointer-events:none solo frenaba al raton: con Tab se podia
    escribir en los pasos 2 y 3 antes de tiempo. */
@@ -809,10 +825,29 @@ $("genQuestions").addEventListener("click",async()=>{
   }catch(err){setStatus($("status1"),err.message,"err");}
   finally{btn.disabled=false;}
 });
+/* Construido con textContent en vez de innerHTML: el escapado a mano solo
+   cubría "<", así que un "&" en una pregunta salía roto en pantalla. Con
+   nodos de texto no hay nada que escapar ni nada que se pueda colar. */
 function renderQuestions(){
-  $("questions").innerHTML=state.questions.map((q,i)=>`
-    <div class="q"><label for="qa${i}">${i+1}. ${q.replace(/</g,"&lt;")}</label>
-    <input type="text" id="qa${i}" class="qa" data-i="${i}" placeholder="Tu respuesta (opcional pero recomendado)" /></div>`).join("");
+  const cont=$("questions"); cont.textContent="";
+  state.questions.forEach((q,i)=>{
+    const fila=document.createElement("div"); fila.className="q";
+    const etiqueta=document.createElement("label");
+    etiqueta.htmlFor="qa"+i; etiqueta.textContent=(i+1)+". "+q;
+    const campo=document.createElement("input");
+    campo.type="text"; campo.id="qa"+i; campo.className="qa"; campo.dataset.i=i;
+    campo.placeholder="Tu respuesta (opcional pero recomendado)";
+    fila.append(etiqueta,campo); cont.appendChild(fila);
+  });
+}
+
+/* Lo mismo para el hilo del chat. */
+function mensajeChat(texto,quien){
+  const div=document.createElement("div");
+  div.className="msg "+quien;
+  div.textContent=texto;
+  const log=$("chatlog");
+  log.appendChild(div); log.scrollTop=log.scrollHeight;
 }
 
 // Paso 2 -> prompt
@@ -827,7 +862,7 @@ $("genPrompt").addEventListener("click",async()=>{
     const r=await callAI({system,user,max_tokens:2000});
     state.versiones=[]; state.chat=[];        // prompt nuevo: historial limpio
     setPrompt(r.text);
-    unlock("card3"); setStep(3); $("chatlog").innerHTML="";
+    unlock("card3"); setStep(3); $("chatlog").textContent="";
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     // Un prompt cortado a la mitad no es un éxito: se dice, no se disimula.
     if(r.truncado) setStatus($("status2"),"⚠ El prompt se cortó por el límite de longitud. Vuelve a crearlo o acorta tu idea y tus respuestas.","warn");
@@ -872,7 +907,7 @@ $("copyBtn").addEventListener("click",async()=>{
 });
 $("restartBtn").addEventListener("click",()=>{
   state.questions=[];state.currentPrompt="";state.idea="";state.versiones=[];state.chat=[];
-  $("idea").value="";$("questions").innerHTML="";$("result").textContent="";$("chatlog").innerHTML="";
+  $("idea").value="";$("questions").textContent="";$("result").textContent="";$("chatlog").textContent="";
   ["card2","card3"].forEach(id=>{$(id).classList.add("locked");$(id).setAttribute("inert","");});
   elegirTipo(tipos[0],false);   // el tipo tambien vuelve al inicio
   ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
@@ -885,8 +920,8 @@ async function refine(){
   const instr=$("chatInput").value.trim(); if(!instr)return;
   if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
   state.chat.push({yo:instr});
-  $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg me">${instr.replace(/</g,"&lt;")}</div>`);
-  $("chatInput").value="";$("chatlog").scrollTop=$("chatlog").scrollHeight;guardar();
+  mensajeChat(instr,"me");
+  $("chatInput").value="";guardar();
   const btn=$("chatSend");btn.disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
@@ -902,8 +937,7 @@ async function refine(){
     setPrompt(r.text);
     const eco=r.truncado?"⚠ El prompt ajustado se cortó por longitud":"✓ Prompt actualizado arriba";
     state.chat.push({ia:eco}); guardar();
-    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">${eco}</div>`);
-    $("chatlog").scrollTop=$("chatlog").scrollHeight;
+    mensajeChat(eco,"ai");
     setStatus($("status4"),r.truncado?"⚠ La versión ajustada quedó incompleta. Pide un cambio más corto o vuelve a intentarlo.":"",r.truncado?"warn":"");
   }catch(err){setStatus($("status4"),err.message,"err");}
   finally{btn.disabled=false;}
@@ -940,9 +974,7 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
   if(state.currentPrompt){
     $("result").textContent=state.currentPrompt;
     unlock("card3");
-    $("chatlog").innerHTML=state.chat.map(m=>m.yo
-      ? `<div class="msg me">${m.yo.replace(/</g,"&lt;")}</div>`
-      : `<div class="msg ai">${(m.ia||"").replace(/</g,"&lt;")}</div>`).join("");
+    state.chat.forEach(m=> m.yo ? mensajeChat(m.yo,"me") : mensajeChat(m.ia||"","ai"));
   }
   actualizarUndo();
   setStep(d.paso||1);
