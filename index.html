@@ -299,6 +299,8 @@
     <div class="result" id="result"></div>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="copyBtn">📋 Copiar</button>
+      <button class="btn ghost" id="downloadBtn">⬇ Descargar .txt</button>
+      <button class="btn ghost" id="undoBtn" disabled title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
       <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
       <span class="status" id="status3"></span>
     </div>
@@ -492,7 +494,24 @@ const $=id=>document.getElementById(id);
 const HAS_PROXY = !!(CONFIG.PROXY_URL && /^https?:\/\//.test(CONFIG.PROXY_URL.trim()));
 const HAS_EMBEDDED = !HAS_PROXY && !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY.trim().length>10);
 const FREE_MODE = HAS_PROXY || HAS_EMBEDDED;
-let state={type:"Redacción",idea:"",questions:[],currentPrompt:""};
+let state={type:"Redacción",idea:"",questions:[],currentPrompt:"",versiones:[],chat:[]};
+let pasoActual=1;
+
+/* Antes, una recarga del navegador borraba todo el trabajo. Se guarda en
+   sessionStorage (no localStorage: al cerrar la pestaña se va, que es lo
+   que espera alguien que escribió algo personal en un equipo prestado). */
+const CLAVE_SESION="sp_sesion";
+function guardar(){
+  try{
+    sessionStorage.setItem(CLAVE_SESION, JSON.stringify({
+      type:state.type, idea:state.idea, questions:state.questions,
+      currentPrompt:state.currentPrompt, versiones:state.versiones, chat:state.chat,
+      respuestas:[...document.querySelectorAll(".qa")].map(a=>a.value),
+      paso:pasoActual
+    }));
+  }catch(e){/* sesión llena o bloqueada: no es motivo para romper la app */}
+}
+function olvidar(){ try{ sessionStorage.removeItem(CLAVE_SESION); }catch(e){} }
 
 /* Cuando la IA gratis no puede atender (cuota agotada, Worker caído), la app
    deja de depender de ella y pasa a la clave propia del usuario. Sin este
@@ -583,6 +602,7 @@ $("types").addEventListener("keydown",e=>{
 
 // progreso
 function setStep(n){
+  pasoActual=n;
   document.querySelectorAll(".pstep").forEach(s=>{
     const v=+s.dataset.s; s.classList.toggle("on",v===n); s.classList.toggle("done",v<n);
     s.querySelector(".pdot").textContent=(v<n)?"✓":v;
@@ -609,10 +629,27 @@ function isTransient(msg,status){
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+/* Sin esto, si el servidor se colgaba el spinner giraba para siempre y el
+   botón quedaba deshabilitado sin vuelta atrás. El Worker corta a los 10 s
+   por modelo, así que 30 s aquí solo salta si algo va muy mal. */
+const TIMEOUT_CLIENTE=30000;
+async function pedir(url,opciones){
+  const ctrl=new AbortController();
+  const reloj=setTimeout(()=>ctrl.abort(),TIMEOUT_CLIENTE);
+  try{
+    return await fetch(url,{...opciones,signal:ctrl.signal});
+  }catch(e){
+    const corto = e && e.name==="AbortError";
+    const err=new Error(corto?"La IA tardó demasiado en responder.":"No se pudo contactar el servicio de IA.");
+    err.status=corto?504:0; err.transient=true;
+    throw err;
+  }finally{ clearTimeout(reloj); }
+}
+
 // una sola llamada (proxy oculto  ó  key directa)
 async function callOnce({system,user,max_tokens,json}){
   if(usaProxy()){
-    const res=await fetch(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
+    const res=await pedir(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({model:CONFIG.MODEL,system,user,max_tokens,json})});
     let data={}; try{data=await res.json();}catch(e){}
     if(!res.ok||data.error){
@@ -642,7 +679,7 @@ async function callOnce({system,user,max_tokens,json}){
     generationConfig:{maxOutputTokens:max_tokens,temperature:0.7}
   };
   if(json) body.generationConfig.responseMimeType="application/json";
-  const res=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  const res=await pedir(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
     if(res.status===400&&/API key/i.test(detail))throw new Error("API Key inválida o restringida.");
@@ -739,7 +776,7 @@ $("genQuestions").addEventListener("click",async()=>{
         : "No se pudieron generar las preguntas. Intenta de nuevo.");
     }
     state.questions=j.questions.slice(0,3); renderQuestions();
-    unlock("card2"); setStep(2);
+    unlock("card2"); setStep(2); guardar();
     $("card2").scrollIntoView({behavior:"smooth",block:"center"});
     setStatus($("status1"),"✓ Preguntas generadas","ok");
   }catch(err){setStatus($("status1"),err.message,"err");}
@@ -761,7 +798,8 @@ $("genPrompt").addEventListener("click",async()=>{
     const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla para las entradas del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
     const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
     const r=await callAI({system,user,max_tokens:2000});
-    state.currentPrompt=r.text; $("result").textContent=r.text;
+    state.versiones=[]; state.chat=[];        // prompt nuevo: historial limpio
+    setPrompt(r.text);
     unlock("card3"); setStep(3); $("chatlog").innerHTML="";
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     // Un prompt cortado a la mitad no es un éxito: se dice, no se disimula.
@@ -771,17 +809,47 @@ $("genPrompt").addEventListener("click",async()=>{
   finally{btn.disabled=false;}
 });
 
+/* Cada refinamiento sobrescribía el prompt sin vuelta atrás: si la IA lo
+   empeoraba, no había forma de recuperarlo. Ahora se apilan las versiones. */
+function setPrompt(txt){
+  if(state.currentPrompt && state.currentPrompt!==txt) state.versiones.push(state.currentPrompt);
+  state.currentPrompt=txt; $("result").textContent=txt;
+  actualizarUndo(); guardar();
+}
+function actualizarUndo(){
+  const n=state.versiones.length;
+  $("undoBtn").disabled = n===0;
+  $("undoBtn").textContent = n>1 ? `↶ Versión anterior (${n})` : "↶ Versión anterior";
+}
+$("undoBtn").addEventListener("click",()=>{
+  if(!state.versiones.length) return;
+  state.currentPrompt=state.versiones.pop();
+  $("result").textContent=state.currentPrompt;
+  actualizarUndo(); guardar();
+  setStatus($("status3"),"↶ Volviste a la versión anterior","ok");
+});
+
+$("downloadBtn").addEventListener("click",()=>{
+  if(!state.currentPrompt){setStatus($("status3"),"Todavía no hay prompt que descargar.","err");return;}
+  const url=URL.createObjectURL(new Blob([state.currentPrompt],{type:"text/plain;charset=utf-8"}));
+  const a=document.createElement("a");
+  a.href=url; a.download="super-prompt.txt"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  setStatus($("status3"),"✓ Descargado como super-prompt.txt","ok");
+});
+
 // copiar / reiniciar
 $("copyBtn").addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(state.currentPrompt);setStatus($("status3"),"✓ Copiado al portapapeles","ok");}
   catch(e){setStatus($("status3"),"No se pudo copiar automáticamente.","err");}
 });
 $("restartBtn").addEventListener("click",()=>{
-  state.questions=[];state.currentPrompt="";
+  state.questions=[];state.currentPrompt="";state.idea="";state.versiones=[];state.chat=[];
   $("idea").value="";$("questions").innerHTML="";$("result").textContent="";$("chatlog").innerHTML="";
   ["card2","card3"].forEach(id=>{$(id).classList.add("locked");$(id).setAttribute("inert","");});
   elegirTipo(tipos[0],false);   // el tipo tambien vuelve al inicio
   ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
+  actualizarUndo(); olvidar();
   setStep(1); window.scrollTo({top:0,behavior:"smooth"});
 });
 
@@ -789,16 +857,25 @@ $("restartBtn").addEventListener("click",()=>{
 async function refine(){
   const instr=$("chatInput").value.trim(); if(!instr)return;
   if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
+  state.chat.push({yo:instr});
   $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg me">${instr.replace(/</g,"&lt;")}</div>`);
-  $("chatInput").value="";$("chatlog").scrollTop=$("chatlog").scrollHeight;
+  $("chatInput").value="";$("chatlog").scrollTop=$("chatlog").scrollHeight;guardar();
   const btn=$("chatSend");btn.disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual y una INSTRUCCIÓN de ajuste. Aplica el cambio y devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
-    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\nINSTRUCCIÓN DE AJUSTE:\n${instr}`;
+    /* El chat se llamaba "continuo" pero mandaba solo el prompt actual y la
+       instrucción: "hazlo más corto" seguido de "ahora en inglés" no
+       acumulaba nada. Ahora viajan también los ajustes ya pedidos, para que
+       la IA no deshaga sin querer lo que acaba de aplicar. */
+    const previos=state.chat.filter(m=>m.yo).map(m=>m.yo).slice(0,-1);
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual, los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const historia=previos.length?`AJUSTES YA PEDIDOS (en orden):\n${previos.map((p,i)=>`${i+1}. ${p}`).join("\n")}\n\n`:"";
+    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
     const r=await callAI({system,user,max_tokens:2000});
-    state.currentPrompt=r.text;$("result").textContent=r.text;
-    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">${r.truncado?"⚠ El prompt ajustado se cortó por longitud":"✓ Prompt actualizado arriba"}</div>`);
+    setPrompt(r.text);
+    const eco=r.truncado?"⚠ El prompt ajustado se cortó por longitud":"✓ Prompt actualizado arriba";
+    state.chat.push({ia:eco}); guardar();
+    $("chatlog").insertAdjacentHTML("beforeend",`<div class="msg ai">${eco}</div>`);
     $("chatlog").scrollTop=$("chatlog").scrollHeight;
     setStatus($("status4"),r.truncado?"⚠ La versión ajustada quedó incompleta. Pide un cambio más corto o vuelve a intentarlo.":"",r.truncado?"warn":"");
   }catch(err){setStatus($("status4"),err.message,"err");}
@@ -806,6 +883,44 @@ async function refine(){
 }
 $("chatSend").addEventListener("click",refine);
 $("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
+
+/* Guardado continuo de lo que el usuario escribe. Sin debounce agresivo:
+   sessionStorage es síncrono pero estos textos son diminutos. */
+$("idea").addEventListener("input",()=>{state.idea=$("idea").value;guardar();});
+$("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa")) guardar(); });
+
+/* Recuperar lo que hubiera antes de la recarga. */
+(function restaurar(){
+  let d=null;
+  try{ d=JSON.parse(sessionStorage.getItem(CLAVE_SESION)||"null"); }catch(e){}
+  if(!d||!d.idea) { actualizarUndo(); return; }
+
+  state.type=d.type||state.type;
+  state.idea=d.idea;
+  state.questions=Array.isArray(d.questions)?d.questions:[];
+  state.currentPrompt=d.currentPrompt||"";
+  state.versiones=Array.isArray(d.versiones)?d.versiones:[];
+  state.chat=Array.isArray(d.chat)?d.chat:[];
+
+  const t=tipos.find(x=>x.dataset.type===state.type); if(t) elegirTipo(t,false);
+  $("idea").value=state.idea;
+
+  if(state.questions.length){
+    renderQuestions();
+    (d.respuestas||[]).forEach((v,i)=>{ const el=$("qa"+i); if(el) el.value=v; });
+    unlock("card2");
+  }
+  if(state.currentPrompt){
+    $("result").textContent=state.currentPrompt;
+    unlock("card3");
+    $("chatlog").innerHTML=state.chat.map(m=>m.yo
+      ? `<div class="msg me">${m.yo.replace(/</g,"&lt;")}</div>`
+      : `<div class="msg ai">${(m.ia||"").replace(/</g,"&lt;")}</div>`).join("");
+  }
+  actualizarUndo();
+  setStep(d.paso||1);
+  setStatus($("status1"),"↻ Recuperado lo que tenías antes de recargar","ok");
+})();
 
 // red de seguridad: contenido siempre visible aunque fallen las animaciones
 setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
