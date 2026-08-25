@@ -162,6 +162,13 @@
   .free-banner .fico{font-size:1.5rem}
   .free-banner b{color:var(--ok)}
   .free-banner span{font-size:.86rem;color:var(--muted)}
+  /* aviso cuando la IA gratis no puede atender y se ofrece la clave propia */
+  .cfg-aviso{display:flex;align-items:flex-start;gap:11px;padding:13px 16px;border-radius:12px;
+    background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.45);
+    margin:16px 0 4px;font-size:.88rem;line-height:1.5}
+  .cfg-aviso b{color:var(--orange)}
+  .cfg-aviso a{color:var(--txt);font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(255,140,0,.8)}
+  .cfg-aviso .fico{font-size:1.2rem;line-height:1.2}
   .hidden{display:none!important}
   footer{text-align:center;color:var(--muted);margin-top:40px}
   footer .dot{color:var(--cyan)}
@@ -220,6 +227,7 @@
   <!-- Configuración (solo visible si NO hay key incluida) -->
   <details class="cfg card hidden" id="cfg" open>
     <summary>Configuración de la IA <span class="chev">▸</span></summary>
+    <div class="cfg-aviso hidden" id="cfgAviso"></div>
     <div style="margin-top:18px">
       <div class="settings">
         <div>
@@ -233,9 +241,9 @@
         <div>
           <label>Modelo</label>
           <select id="model">
-            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite · rápido</option>
+            <option value="gemini-flash-lite-latest">Flash-Lite más reciente · rápido</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash · más potente</option>
             <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-            <option value="gemini-flash-lite-latest">Siempre el más reciente</option>
           </select>
         </div>
       </div>
@@ -413,19 +421,34 @@ const HAS_EMBEDDED = !HAS_PROXY && !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY
 const FREE_MODE = HAS_PROXY || HAS_EMBEDDED;
 let state={type:"Redacción",idea:"",questions:[],currentPrompt:""};
 
+/* Cuando la IA gratis no puede atender (cuota agotada, Worker caído), la app
+   deja de depender de ella y pasa a la clave propia del usuario. Sin este
+   modo, una caída del proxy dejaba al usuario sin salida: el panel de
+   configuración estaba oculto y no había forma de meter una clave. */
+let modoClavePropia = false;
+const usaProxy = () => HAS_PROXY && !modoClavePropia;
+
 // Mostrar/ocultar configuración según el modo
 if(FREE_MODE){
   $("freeBanner").classList.remove("hidden");
   $("cfg").classList.add("hidden");
 }else{
   $("cfg").classList.remove("hidden");
+  prepararPanelClave();
 }
 
-function currentKey(){ return HAS_EMBEDDED ? CONFIG.EMBEDDED_KEY.trim() : $("apiKey").value.trim(); }
-function currentModel(){ return FREE_MODE ? CONFIG.MODEL : $("model").value; }
+function currentKey(){
+  return (HAS_EMBEDDED && !modoClavePropia) ? CONFIG.EMBEDDED_KEY.trim() : $("apiKey").value.trim();
+}
+function currentModel(){
+  return (FREE_MODE && !modoClavePropia) ? CONFIG.MODEL : $("model").value;
+}
 
-// key badge + persistencia (solo modo "usuario trae su key")
-if(!FREE_MODE){
+// key badge + persistencia. Se activa al arrancar sin IA incluida, o más
+// tarde si la IA gratis falla y hay que ofrecer la clave propia.
+let panelClaveListo = false;
+function prepararPanelClave(){
+  if(panelClaveListo) return; panelClaveListo = true;
   const refreshBadge=()=>{const b=$("keyBadge"),has=$("apiKey").value.trim().length>10;
     b.className="keybadge "+(has?"yes":"no");b.textContent=has?"Key lista":"Sin key";};
   const k=localStorage.getItem("sp_key"); if(k){$("apiKey").value=k;$("remember").checked=true;}
@@ -437,6 +460,24 @@ if(!FREE_MODE){
   $("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)localStorage.setItem("sp_key",$("apiKey").value.trim());});
   $("model").addEventListener("change",()=>localStorage.setItem("sp_model",$("model").value));
   $("toggleKey").addEventListener("click",()=>{const f=$("apiKey");f.type=f.type==="password"?"text":"password";});
+}
+
+/* La IA gratis no puede seguir: se abre el panel y se explica por qué, con
+   el enlace para sacar una clave gratis. Se hace una sola vez por sesión. */
+function ofrecerClavePropia(motivo){
+  if(modoClavePropia) return;
+  modoClavePropia = true;
+  prepararPanelClave();
+  $("freeBanner").classList.add("hidden");
+  $("cfg").classList.remove("hidden");
+  $("cfg").open = true;
+  const aviso=$("cfgAviso");
+  aviso.innerHTML='<span class="fico">⚠️</span><div><b>'+motivo+'</b><br>'+
+    'Puedes seguir ahora mismo con tu propia clave gratis de Gemini: se saca en un minuto en '+
+    '<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, '+
+    'no cuesta nada y se queda solo en este navegador.</div>';
+  aviso.classList.remove("hidden");
+  $("cfg").scrollIntoView({behavior:"smooth",block:"center"});
 }
 
 // selector de tipo
@@ -476,7 +517,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 // una sola llamada (proxy oculto  ó  key directa)
 async function callOnce({system,user,max_tokens,json}){
-  if(HAS_PROXY){
+  if(usaProxy()){
     const res=await fetch(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({model:CONFIG.MODEL,system,user,max_tokens,json})});
     let data={}; try{data=await res.json();}catch(e){}
@@ -487,6 +528,7 @@ async function callOnce({system,user,max_tokens,json}){
       // El Worker ya sabe si agotó TODO el pool de claves (quota) o si fue
       // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
       err.quota = data.quota===true || isQuota(emsg,status);
+      err.rate = data.rate===true;
       // rate:true = freno por IP del Worker. Reintentar solo empeora la
       // situación, así que tampoco cuenta como saturación pasajera.
       err.transient = (data.quota===true || data.rate===true) ? false
@@ -522,6 +564,22 @@ async function callOnce({system,user,max_tokens,json}){
   return txt;
 }
 
+// ¿Este fallo significa que la IA incluida no puede atender ahora mismo?
+// (cuota agotada, freno por IP, Worker caído o inalcanzable)
+function iaGratisCaida(err){
+  const s = err.status||0;
+  // 404 incluido: si el Worker se borra o se renombra, la URL deja de
+  // existir y el usuario merece una salida, no un "Error 404".
+  return !!err.quota || !!err.rate ||
+    s===0 || s===401 || s===403 || s===404 || s===429 || s>=500;
+}
+function motivoCaida(err){
+  if(err.quota) return "Se agotó la cuota gratuita de IA por hoy.";
+  if(err.rate)  return "Demasiadas peticiones desde tu conexión.";
+  if(!err.status) return "No se pudo contactar el servicio de IA incluido.";
+  return "El servicio de IA incluido no está disponible ahora.";
+}
+
 // llamada a la IA con reintentos automáticos ante saturaciones temporales
 async function callAI({system,user,max_tokens=1500,json=false}){
   const MAX=4;
@@ -529,6 +587,14 @@ async function callAI({system,user,max_tokens=1500,json=false}){
     try{
       return await callOnce({system,user,max_tokens,json});
     }catch(err){
+      /* La IA incluida no puede seguir. En vez de dejar al usuario sin
+         salida, se abre el panel y se le ofrece su propia clave gratis.
+         Si ya tenía una guardada, ni se entera: se reintenta con ella. */
+      if(usaProxy() && iaGratisCaida(err)){
+        ofrecerClavePropia(motivoCaida(err));
+        if(currentKey().length>10) return await callOnce({system,user,max_tokens,json});
+        throw new Error(motivoCaida(err)+" Pega arriba tu clave gratis de Gemini y vuelve a intentarlo.");
+      }
       // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
       // decimos la verdad, en vez de 7 segundos de spinner y "espera un momento".
       if(err.quota||isQuota(err.message,err.status||0)) throw err;
