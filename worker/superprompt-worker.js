@@ -36,6 +36,7 @@ const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
    prueba el siguiente modelo. Con una cadena de 2 modelos, el peor caso
    posible queda en ~20 s en vez de los 40 s medidos el 2026-08-24. */
 const TIMEOUT_MS = 10000;
+const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (Laboratorio)
 
 /* Orígenes que pueden usar este proxy. */
 const ORIGEN_PRINCIPAL = "https://jorgeicone.github.io";
@@ -84,7 +85,9 @@ let diaDeLaMemoria = "";
 /* Freno por IP, también en memoria del isolate. No sustituye a un límite
    real con KV o Durable Objects (un atacante repartido entre muchos
    isolates lo diluye), pero encarece el abuso desde una sola máquina. */
-const LIMITE_POR_IP = 40;          // peticiones…
+/* Un salón entero sale por la misma IP del wifi: con 30 personas usando
+   el Laboratorio, 40 peticiones se iban en minutos. */
+const LIMITE_POR_IP = 300;         // peticiones…
 const VENTANA_MS = 10 * 60 * 1000; // …por cada 10 minutos
 const visitas = new Map();
 
@@ -184,26 +187,34 @@ function modeloMuerto(status, detalle) {
 /* Modelos a probar, en orden, sin repetir. */
 function cadenaDeModelos(pedido) {
   const lista = [];
-  for (const m of [modeloVivo, pedido, ...MODELOS_RESPALDO]) {
+  /* Primero el que pidió la app (el Laboratorio pide uno más capaz que la
+     app principal); luego el último que funcionó y los de respaldo. */
+  for (const m of [pedido, modeloVivo, ...MODELOS_RESPALDO]) {
     if (m && !MODELOS_VETADOS.has(m) && !lista.includes(m)) lista.push(m);
   }
   return lista.length ? lista : [MODELO_POR_DEFECTO];
 }
 
 /* Una llamada a Gemini con UNA clave concreta. */
-async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson }) {
+async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, temperature, grounded }) {
   const body = {
     contents: [{ role: "user", parts: [{ text: user }] }],
     generationConfig: {
       maxOutputTokens: max_tokens || 1500,
-      temperature: 0.7
+      temperature: temperature
     }
   };
   if (system) body.system_instruction = { parts: [{ text: system }] };
-  if (wantJson) body.generationConfig.responseMimeType = "application/json";
+  /* La búsqueda en Google y el modo JSON no se pueden pedir a la vez:
+     con búsqueda, la app recibe texto y lo parsea ella. */
+  if (grounded) body.tools = [{ google_search: {} }];
+  else if (wantJson) body.generationConfig.responseMimeType = "application/json";
 
+  /* Un dossier con búsqueda y 4.000 tokens tarda más que un prompt corto:
+     10 s lo cortaría siempre. */
+  const limite = (grounded || (max_tokens || 0) > 2000) ? TIMEOUT_LARGO_MS : TIMEOUT_MS;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const to = setTimeout(() => ctrl.abort(), limite);
   let res;
   try {
     res = await fetch(API_BASE + modelo + ":generateContent", {
@@ -257,7 +268,10 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson })
     throw err;
   }
 
-  return { texto, truncado: razon === "MAX_TOKENS" };
+  const gm = cand.groundingMetadata || {};
+  const fuentes = (gm.groundingChunks || []).map(c => c && c.web).filter(w => w && w.uri)
+    .slice(0, 12).map(w => ({ titulo: String(w.title || w.uri), url: String(w.uri) }));
+  return { texto, truncado: razon === "MAX_TOKENS", fuentes };
 }
 
 export default {
@@ -299,6 +313,11 @@ export default {
     const user = (entrada.user || "").trim();
     const max_tokens = Math.min(Math.max(parseInt(entrada.max_tokens, 10) || 1500, 32), 8192);
     const wantJson = !!entrada.json;
+    const tempPedida = Number(entrada.temperature);
+    const temperature = Number.isFinite(tempPedida) ? Math.min(Math.max(tempPedida, 0), 1) : 0.7;
+    /* Búsqueda en Google: si la clave o el modelo no la admiten, se sigue
+       sin ella en vez de fallar (la app lo nota porque no llegan fuentes). */
+    let usarBusqueda = !!entrada.grounded;
 
     if (!user) return json({ error: "Falta el texto de la petición." }, 400, origen);
 
@@ -346,11 +365,17 @@ export default {
         const m = modelos[j];
         if (descartados.has(m)) continue;
         try {
-          const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson });
+          const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson, temperature, grounded: usarBusqueda });
           agotadasHoy.delete(id);   // la clave sigue viva
           modeloVivo = m;           // y este modelo también
-          return json({ text: r.texto, truncated: r.truncado }, 200, origen);
+          return json({ text: r.texto, truncated: r.truncado, sources: r.fuentes }, 200, origen);
         } catch (err) {
+          if (usarBusqueda && (err.status === 400 || err.status === 403 || err.status === 429) &&
+              !claveInvalida(err.status, err.detalle)) {
+            usarBusqueda = false;   // la búsqueda tiene su propia cuota: sin ella
+            j--;                    // mismo modelo, misma clave
+            continue;
+          }
           if (err.noRotar) {
             return json({ error: err.message, status: err.status }, err.status, origen);
           }
