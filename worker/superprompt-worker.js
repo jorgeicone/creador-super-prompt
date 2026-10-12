@@ -88,8 +88,8 @@ function origenPermitido(request) {
      · gemini-3.5-flash-lite    → 200 OK con texto VACÍO
    Por eso nunca se fija UNO solo: si el modelo pedido está muerto o
    devuelve vacío, se pasa al siguiente de la lista. La cadena es corta
-   a propósito (hasta 3 modelos: el pedido, el último que funcionó y los
-   de respaldo), y el tiempo total lo acota PRESUPUESTO_MS. */
+   a propósito (hasta 4 modelos: el pedido, el último que funcionó y los
+   2 de respaldo, sin repetir), y el tiempo total lo acota PRESUPUESTO_MS. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
@@ -194,7 +194,7 @@ function limitePorMinuto(status, detalle) {
    cuota: si todas fallan así, "vuelve mañana" sería mentira. */
 function claveInvalida(status, detalle) {
   const d = (detalle || "").toLowerCase();
-  if (status === 403) return true;                        // sin permiso sobre la API
+  if (status === 401 || status === 403) return true;      // clave rechazada o sin permiso
   if (status === 400 && /api.?key|api_key_invalid/.test(d)) return true;
   return false;
 }
@@ -409,6 +409,11 @@ export default {
       const id = cadena[i].id;
       const key = cadena[i].key;
       let claveAgotada = false;
+      /* La cuota diaria es por proyecto Y por modelo: que un modelo la agote
+         no significa que los otros también. Solo se da la clave por
+         quemada si agotó la cuota en todos los modelos que se probaron. */
+      let cuotaEnEstaClave = 0;
+      let probadosEnEstaClave = 0;
 
       if (descartados.size >= modelos.length || sinTiempo) break;
 
@@ -417,6 +422,7 @@ export default {
         if (descartados.has(m)) continue;
         const restante = fin - Date.now();
         if (restante < 1500) { sinTiempo = true; break; }
+        probadosEnEstaClave++;
         try {
           const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson, temperature, grounded: usarBusqueda, restante });
           agotadasHoy.delete(id);   // la clave sigue viva
@@ -465,15 +471,17 @@ export default {
             continue;
           }
           if (claveQuemada(err.status, err.detalle)) {
-            agotadasHoy.add(id);
-            quemadasAhora++;
-            claveAgotada = true;    // siguiente clave del pool
-            continue;
+            cuotaEnEstaClave++;
+            continue;               // misma clave, siguiente modelo
           }
           /* Error desconocido: no insistimos, y no se filtra el detalle
              crudo de Google (que incluye datos de facturación). */
           return json({ error: "La IA devolvió un error inesperado.", status: err.status || 500 }, err.status || 500, origen);
         }
+      }
+      if (!claveAgotada && probadosEnEstaClave && cuotaEnEstaClave === probadosEnEstaClave) {
+        agotadasHoy.add(id);        // agotó la cuota en todos sus modelos
+        quemadasAhora++;
       }
     }
 

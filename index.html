@@ -20,7 +20,7 @@
 
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="ICONEialabs" />
-<meta property="og:locale" content="es_ES" />
+<meta property="og:locale" content="es_419" />
 <meta property="og:url" content="https://super-prompt.iconeialabs.com/" />
 <meta property="og:title" content="Creador de Super Prompt" />
 <meta property="og:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
@@ -277,7 +277,7 @@
            del celular y dejaba fuera el campo para escribir. El detalle,
            plegado. -->
       <details class="privacidad"><summary>🔒 No escribas datos personales ni confidenciales. <u>Ver por qué</u></summary>
-        Tu texto (idea, respuestas y ajustes) pasa por nuestro servidor intermedio y de ahí a Google (Gemini) para generar el prompt. Nosotros no lo guardamos, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. Lo que escribas queda en esta pestaña y se borra al cerrarla.</details>
+        Tu texto (idea, respuestas y ajustes) pasa por nuestro servidor intermedio y de ahí a Google (Gemini) para generar el prompt. Nosotros no lo guardamos, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. Lo que escribas se guarda solo en esta pestaña; usa «↺ Empezar de nuevo» para borrarlo.</details>
     </div>
   </div>
 
@@ -755,7 +755,7 @@ async function callOnce({system,user,max_tokens,json}){
   const res=await pedir(url,{method:"POST",headers:{"content-type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
-    if(res.status===400&&/API key/i.test(detail))throw new Error("Tu clave de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
+    if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(detail)))throw new Error("Tu clave de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
     const agotada=isQuota(detail,res.status);
     // Sin exponer el detalle crudo de Google (que incluye datos de facturación).
     // Ni el detalle crudo de Google (en inglés, con datos de facturación)
