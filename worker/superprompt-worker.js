@@ -1,11 +1,11 @@
 /* ====================================================================
    Worker · Creador de Super Prompt
-   © Ingeniero Jorge Hugo Pérez — ICONEialabs. Todos los derechos reservados.
+   © 2026 Ing. Jorge Hugo Pérez Gaona — ICONEialabs. Todos los derechos reservados.
    --------------------------------------------------------------------
    Proxy hacia Gemini con POOL DE CLAVES EN ROTACIÓN.
 
    Este archivo ES el que corre en producción (Cloudflare Worker
-   "superprompt", cuenta 440c8a22…). Si lo editas aquí, despliégalo;
+   "superprompt"). Si lo editas aquí, despliégalo;
    si lo editas en el panel, tráelo aquí. No dejes que se separen.
 
    Las claves NO viven en este archivo: se cargan como secrets de
@@ -37,18 +37,41 @@ const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
    posible queda en ~20 s en vez de los 40 s medidos el 2026-08-24. */
 const TIMEOUT_MS = 10000;
 const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (Laboratorio)
+/* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
+   prueben. Debe quedar por debajo del corte del navegador (30 s en la app
+   principal, 100 s en el Laboratorio) para que la app reciba un mensaje
+   honesto en vez de cortar ella y culpar a la conexión. */
+const PRESUPUESTO_MS = 25000;
+const PRESUPUESTO_LARGO_MS = 90000;
+
+/* Topes de entrada: nadie escribe 20.000 caracteres en una idea, y sin tope
+   cualquiera podía usar el Worker para mandar documentos enteros a Gemini. */
+const MAX_USER = 20000;
+const MAX_SYSTEM = 8000;
+
+/* Solo estos modelos. Antes se aceptaba cualquier nombre que mandara el
+   cliente, y con un Origin falsificado se podía gastar el pool en otros. */
+const MODELOS_PERMITIDOS = new Set([
+  "gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash"
+]);
 
 /* Orígenes que pueden usar este proxy. */
 const ORIGEN_PRINCIPAL = "https://jorgeicone.github.io";
-const ORIGENES_EXACTOS = [ORIGEN_PRINCIPAL, "https://iconeialabs.com"];
-const DOMINIO_PROPIO = ".iconeialabs.com";   // cualquier subdominio https
+/* Lista exacta. Antes valía cualquier *.iconeialabs.com: un subdominio
+   abandonado (o apuntado a otro servicio) heredaba el acceso al pool.
+   Si otra app de ICONEialabs usa este Worker, agrega aquí su origen. */
+const ORIGENES_EXACTOS = [
+  ORIGEN_PRINCIPAL,
+  "https://iconeialabs.com",
+  "https://www.iconeialabs.com",
+  "https://super-prompt.iconeialabs.com"
+];
 
 /* Devuelve el origen si está permitido; "" si no. */
 function origenPermitido(request) {
   const o = (request.headers.get("Origin") || "").trim().toLowerCase();
   if (!o) return "";                                   // sin Origin: fuera
   if (ORIGENES_EXACTOS.includes(o)) return o;
-  if (o.startsWith("https://") && o.endsWith(DOMINIO_PROPIO)) return o;
   return "";
 }
 
@@ -196,7 +219,7 @@ function cadenaDeModelos(pedido) {
 }
 
 /* Una llamada a Gemini con UNA clave concreta. */
-async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, temperature, grounded }) {
+async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, temperature, grounded, restante }) {
   const body = {
     contents: [{ role: "user", parts: [{ text: user }] }],
     generationConfig: {
@@ -212,7 +235,8 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
 
   /* Un dossier con búsqueda y 4.000 tokens tarda más que un prompt corto:
      10 s lo cortaría siempre. */
-  const limite = (grounded || (max_tokens || 0) > 2000) ? TIMEOUT_LARGO_MS : TIMEOUT_MS;
+  const porModelo = (grounded || (max_tokens || 0) > 2000) ? TIMEOUT_LARGO_MS : TIMEOUT_MS;
+  const limite = Math.max(1000, Math.min(porModelo, restante || porModelo));
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), limite);
   let res;
@@ -245,8 +269,18 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
     throw err;
   }
 
-  const data = await res.json();
-  const cand = (data.candidates && data.candidates[0]) || {};
+  /* Un 200 con cuerpo que no es JSON es un tropiezo del modelo, no de la
+     clave: se prueba el siguiente modelo. */
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    const err = new Error("La IA devolvió una respuesta ilegible.");
+    err.status = 502;
+    err.modeloFlojo = true;
+    throw err;
+  }
+  const cand = (data && data.candidates && data.candidates[0]) || {};
   const partes = (cand.content && cand.content.parts) || [];
   const texto = partes.map(p => p.text || "").join("").trim();
   const razon = cand.finishReason || "";
@@ -308,9 +342,16 @@ export default {
       return json({ error: "Petición inválida" }, 400, origen);
     }
 
-    const modelo = String(entrada.model || MODELO_POR_DEFECTO).trim().replace(/[^a-z0-9.\-]/gi, "");
-    const system = entrada.system || "";
-    const user = (entrada.user || "").trim();
+    if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) {
+      return json({ error: "Petición inválida" }, 400, origen);
+    }
+    const pedido = typeof entrada.model === "string" ? entrada.model.trim() : "";
+    const modelo = MODELOS_PERMITIDOS.has(pedido) ? pedido : MODELO_POR_DEFECTO;
+    const system = typeof entrada.system === "string" ? entrada.system : "";
+    const user = typeof entrada.user === "string" ? entrada.user.trim() : "";
+    if (user.length > MAX_USER || system.length > MAX_SYSTEM) {
+      return json({ error: "El texto es demasiado largo. Resúmelo e inténtalo de nuevo.", status: 413 }, 413, origen);
+    }
     const max_tokens = Math.min(Math.max(parseInt(entrada.max_tokens, 10) || 1500, 32), 8192);
     const wantJson = !!entrada.json;
     const tempPedida = Number(entrada.temperature);
@@ -320,6 +361,10 @@ export default {
     let usarBusqueda = !!entrada.grounded;
 
     if (!user) return json({ error: "Falta el texto de la petición." }, 400, origen);
+
+    const largo = usarBusqueda || max_tokens > 2000;
+    const fin = Date.now() + (largo ? PRESUPUESTO_LARGO_MS : PRESUPUESTO_MS);
+    let sinTiempo = false;
 
     limpiarSiCambioElDia();
 
@@ -359,13 +404,15 @@ export default {
       const key = cadena[i].key;
       let claveAgotada = false;
 
-      if (descartados.size >= modelos.length) break;
+      if (descartados.size >= modelos.length || sinTiempo) break;
 
       for (let j = 0; j < modelos.length && !claveAgotada; j++) {
         const m = modelos[j];
         if (descartados.has(m)) continue;
+        const restante = fin - Date.now();
+        if (restante < 1500) { sinTiempo = true; break; }
         try {
-          const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson, temperature, grounded: usarBusqueda });
+          const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson, temperature, grounded: usarBusqueda, restante });
           agotadasHoy.delete(id);   // la clave sigue viva
           modeloVivo = m;           // y este modelo también
           return json({ text: r.texto, truncated: r.truncado, sources: r.fuentes }, 200, origen);
@@ -457,6 +504,13 @@ export default {
     /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
        la app NO reintente 4 veces ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
+    if (sinTiempo && !todasQuemadas) {
+      return json({
+        error: "La IA está tardando demasiado en responder. Inténtalo de nuevo en un momento.",
+        status: 504,
+        transient: true
+      }, 504, origen);
+    }
     if (huboMinuto && !todasQuemadas) {
       return json({
         error: "Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo.",
