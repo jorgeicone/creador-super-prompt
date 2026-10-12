@@ -26,10 +26,11 @@
        créditos), pasa sola a la siguiente sin que el usuario lo note.
        Google cuenta la cuota POR PROYECTO, no por clave: el pool solo
        suma cuota si cada clave es de un proyecto de Google distinto.
-     · Si TODAS se agotan en la misma petición devuelve quota:true, para
-       que la app muestre el mensaje honesto y NO reintente en vano. Otros
-       fallos (saturación, respuesta vacía, modelos jubilados, claves
-       inválidas, origen o petición inválidos) tienen su propio mensaje.
+     · Si ninguna clave tiene cupo (agotadas hoy, o inválidas) y al menos
+       una se agotó, devuelve quota:true para que la app no reintente en
+       vano. Los baches pasajeros llevan transient:true; los fallos que
+       necesitan mantenimiento (modelos jubilados, claves inválidas, sin
+       claves) no, y la app ofrece entonces la clave propia.
    ==================================================================== */
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
@@ -82,7 +83,9 @@ function origenPermitido(request) {
 }
 
 /* Google jubila modelos sin avisar, y a veces algo peor: los deja vivos
-   pero devolviendo vacío. Medido contra producción el 2026-08-24:
+   pero devolviendo vacío. Medido contra producción el 2026-08-24 (los
+   alias -latest cambian de modelo con el tiempo: hay que volver a medir;
+   en septiembre de 2026 flash-lite-latest ya apuntaba a 3.5-flash-lite):
      · gemini-flash-lite-latest → 0,9 s, responde bien   ← por defecto
      · gemini-3.6-flash         → 1,5 s, gasta tokens pensando (trunca)
      · gemini-3.5-flash-lite    → 200 OK con texto VACÍO
@@ -187,7 +190,9 @@ function claveQuemada(status, detalle) {
    en segundos. No quema la clave y no debe decir "vuelve mañana". */
 function limitePorMinuto(status, detalle) {
   const d = (detalle || "").toLowerCase();
-  return status === 429 && /per.?minute|perminute|retry in \d/.test(d);
+  if (status !== 429) return false;
+  if (/perday|per day/.test(d)) return false;      // cuota diaria, aunque diga "retry in"
+  return /perminute|per minute|retry in \d/.test(d);
 }
 
 /* ¿La clave no sirve (inválida o sin permiso)? También se rota, pero no es
@@ -229,10 +234,12 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
   const body = {
     contents: [{ role: "user", parts: [{ text: user }] }],
     generationConfig: {
-      maxOutputTokens: max_tokens || 1500,
-      temperature: temperature
+      maxOutputTokens: max_tokens || 1500
     }
   };
+  /* La temperatura solo viaja si la app la pide: los modelos Gemini 3.x la
+     ignoran y Google anuncia que generaciones futuras responderán 400. */
+  if (temperature !== undefined) body.generationConfig.temperature = temperature;
   if (system) body.system_instruction = { parts: [{ text: system }] };
   /* La búsqueda en Google y el modo JSON no se pueden pedir a la vez:
      con búsqueda, la app recibe texto y lo parsea ella. */
@@ -265,7 +272,10 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
     let detalle = "";
     try {
       const j = await res.json();
-      detalle = (j.error && j.error.message) || "";
+      /* El tipo de cuota (PerDay / PerMinute) viene en error.details
+         (quotaId); el mensaje solo no basta para distinguirlas. */
+      detalle = ((j.error && j.error.message) || "") + " " +
+        JSON.stringify((j.error && j.error.details) || []);
     } catch (e) {
       detalle = res.statusText || "";
     }
@@ -297,7 +307,7 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
          3.5-flash-lite): se prueba el siguiente, sin tocar la clave. */
   if (!texto) {
     if (razon === "SAFETY") {
-      const err = new Error("La IA bloqueó esta petición por sus filtros de contenido. Reformula la idea.");
+      const err = new Error("Los filtros de Google frenaron esta petición (a veces pasa con temas sensibles). Prueba a contarlo con otras palabras.");
       err.status = 422;
       err.noRotar = true;
       throw err;
@@ -333,9 +343,15 @@ export default {
       return json({ error: "Origen no permitido" }, 403, "");
     }
 
-    if (demasiadasPeticiones(request.headers.get("CF-Connecting-IP"))) {
+    /* En Cloudflare toda petición real trae CF-Connecting-IP. Sin ella no
+       hay forma de aplicar el freno, así que no se atiende. */
+    const ip = request.headers.get("CF-Connecting-IP");
+    if (!ip) {
+      return json({ error: "Petición inválida" }, 400, origen);
+    }
+    if (demasiadasPeticiones(ip)) {
       return json({
-        error: "Demasiadas peticiones desde esta conexión. Espera unos minutos.",
+        error: "Muchas personas están usando la IA desde esta misma red. Espera unos minutos.",
         status: 429,
         rate: true
       }, 429, origen);
@@ -361,7 +377,8 @@ export default {
     const max_tokens = Math.min(Math.max(parseInt(entrada.max_tokens, 10) || 1500, 32), 8192);
     const wantJson = !!entrada.json;
     const tempPedida = Number(entrada.temperature);
-    const temperature = Number.isFinite(tempPedida) ? Math.min(Math.max(tempPedida, 0), 1) : 0.7;
+    const temperature = (entrada.temperature !== undefined && Number.isFinite(tempPedida))
+      ? Math.min(Math.max(tempPedida, 0), 1) : undefined;
     /* Búsqueda en Google: si la clave o el modelo no la admiten, se sigue
        sin ella en vez de fallar (la app lo nota porque no llegan fuentes). */
     let usarBusqueda = !!entrada.grounded;
@@ -433,6 +450,7 @@ export default {
               !claveInvalida(err.status, err.detalle)) {
             usarBusqueda = false;   // la búsqueda tiene su propia cuota: sin ella
             j--;                    // mismo modelo, misma clave
+            probadosEnEstaClave--;  // el reintento no cuenta como otro modelo
             continue;
           }
           if (err.noRotar) {
@@ -461,9 +479,8 @@ export default {
             continue;
           }
           if (limitePorMinuto(err.status, err.detalle)) {
-            huboMinuto = true;
-            claveAgotada = true;    // otra clave (otro proyecto) puede tener cupo
-            continue;
+            huboMinuto = true;      // el límite es por modelo: se prueba el siguiente,
+            continue;               // y si no hay más, la siguiente clave
           }
           if (claveInvalida(err.status, err.detalle)) {
             invalidasAhora++;
