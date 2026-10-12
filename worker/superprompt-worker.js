@@ -78,13 +78,16 @@ function origenPermitido(request) {
    otro con poco aviso (en septiembre de 2026 flash-lite-latest apuntaba a
    gemini-3.5-flash-lite). Por eso nunca se fija uno solo: si el modelo
    pedido está retirado, devuelve vacío o rechaza la petición, se pasa al
-   siguiente de la cadena (hasta 4: el pedido, el último que funcionó y
-   los 2 de respaldo, sin repetir). El tiempo total lo acota
+   siguiente de la cadena (el pedido, el último que funcionó para esa app
+   y los de respaldo, sin repetir: hasta 4 modelos distintos). El tiempo total lo acota
    PRESUPUESTO_MS. Antes de cambiar el modelo por defecto, medirlo en vivo. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
 /* Recuerda el modelo que sí funcionó, para no volver a probar los muertos. */
+/* Último modelo que funcionó, por origen: cada app conserva su propia
+   cadena y una no alarga la de la otra. */
+const modeloVivoPorOrigen = new Map();
 let modeloVivo = "";
 
 /* Memoria del isolate: recuerda qué claves ya se agotaron HOY para no
@@ -428,6 +431,7 @@ export default {
        reinició): recorrerlas todas solo alarga la espera. */
     const cadena = frescas.length ? frescas.concat(quemadas) : quemadas.slice(0, 1);
 
+    modeloVivo = modeloVivoPorOrigen.get(origen) || "";
     const modelos = cadenaDeModelos(modelo);
     let modelosMuertos = 0;
     let huboVacio = false;
@@ -468,6 +472,7 @@ export default {
           const r = await llamarGemini({ key, modelo: m, system, user, max_tokens, wantJson, temperature, grounded: usarBusqueda, restante });
           agotadasHoy.delete(id);   // la clave sigue viva
           modeloVivo = m;           // y este modelo también
+          modeloVivoPorOrigen.set(origen, m);
           return json({ text: r.texto, truncated: r.truncado, sources: r.fuentes }, 200, origen);
         } catch (err) {
           if (usarBusqueda && (err.status === 400 || err.status === 403 || err.status === 429) &&
@@ -514,6 +519,10 @@ export default {
           }
           if (claveQuemada(err.status, err.detalle)) {
             cuotaEnEstaClave++;
+            /* Si otra clave ya se agotó en esta petición, es casi seguro que
+               el día se acabó para el pool: basta un modelo por clave para
+               decirlo pronto y no gastar el presupuesto en esperas. */
+            if (quemadasAhora > 0) { probadosEnEstaClave = cuotaEnEstaClave; break; }
             continue;               // misma clave, siguiente modelo
           }
           /* Error desconocido: no insistimos, y no se filtra el detalle
@@ -590,7 +599,8 @@ export default {
       return json({
         error: "Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo.",
         status: 503,
-        transient: true
+        transient: true,
+        minute: true                // reintentar en segundos no sirve: la app no lo hace
       }, 503, origen);
     }
     if (invalidasAhora && !quemadasAhora) {

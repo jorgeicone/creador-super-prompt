@@ -784,6 +784,7 @@ async function callOnce({system,user,max_tokens,json}){
       // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
       err.quota = data.quota===true || isQuota(emsg,status);
       err.rate = data.rate===true;
+      err.minuto = data.minute===true;
       if(err.rate && data.retryAfter) err.esperaMin=Math.max(1,Math.ceil(data.retryAfter/60));
       // rate:true = freno por IP del Worker. Reintentar solo empeora la
       // situación, así que tampoco cuenta como saturación pasajera.
@@ -889,7 +890,7 @@ async function callAI({system,user,max_tokens=1500,json=false}){
       if(err.cancelado) throw err;
       // Solo se reintenta si el primer intento fue rápido: si ya se esperó
       // más de 8 s, otro intento solo duplica la espera.
-      const pasajero = !err.quota && !err.rate && err.status!==504 && err.transient!==false &&
+      const pasajero = !err.quota && !err.rate && !err.minuto && err.status!==504 && err.transient!==false &&
         (err.transient || err.caido || (!err.delWorker && isTransient(err.message,err.status||0)));
       if(pasajero && intento<MAX && Date.now()-t0<8000){
         await sleep(1500 + Math.random()*800);
@@ -906,7 +907,9 @@ async function callAI({system,user,max_tokens=1500,json=false}){
           : "No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
       if(usaProxy() && iaGratisCaida(err)){
         ofrecerClavePropia(motivoCaida(err));
-        if(currentKey().length>10) return await callOnce({system,user,max_tokens,json});
+        // Con una API key propia guardada se reintenta con ella, salvo que ya
+        // se haya esperado mucho: entonces se deja la decisión al usuario.
+        if(currentKey().length>10 && Date.now()-t0<12000) return await callOnce({system,user,max_tokens,json});
         throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega arriba tu API key gratuita de Gemini e inténtalo de nuevo.");
       }
       // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
