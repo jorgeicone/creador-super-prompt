@@ -39,9 +39,11 @@ const TIMEOUT_MS = 12000;
 const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas
 /* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
    prueben. Debe quedar por debajo del corte del navegador de cada app
-   (30 s en el Creador de Super Prompt) para que la app reciba un mensaje
+   (34 s en el Creador de Super Prompt) para que la app reciba un mensaje
    honesto en vez de cortar ella y culpar a la conexión. */
-const PRESUPUESTO_MS = 25000;
+const PRESUPUESTO_MS = 26000;
+/* Prompts de hasta 2000 tokens: un solo modelo puede necesitar más de 12 s. */
+const TIMEOUT_MEDIO_MS = 20000;
 const PRESUPUESTO_LARGO_MS = 90000;
 
 /* Topes de entrada. */
@@ -51,7 +53,7 @@ const MAX_CUERPO = 64 * 1024;     // tope aproximado del cuerpo; con Content-Len
 
 /* Solo estos modelos; cualquier otro se sustituye por el de por defecto. */
 const MODELOS_PERMITIDOS = new Set([
-  "gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash"
+  "gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.6-flash"
 ]);
 
 /* Orígenes que pueden usar este proxy. */
@@ -110,7 +112,10 @@ function demasiadasPeticiones(ip) {
   const v = visitas.get(ip);
   if (!v || ahora - v.desde > VENTANA_MS) {
     visitas.set(ip, { desde: ahora, n: 1 });
-    if (visitas.size > 5000) visitas.clear();   // techo de memoria
+    if (visitas.size > 1000) {                  // limpieza de ventanas vencidas
+      for (const [k, x] of visitas) if (ahora - x.desde > VENTANA_MS) visitas.delete(k);
+      if (visitas.size > 5000) visitas.clear(); // techo de memoria
+    }
     return false;
   }
   v.n++;
@@ -124,9 +129,8 @@ function devolverVisita(ip) {
   if (v && v.n > 0 && (v.devueltas || 0) < DEVOLUCIONES_MAX) { v.n--; v.devueltas = (v.devueltas || 0) + 1; }
 }
 
-function hoyUTC() {
-  /* Nombre histórico: devuelve el día en hora del Pacífico, que es cuando
-     Google reinicia la cuota diaria de la API de Gemini. */
+function hoyPacifico() {
+  /* Día en hora del Pacífico: es cuando Google reinicia la cuota diaria. */
   try {
     return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   } catch (e) {
@@ -135,7 +139,7 @@ function hoyUTC() {
 }
 
 function limpiarSiCambioElDia() {
-  const d = hoyUTC();
+  const d = hoyPacifico();
   if (d !== diaDeLaMemoria) {
     diaDeLaMemoria = d;
     agotadasHoy = new Set();
@@ -242,9 +246,9 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
   if (grounded) body.tools = [{ google_search: {} }];
   else if (wantJson) body.generationConfig.responseMimeType = "application/json";
 
-  /* Una respuesta larga o con búsqueda tarda más que un prompt corto:
-     12 s lo cortaría siempre. */
-  const porModelo = (grounded || (max_tokens || 0) > 2000) ? TIMEOUT_LARGO_MS : TIMEOUT_MS;
+  /* Cuanto más larga la respuesta pedida, más tiempo por modelo. */
+  const mt = max_tokens || 0;
+  const porModelo = (grounded || mt > 2000) ? TIMEOUT_LARGO_MS : mt >= 1500 ? TIMEOUT_MEDIO_MS : TIMEOUT_MS;
   const limite = Math.max(1000, Math.min(porModelo, restante || porModelo));
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), limite);
@@ -349,7 +353,7 @@ export default {
       return json({ error: "Método no permitido" }, 405, origen);
     }
 
-    /* Punto 2: se exige Origin permitido. Frena a páginas de otros sitios
+    /* Se exige Origin permitido. Frena a páginas de otros sitios
        y a clientes que no lo envían; quien lo falsifique a mano choca con
        el freno por IP. */
     if (!origen) {
@@ -535,7 +539,7 @@ export default {
             probadosEnEstaClave--;
             continue;
           }
-          return json({ error: "La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.", status: err.status || 500 }, err.status || 500, origen);
+          return json({ error: "La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.", status: 502 }, 502, origen);
         }
       }
       if (!claveAgotada && probadosEnEstaClave && cuotaEnEstaClave === probadosEnEstaClave) {
@@ -583,9 +587,15 @@ export default {
       }, 503, origen);
     }
 
-    /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
-       la app NO reintente ni mienta diciendo "espera un momento".
-       El detalle crudo de Google (incluida la facturación) NO se expone. */
+    /* Se acabó el presupuesto de tiempo. Si lo que lo gastó fueron límites
+       por minuto, se dice eso (no "tarda demasiado"). */
+    if (sinTiempo && huboMinuto && !todasQuemadas) {
+      devolverVisita(ip);
+      return json({
+        error: "Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo.",
+        status: 503, transient: true, minute: true
+      }, 503, origen);
+    }
     if (sinTiempo && !todasQuemadas) {
       devolverVisita(ip);
       return json({
@@ -617,8 +627,9 @@ export default {
         transient: true
       }, 503, origen);
     }
+    /* Ninguna clave tiene cupo hoy: quota:true para que la app no reintente. */
     return json({
-      error: "Se acabó el uso gratuito de la IA incluida por hoy. Se reinicia en unas horas (a medianoche, hora del Pacífico).",
+      error: "Se acabó el uso gratuito de la IA incluida por hoy. Se reinicia a medianoche, hora del Pacífico (hacia las 2 o 3 a. m. en Colombia).",
       status: 429,
       quota: true
     }, 429, origen);
