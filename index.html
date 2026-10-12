@@ -140,13 +140,6 @@
   .siguiente{margin:14px 0 0;font-size:.92rem;line-height:1.5;color:var(--muted)}
   .siguiente b{color:var(--txt)}
   .siguiente code{font-size:.85rem;color:var(--orange)}
-  /* Proyectado en sala (1920 px): más ancho y letra más grande. */
-  @media (min-width:1600px){
-    html{font-size:20px}
-    .wrap{max-width:1180px}
-    .result{font-size:1.25rem}
-    .status{font-size:1rem}
-  }
 
   .btn{cursor:pointer;border:none;border-radius:13px;padding:14px 26px;font-size:1rem;
     font-weight:700;font-family:inherit;color:#04101f;position:relative;overflow:hidden;
@@ -187,6 +180,7 @@
   .note{font-size:.79rem;color:var(--muted);margin-top:10px;line-height:1.5}
   /* Subrayado con text-decoration (no border+padding): el borde caía sobre
      la línea siguiente y parecía tachar el texto. */
+  .legal-fine a{min-height:44px;display:inline-flex;align-items:center}
   .note a,.legal-fine a,.privacidad a{color:var(--cyan);text-decoration:underline dashed;text-underline-offset:3px;
     text-decoration-color:var(--border-str);display:inline-block;padding:4px 0}
   .status{font-size:.86rem;margin-top:10px;min-height:1.2em;transition:.2s}
@@ -251,11 +245,11 @@
     .types{grid-template-columns:repeat(2,1fr);gap:8px}.settings{grid-template-columns:1fr}
     .type{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 6px;font-size:.88rem;border-radius:11px}
     .type .ico{display:inline;font-size:1.1rem;margin:0}
-    /* En celular la barra de progreso sin etiquetas solo repetía el número
-       que ya lleva cada tarjeta: se oculta y se gana espacio arriba. */
     h1{font-size:1.35rem}
     header.top{margin-bottom:16px}
     .keyrow{flex-wrap:wrap}.keyrow .keybadge{order:3}
+    .result{max-height:50vh}
+    header.top .sub{font-size:.85rem}
   }
   @media (max-width:640px) and (max-height:700px){
     .wrap{padding-top:16px}
@@ -267,8 +261,14 @@
     .label,label{margin-bottom:5px}
     .types{margin-bottom:12px}
     textarea{min-height:72px}
-    .result{max-height:50vh}
-    header.top .sub{font-size:.85rem}
+  }
+  /* Proyectado en sala (1920 px): más ancho y letra más grande. Va al
+     final para que ninguna regla posterior lo anule. */
+  @media (min-width:1600px){
+    html{font-size:20px}
+    .wrap{max-width:1180px}
+    .result{font-size:1.25rem}
+    .status{font-size:1rem}
   }
 </style>
 </head>
@@ -578,6 +578,7 @@ function guardar(){
       type:state.type, idea:state.idea, questions:state.questions,
       currentPrompt:state.currentPrompt, versiones:state.versiones, chat:state.chat,
       truncado:state.truncado, ideaPreguntas:state.ideaPreguntas, tipoPreguntas:state.tipoPreguntas,
+      ajustePendiente:$("chatInput").value,
       respuestas:[...document.querySelectorAll(".qa")].map(a=>a.value),
       v:2
     }));
@@ -657,6 +658,8 @@ function ofrecerClavePropia(motivo){
     '</div>';
   aviso.classList.remove("hidden");
   const v=$("volverGratis"); if(v) v.addEventListener("click",volverAIaIncluida);
+  // El foco va al aviso (que se desplaza a la vista), no se queda en un botón fuera de pantalla.
+  aviso.setAttribute("tabindex","-1"); setTimeout(()=>aviso.focus({preventScroll:true}),350);
   $("cfg").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -781,6 +784,7 @@ async function callOnce({system,user,max_tokens,json}){
       // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
       err.quota = data.quota===true || isQuota(emsg,status);
       err.rate = data.rate===true;
+      if(err.rate && data.retryAfter) err.esperaMin=Math.max(1,Math.ceil(data.retryAfter/60));
       // rate:true = freno por IP del Worker. Reintentar solo empeora la
       // situación, así que tampoco cuenta como saturación pasajera.
       // Si respondió el Worker, su transient manda: sin transient:true es una
@@ -844,7 +848,8 @@ function iaGratisCaida(err){
   const s = err.status||0;
   if(s===0 && !err.caido){
     if(!navigator.onLine) return false;
-    return ++fallosRed>=2;
+    if(!err.contado){ err.contado=true; fallosRed++; }
+    return fallosRed>=3;
   }
   // El freno por red compartida pide esperar, no cambiar de modo.
   if(err.rate) return false;
@@ -859,8 +864,8 @@ function iaGratisCaida(err){
 }
 function motivoCaida(err){
   if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy.";
-  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi de un salón o de una oficina). Espera unos minutos (hasta 10) e inténtalo de nuevo.";
-  if(!err.status) return "No se pudo contactar la IA incluida.";
+  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi de un salón o de una oficina). Espera "+(err.esperaMin?("unos "+err.esperaMin+" min"):"unos minutos")+" e inténtalo de nuevo.";
+  if(!err.status) return "No se pudo contactar la IA incluida varias veces seguidas. Si tu internet funciona (abre otra página para comprobarlo), puedes seguir con tu propia API key.";
   return "La IA incluida no está disponible ahora.";
 }
 
@@ -1173,6 +1178,7 @@ async function refine(){
   finally{btn.disabled=false; actualizarUndo(); if(document.activeElement===document.body) $("chatInput").focus({preventScroll:true});}
 }
 $("chatSend").addEventListener("click",refine);
+$("chatInput").addEventListener("input",guardar);
 // Sin estas guardas, Enter repetido lanzaba otra petición con una en vuelo,
 // y Enter al confirmar un acento o un carácter compuesto también enviaba.
 $("chatInput").addEventListener("keydown",e=>{
@@ -1215,6 +1221,7 @@ $("questions").addEventListener("input",e=>{
   if(state.currentPrompt){
     $("result").textContent=state.currentPrompt;
     unlock("card3"); marcarEstado(); pintarChat();
+    if(typeof d.ajustePendiente==="string") $("chatInput").value=d.ajustePendiente;
   }
   actualizarUndo();
   revisarVigencia();   // si la idea había cambiado, no se mezclan ideas

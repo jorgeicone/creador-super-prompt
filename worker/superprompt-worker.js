@@ -97,7 +97,7 @@ let diaDeLaMemoria = "";
 /* Freno básico por IP en memoria del isolate (un salón entero comparte
    la IP del wifi, por eso el número es alto). Complementa, no sustituye,
    las reglas de límite de Cloudflare. */
-const LIMITE_POR_IP = 300;         // peticiones…
+const LIMITE_POR_IP = 600;         // peticiones…  (30 personas × ~20 en una sesión)
 const VENTANA_MS = 10 * 60 * 1000; // …por cada 10 minutos
 const visitas = new Map();
 
@@ -360,10 +360,13 @@ export default {
       return json({ error: "Petición inválida" }, 400, origen);
     }
     if (demasiadasPeticiones(ip)) {
+      const v = visitas.get(ip);
+      const retryAfter = v ? Math.max(1, Math.ceil((v.desde + VENTANA_MS - Date.now()) / 1000)) : 60;
       return json({
         error: "Muchas personas están usando la IA desde esta misma red. Espera unos minutos.",
         status: 429,
-        rate: true
+        rate: true,
+        retryAfter
       }, 429, origen);
     }
 
