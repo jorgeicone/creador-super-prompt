@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="author" content="Ingeniero Jorge Hugo Pérez - ICONE ialabs" />
-<meta name="copyright" content="© Jorge Hugo Pérez - ICONE ialabs. Todos los derechos reservados. Prohibida la reproducción o copia sin autorización." />
+<meta name="author" content="Ing. Jorge Hugo Pérez Gaona · ICONEialabs" />
+<meta name="copyright" content="© 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs. Todos los derechos reservados." />
 <meta name="rights" content="Todos los derechos reservados" />
-<title>Creador de Super Prompt · ICONE</title>
+<title>Creador de Super Prompt · ICONEialabs</title>
 
 <!-- Cómo se ve el enlace al compartirlo. Sin esto, pegarlo en WhatsApp o
      LinkedIn salía como un rectángulo gris sin título ni imagen. -->
-<meta name="description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis, sin registro y sin instalar nada." />
+<meta name="description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
 <link rel="canonical" href="https://super-prompt.iconeialabs.com/" />
 <meta name="theme-color" content="#050d1f" />
 
@@ -19,24 +19,24 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="ICONE ialabs" />
-<meta property="og:locale" content="es_ES" />
+<meta property="og:site_name" content="ICONEialabs" />
+<meta property="og:locale" content="es_419" />
 <meta property="og:url" content="https://super-prompt.iconeialabs.com/" />
 <meta property="og:title" content="Creador de Super Prompt" />
-<meta property="og:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis, sin registro y sin instalar nada." />
+<meta property="og:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
 <meta property="og:image" content="https://super-prompt.iconeialabs.com/assets/og-image.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Creador de Super Prompt · ICONE ialabs" />
+<meta property="og:image:alt" content="Creador de Super Prompt · ICONEialabs" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Creador de Super Prompt" />
-<meta name="twitter:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin registro." />
+<meta name="twitter:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
 <meta name="twitter:image" content="https://super-prompt.iconeialabs.com/assets/og-image.png" />
 <!--
   ====================================================================
-  © Creado por el Ingeniero Jorge Hugo Pérez — ICONE ialabs
+  © 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs
   Todos los derechos reservados.
   Queda prohibida la reproducción, copia, distribución o modificación
   total o parcial de esta obra sin autorización expresa del autor.
@@ -67,7 +67,7 @@
 
   header.top{margin-bottom:26px;opacity:0;transform:translateY(14px);animation:rise .7s .05s forwards}
   .brand{display:flex;align-items:center;gap:14px}
-  .logo{width:52px;height:52px;border-radius:15px;position:relative;
+  .logo{flex:0 0 52px;width:52px;height:52px;border-radius:15px;position:relative;
     background:linear-gradient(135deg,var(--cyan),var(--purple));
     display:grid;place-items:center;font-weight:800;font-size:22px;color:#04101f;
     box-shadow:var(--glow-cyan);animation:float 5s ease-in-out infinite}
@@ -79,20 +79,6 @@
     filter:drop-shadow(0 0 18px rgba(0,212,255,.25))}
   .sub{color:var(--muted);font-size:1rem;margin:4px 0 0}
 
-  .progress{display:flex;align-items:center;gap:0;margin:24px 0 26px;
-    opacity:0;transform:translateY(14px);animation:rise .7s .15s forwards}
-  .pstep{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-  .pdot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
-    font-weight:700;font-size:.95rem;border:1.5px solid var(--border);color:var(--muted);
-    background:rgba(8,19,39,.8);transition:.4s}
-  .pstep.on .pdot{border-color:var(--cyan);color:#04101f;
-    background:linear-gradient(135deg,var(--cyan),var(--purple));box-shadow:var(--glow-cyan)}
-  .pstep.done .pdot{border-color:var(--ok);color:var(--ok);background:rgba(34,211,166,.12)}
-  .plabel{font-size:.82rem;color:var(--muted);font-weight:600}
-  .pstep.on .plabel{color:var(--txt)}
-  .pline{flex:1 1 auto;height:2px;background:var(--border);margin:0 12px;min-width:20px;position:relative;overflow:hidden}
-  .pline::after{content:"";position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .5s}
-  .pline.fill::after{width:100%}
 
   .card{position:relative;background:var(--panel);backdrop-filter:blur(16px) saturate(140%);
     -webkit-backdrop-filter:blur(16px) saturate(140%);
@@ -116,10 +102,10 @@
     text-transform:uppercase;letter-spacing:.7px}
   input[type=text],input[type=password],textarea,select{
     width:100%;background:rgba(6,14,30,.75);border:1px solid var(--border);color:var(--txt);
-    border-radius:13px;padding:13px 15px;font-size:.98rem;font-family:inherit;outline:none;
+    border-radius:13px;padding:13px 15px;font-size:max(16px,1rem);font-family:inherit;outline:none;
     transition:border-color .18s, box-shadow .18s, background .18s}
   textarea{resize:vertical;min-height:104px}
-  input::placeholder,textarea::placeholder{color:#5f739a}
+  input::placeholder,textarea::placeholder{color:#8396bd}
   input:focus,textarea:focus,select:focus{border-color:var(--cyan);
     box-shadow:0 0 0 3px rgba(0,212,255,.16),var(--glow-cyan);background:rgba(6,14,30,.95)}
 
@@ -134,10 +120,32 @@
   /* El foco tiene que verse: sobre este fondo oscuro el contorno por
      defecto del navegador es casi invisible. */
   :focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+  #result:focus{outline:none}
+  .sub .marca{color:var(--txt);font-weight:700}
+  details.avanzadas{margin-top:12px}
+  details.avanzadas summary{cursor:pointer;color:var(--muted);font-size:.85rem;min-height:44px;display:flex;align-items:center}
+  /* Portátil con la barra del navegador (~650 px útiles): compactar arriba
+     para que la idea y el botón entren en la primera pantalla. */
+  @media (min-width:641px) and (max-height:800px){
+    .wrap{padding-top:18px}
+    header.top{margin-bottom:14px}
+    .free-banner{padding:10px 16px;margin-bottom:14px}
+    .card{padding-top:22px;padding-bottom:22px}
+    .type{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 8px}
+    .type .ico{display:inline;font-size:1.15rem;margin:0}
+    textarea{min-height:84px}
+  }
+  .aviso-chico{display:block;font-size:.8rem;color:var(--muted);margin:2px 0 0 26px}
+  .siguiente a{color:var(--cyan)}
+  .siguiente{margin:14px 0 0;font-size:.92rem;line-height:1.5;color:var(--muted)}
+  .siguiente b{color:var(--txt)}
+  .siguiente code{font-size:.85rem;color:var(--orange)}
 
   .btn{cursor:pointer;border:none;border-radius:13px;padding:14px 26px;font-size:1rem;
     font-weight:700;font-family:inherit;color:#04101f;position:relative;overflow:hidden;
-    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    /* El extremo violeta puro (#7b2fff) dejaba el texto oscuro en 3,4:1;
+       con #a77bff queda por encima de 6:1 en todo el botón. */
+    background:linear-gradient(135deg,var(--cyan),#a77bff);
     transition:transform .12s, box-shadow .2s, filter .2s;box-shadow:0 10px 26px rgba(123,47,255,.34)}
   .btn::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
     background:linear-gradient(120deg,transparent,rgba(255,255,255,.45),transparent);transition:.5s}
@@ -149,6 +157,7 @@
   .btn.ghost:hover{border-color:var(--cyan);background:rgba(0,212,255,.08)}
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .grow{flex:1 1 auto}
+  .row > input.grow{flex:1 1 0;min-width:0;width:auto}
 
   .q{margin-bottom:16px;opacity:0;transform:translateX(-10px);animation:slideIn .45s forwards}
   .q:nth-child(2){animation-delay:.1s}.q:nth-child(3){animation-delay:.2s}
@@ -156,7 +165,7 @@
 
   .result{background:rgba(3,10,24,.9);border:1px solid var(--border);border-radius:14px;
     padding:20px;white-space:pre-wrap;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
-    font-size:.9rem;line-height:1.65;color:#d7e3ff;max-height:540px;overflow:auto;
+    font-size:.9rem;line-height:1.65;color:#d7e3ff;max-height:540px;overflow:auto;overflow-wrap:anywhere;
     box-shadow:inset 0 0 30px rgba(0,212,255,.05)}
   .result::-webkit-scrollbar,.chatlog::-webkit-scrollbar{width:8px}
   .result::-webkit-scrollbar-thumb,.chatlog::-webkit-scrollbar-thumb{background:var(--border-str);border-radius:8px}
@@ -166,22 +175,26 @@
   .msg.me{align-self:flex-end;background:linear-gradient(135deg,rgba(123,47,255,.35),rgba(123,47,255,.15));border:1px solid var(--purple)}
   .msg.ai{align-self:flex-start;background:rgba(0,212,255,.1);border:1px solid var(--border);color:var(--muted)}
 
-  .settings{display:grid;grid-template-columns:1fr 220px;gap:14px}
+  .settings{display:grid;grid-template-columns:1fr minmax(260px,auto);gap:14px}
   .keyrow{display:flex;gap:8px;align-items:stretch}
   .note{font-size:.79rem;color:var(--muted);margin-top:10px;line-height:1.5}
-  .note a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed var(--border-str)}
+  /* Subrayado con text-decoration (no border+padding): el borde caía sobre
+     la línea siguiente y parecía tachar el texto. */
+  .legal-fine a{min-height:44px;display:inline-flex;align-items:center}
+  .note a,.legal-fine a,.privacidad a{color:var(--cyan);text-decoration:underline dashed;text-underline-offset:3px;
+    text-decoration-color:var(--border-str);display:inline-block;padding:4px 0}
   .status{font-size:.86rem;margin-top:10px;min-height:1.2em;transition:.2s}
   .status.err{color:var(--err)} .status.ok{color:var(--ok)} .status.warn{color:var(--orange)}
   .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.22);
     border-top-color:var(--cyan);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
-  details.cfg summary{cursor:pointer;font-size:1.1rem;font-weight:700;color:var(--txt);user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
-  details.cfg summary::-webkit-details-marker{display:none}
-  details.cfg summary::before{content:"⚙️";font-size:1.1rem}
-  details.cfg[open] summary .chev{transform:rotate(90deg)}
+  details.cfg > summary{cursor:pointer;min-height:44px;font-size:1.1rem;font-weight:700;color:var(--txt);user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
+  details.cfg > summary::-webkit-details-marker{display:none}
+  details.cfg > summary::before{content:"⚙️";font-size:1.1rem}
+  details.cfg[open] > summary .chev{transform:rotate(90deg)}
   .chev{display:inline-block;transition:.25s;color:var(--muted);margin-left:auto;font-size:.9rem}
-  .pill{display:inline-block;font-size:.7rem;padding:3px 10px;border-radius:20px;vertical-align:middle;
+  .pill{display:inline-block;font-size:.75rem;padding:3px 10px;border-radius:20px;vertical-align:middle;
     background:rgba(255,140,0,.15);border:1px solid var(--orange);color:var(--orange);font-weight:700}
-  .keybadge{font-size:.72rem;padding:4px 10px;border-radius:20px;font-weight:700;white-space:nowrap;align-self:center}
+  .keybadge{font-size:.75rem;padding:4px 10px;border-radius:20px;font-weight:700;white-space:nowrap;align-self:center}
   .keybadge.no{background:rgba(255,90,114,.12);border:1px solid var(--err);color:var(--err)}
   .keybadge.yes{background:rgba(34,211,166,.12);border:1px solid var(--ok);color:var(--ok)}
   /* banner IA incluida gratis */
@@ -192,8 +205,13 @@
   .free-banner .fico{font-size:1.5rem}
   .free-banner b{color:var(--ok)}
   .free-banner span{font-size:.86rem;color:var(--muted)}
-  .free-banner .privacidad{display:inline-block;margin-top:7px;font-size:.79rem;line-height:1.45;
-    color:var(--muted);opacity:.92}
+  .free-banner .privacidad{display:block;margin-top:6px;font-size:.84rem;line-height:1.5;color:var(--muted)}
+  .free-banner .privacidad summary{cursor:pointer;list-style:none;padding:8px 0;min-height:44px;box-sizing:border-box}
+  .free-banner .privacidad summary::-webkit-details-marker{display:none}
+  .privacidad .linkbtn{display:inline;min-height:0;margin:0;padding:2px 0}
+  .linkbtn{margin-top:8px;background:none;border:none;padding:0 2px;color:var(--cyan);font:inherit;
+    font-weight:700;text-decoration:underline;cursor:pointer;min-height:44px}
+  .status .linkbtn{margin:0 0 0 6px;min-height:44px;padding:0 10px}
   /* aviso cuando la IA gratis no puede atender y se ofrece la clave propia */
   .cfg-aviso{display:flex;align-items:flex-start;gap:11px;padding:13px 16px;border-radius:12px;
     background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.45);
@@ -208,7 +226,7 @@
     border-radius:14px;background:rgba(6,14,30,.5);backdrop-filter:blur(8px)}
   .legal-main{margin:0 0 8px;font-size:.9rem;color:var(--txt)}
   .legal-main strong{color:var(--cyan)}
-  .legal-fine{margin:0;font-size:.74rem;line-height:1.55;color:var(--muted)}
+  .legal-fine{margin:0;font-size:.8rem;line-height:1.55;color:var(--muted)}
   .legal-brand{font-size:.8rem;margin:16px 0 0}
 
   @keyframes rise{to{opacity:1;transform:none}}
@@ -218,11 +236,39 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   @media(prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
-    header.top,.progress,.card,.q,.free-banner{opacity:1!important;transform:none!important}
+    header.top,.card,.q,.free-banner{opacity:1!important;transform:none!important}
   }
   @media(max-width:640px){
-    .types{grid-template-columns:repeat(2,1fr)}.settings{grid-template-columns:1fr}
-    h1{font-size:1.6rem}.plabel{display:none}.pline{margin:0 6px}
+    /* En celular las 4 tarjetas de tipo en 2x2 empujaban el campo de la
+       idea fuera de la primera pantalla: siguen en 2x2, pero en tarjetas
+       horizontales y bajas (ícono al lado del texto). */
+    .types{grid-template-columns:repeat(2,1fr);gap:8px}.settings{grid-template-columns:1fr}
+    .type{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 6px;font-size:.88rem;border-radius:11px}
+    .type .ico{display:inline;font-size:1.1rem;margin:0}
+    h1{font-size:1.35rem}
+    header.top{margin-bottom:16px}
+    .keyrow{flex-wrap:wrap}.keyrow .keybadge{order:3}
+    .result{max-height:50vh}
+    header.top .sub{font-size:.85rem}
+  }
+  @media (max-width:640px) and (max-height:700px){
+    .wrap{padding-top:16px}
+    header.top .sub .promesa{display:none}
+    .free-banner{padding:9px 12px;margin-bottom:12px}
+    .card{padding-top:18px}
+    .card-head{margin-bottom:10px}.card-head p{display:none}
+    header.top{margin-bottom:10px}
+    .label,label{margin-bottom:5px}
+    .types{margin-bottom:12px}
+    textarea{min-height:72px}
+  }
+  /* Proyectado en sala (1920 px): más ancho y letra más grande. Va al
+     final para que ninguna regla posterior lo anule. */
+  @media (min-width:1600px){
+    html{font-size:20px}
+    .wrap{max-width:1180px}
+    .result{font-size:1.25rem}
+    .status{font-size:1rem}
   }
 </style>
 </head>
@@ -237,27 +283,21 @@
       <div class="logo">SP</div>
       <div>
         <h1>Creador de <span class="accent">Super Prompt</span></h1>
-        <p class="sub">Laboratorio de ingeniería de prompts · potenciado por IA</p>
+        <p class="sub"><span class="promesa">Convierte cualquier idea en un prompt profesional en tres pasos ·&nbsp;</span><span class="marca">ICONEialabs</span></p>
       </div>
     </div>
   </header>
 
-  <div class="progress" id="progress">
-    <div class="pstep on" data-s="1"><div class="pdot">1</div><span class="plabel">Idea</span></div>
-    <div class="pline" data-l="1"></div>
-    <div class="pstep" data-s="2"><div class="pdot">2</div><span class="plabel">Detalles</span></div>
-    <div class="pline" data-l="2"></div>
-    <div class="pstep" data-s="3"><div class="pdot">3</div><span class="plabel">Super Prompt</span></div>
-  </div>
-
   <!-- Banner cuando la IA viene incluida gratis -->
   <div class="free-banner hidden" id="freeBanner">
     <span class="fico">🎁</span>
-    <div><b>IA incluida · totalmente gratis</b><br><span>No necesitas configurar nada. Solo escribe tu idea y crea tu Super Prompt.</span>
-      <!-- El aviso de privacidad estaba dentro del panel de configuración,
-           que en modo gratis está oculto. Pero es justo en este modo cuando
-           el texto del usuario sale del navegador, así que aquí va visible. -->
-      <br><span class="privacidad">🔒 Tu idea viaja a nuestro servidor y de ahí a Google (Gemini) solo para generar el prompt. No la guardamos ni la usamos para nada más. Lo que escribas queda en esta pestaña y se borra al cerrarla.</span>
+    <div><b>IA incluida y gratis</b> <span>· normalmente no tienes que configurar nada.</span>
+      <!-- El aviso de privacidad va visible en modo gratis (es cuando el texto
+           sale del navegador), pero corto: antes ocupaba la primera pantalla
+           del celular y dejaba fuera el campo para escribir. El detalle,
+           plegado. -->
+      <details class="privacidad"><summary>🔒 No escribas datos personales ni confidenciales. <u>Ver por qué</u></summary>
+        Tu texto (idea, respuestas y ajustes) pasa por nuestro sistema en Cloudflare y de ahí a Google (Gemini), para generar el prompt: Cloudflare lo procesa por encargo de ICONEialabs y Google lo recibe bajo sus propios términos; la dirección de tu conexión se usa solo para evitar el uso excesivo. Nosotros no guardamos tu texto, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. Lo que escribas se guarda solo en esta pestaña del navegador. <button type="button" class="linkbtn" id="borrarAhora">Borrar lo que escribí</button> · Preguntas sobre tus datos: <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a></details>
     </div>
   </div>
 
@@ -268,25 +308,30 @@
     <div style="margin-top:18px">
       <div class="settings">
         <div>
-          <label for="apiKey">Tu API Key gratis de Google Gemini</label>
+          <label for="apiKey">Tu código de acceso a Gemini (API key)</label>
+          <p class="aviso-chico" style="margin:0 0 8px">No es la contraseña de tu cuenta de Google: nunca escribas tu contraseña aquí.</p>
           <div class="keyrow">
-            <input type="password" id="apiKey" class="grow" placeholder="AIza..." autocomplete="off" />
-            <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
-            <span class="keybadge no" id="keyBadge">Sin key</span>
+            <input type="password" id="apiKey" class="grow" placeholder="Pega aquí tu API key" autocomplete="off" />
+            <button class="btn ghost" id="toggleKey" title="Mostrar u ocultar" aria-label="Mostrar la API key" aria-pressed="false" style="padding:0 16px;min-height:44px">👁</button>
+            <span class="keybadge no" id="keyBadge">Sin API key</span>
           </div>
         </div>
-        <div>
-          <label for="model">Modelo</label>
-          <select id="model">
-            <option value="gemini-flash-lite-latest">Flash-Lite más reciente · rápido</option>
-            <option value="gemini-3.6-flash">Gemini 3.6 Flash · más potente</option>
-            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-          </select>
-        </div>
       </div>
+      <!-- Elegir modelo no es una decisión que este público necesite tomar:
+           queda plegado, con el valor por defecto. -->
+      <details class="avanzadas"><summary>Opciones avanzadas</summary>
+          <label for="model" style="margin-top:8px">Modelo de Gemini</label>
+          <select id="model">
+            <option value="gemini-flash-lite-latest">Flash-Lite (rápido, recomendado)</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash (respuestas más largas, puede cortarse)</option>
+          </select>
+      </details>
       <label style="margin-top:14px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">
-        <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la key en este navegador</label>
-      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu clave se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas.</p>
+        <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la API key en este navegador <span class="aviso-chico">(no lo marques en un computador compartido ni mientras proyectas)</span></label>
+      <button type="button" class="linkbtn" id="olvidarClave">Olvidar mi API key en este navegador</button>
+      <span class="status" id="statusClave" role="status" aria-live="polite"></span>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu API key se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos y revisores humanos pueden leerlo.</p>
     </div>
   </details>
 
@@ -304,10 +349,10 @@
       <div class="type"        data-type="General"   role="radio" aria-checked="false" tabindex="-1"><span class="ico" aria-hidden="true">✨</span>General</div>
     </div>
     <label for="idea">¿Qué necesitas?</label>
-    <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para LinkedIn sobre inteligencia artificial para emprendedores..."></textarea>
+    <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para redes sociales sobre inteligencia artificial para emprendedores..."></textarea>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="genQuestions">Generar preguntas →</button>
-      <span class="status" id="status1"></span>
+      <span class="status" id="status1" role="status" aria-live="polite"></span>
     </div>
   </section>
 
@@ -315,12 +360,12 @@
   <section class="card locked" id="card2" inert>
     <div class="card-head">
       <div class="step-num">2</div>
-      <div><h2>Cuéntame un poco más</h2><p>Con estos 3 detalles dejamos tu prompt a tu medida.</p></div>
+      <div><h2>Cuéntanos un poco más</h2><p>Con estos detalles dejamos tu prompt a tu medida.</p></div>
     </div>
     <div id="questions"></div>
     <div class="row" style="margin-top:6px">
       <button class="btn" id="genPrompt">Crear Super Prompt ✨</button>
-      <span class="status" id="status2"></span>
+      <span class="status" id="status2" role="status" aria-live="polite"></span>
     </div>
   </section>
 
@@ -328,34 +373,37 @@
   <section class="card locked" id="card3" inert>
     <div class="card-head">
       <div class="step-num">3</div>
-      <div><h2>Tu Super Prompt <span class="pill">listo para usar</span></h2><p>Rol experto · contexto · restricciones · formato de salida.</p></div>
+      <div><h2>Tu Super Prompt <span class="pill hidden" id="estadoPrompt"></span></h2><p>Le dice a la IA quién ser, qué sabe de tu caso, qué evitar y cómo entregarte el resultado.</p></div>
     </div>
-    <div class="result" id="result"></div>
+    <div class="result" id="result" tabindex="-1"></div>
+    <p class="siguiente">👉 <b>Siguiente paso:</b> cópialo y pégalo en ChatGPT, Gemini, Copilot o la IA que uses. Si ves un <code>[COMPLETAR: …]</code>, llénalo antes de enviarlo, o escríbelo abajo en «Pide un ajuste» (ej.: «es para clientes de 40 a 60 años»).</p>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="copyBtn">📋 Copiar</button>
       <button class="btn ghost" id="downloadBtn">⬇ Descargar .txt</button>
-      <button class="btn ghost" id="undoBtn" disabled title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
-      <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
-      <span class="status" id="status3"></span>
+      <button class="btn ghost hidden" id="undoBtn" title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
+      <span class="status" id="status3" role="status" aria-live="polite"></span>
     </div>
 
     <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
-      <label for="chatInput">💬 Chat de ajuste continuo</label>
+      <label for="chatInput">💬 Pide un ajuste al prompt</label>
       <div class="chatlog" id="chatlog"></div>
       <div class="row">
-        <input type="text" id="chatInput" class="grow" placeholder='"hazlo más corto", "cambia el tono a divertido", "en inglés"...' />
+        <input type="text" id="chatInput" class="grow" placeholder='Ej.: más corto' />
         <button class="btn" id="chatSend">Ajustar</button>
       </div>
-      <span class="status" id="status4"></span>
+      <span class="status" id="status4" role="status" aria-live="polite"></span>
     </div>
+    <div class="row" style="margin-top:20px">
+      <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
+    </div>
+    <p class="siguiente">¿Quieres sacarle más provecho a la IA? Conoce más de ICONEialabs en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>.</p>
   </section>
 
   <footer>
     <div class="legal">
-      <p class="legal-main">© <span id="year"></span> · <strong>Creado por el Ingeniero Jorge Hugo Pérez</strong> · ICONE ialabs</p>
-      <p class="legal-fine">Todos los derechos reservados. Queda estrictamente prohibida la reproducción, copia, distribución, modificación o uso total o parcial de esta aplicación, su código, diseño o metodología sin autorización expresa y por escrito de su autor. Obra protegida por las leyes de propiedad intelectual y derechos de autor.</p>
+      <p class="legal-main">© 2026 <strong>Ing.&nbsp;Jorge Hugo Pérez&nbsp;Gaona</strong>&nbsp;·&nbsp;ICONEialabs</p>
+      <p class="legal-fine">Úsala libremente para crear tus prompts. El código, el diseño y los textos de esta aplicación son de su autor: para copiarlos o adaptarlos, escríbenos en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>. Google y Gemini son marcas de Google LLC, ChatGPT de OpenAI, Copilot de Microsoft y Cloudflare de Cloudflare, Inc.; ICONEialabs no está afiliada a ellas.</p>
     </div>
-    <p class="legal-brand">Hecho con IA <span class="dot">●</span> ICONE ialabs</p>
   </footer>
 </div>
 
@@ -363,28 +411,19 @@
 /* ====================================================================
    CONFIGURACIÓN
    --------------------------------------------------------------------
-   👉 PARA REGALAR CON IA GRATIS INCLUIDA:
-      pega tu clave de Gemini entre las comillas de EMBEDDED_KEY.
-        EMBEDDED_KEY: "AQ.Ab8...tu_clave..."
-
-   Antes de publicarla, para que NUNCA te cobren y nadie la abuse:
-     1) NO actives facturación en el proyecto de Google.
-     2) Restringe la clave por dominio (jorgeicone.github.io/*).
-
-   La app decide sola:
-     · Si EMBEDDED_KEY tiene clave -> IA gratis incluida (config oculta).
-     · Si está vacía              -> le pide al usuario su propia clave.
-   (PROXY_URL es opcional: solo si algún día usas el servidor oculto.)
+   Las claves de la IA incluida viven SOLO como secrets del Worker y nunca
+   llegan al navegador. Las claves del pool no se pegan en esta página
+   (la única clave que se escribe aquí es la propia del usuario).
+     · Si PROXY_URL tiene URL -> IA incluida vía el Worker.
+     · Si está vacía          -> la app pide al usuario su propia clave.
    ==================================================================== */
 const CONFIG = {
-  EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
-  PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // (opcional) URL del Worker si usas proxy
-  MODEL: "gemini-flash-lite-latest"  // 0,8 s y responde; el Worker tiene respaldo si se jubila
+  PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // URL del Worker (pool de claves en secrets)
+  MODEL: "gemini-flash-lite-latest"  // el Worker prueba otros modelos si este falla
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
-document.getElementById("year").textContent=new Date().getFullYear();
-console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — Todos los derechos reservados. Prohibida su reproducción o copia sin autorización expresa.","color:#00d4ff;font-weight:bold;font-size:13px");
+console.log("%c© 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs. Todos los derechos reservados.","color:#00d4ff;font-weight:bold;font-size:13px");
 
 /* ============ FONDO: red neuronal + partículas discretas ============ */
 (function neuralBG(){
@@ -526,10 +565,8 @@ console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — 
 /* ============ LÓGICA DE LA APP (Google Gemini) ============ */
 const $=id=>document.getElementById(id);
 const HAS_PROXY = !!(CONFIG.PROXY_URL && /^https?:\/\//.test(CONFIG.PROXY_URL.trim()));
-const HAS_EMBEDDED = !HAS_PROXY && !!(CONFIG.EMBEDDED_KEY && CONFIG.EMBEDDED_KEY.trim().length>10);
-const FREE_MODE = HAS_PROXY || HAS_EMBEDDED;
-let state={type:"Redacción",idea:"",questions:[],currentPrompt:"",versiones:[],chat:[]};
-let pasoActual=1;
+const FREE_MODE = HAS_PROXY;
+let state={type:"Redacción",idea:"",questions:[],currentPrompt:"",versiones:[],chat:[],truncado:false,ideaPreguntas:"",tipoPreguntas:""};
 
 /* Antes, una recarga del navegador borraba todo el trabajo. Se guarda en
    sessionStorage (no localStorage: al cerrar la pestaña se va, que es lo
@@ -540,8 +577,10 @@ function guardar(){
     sessionStorage.setItem(CLAVE_SESION, JSON.stringify({
       type:state.type, idea:state.idea, questions:state.questions,
       currentPrompt:state.currentPrompt, versiones:state.versiones, chat:state.chat,
+      truncado:state.truncado, ideaPreguntas:state.ideaPreguntas, tipoPreguntas:state.tipoPreguntas,
+      ajustePendiente:$("chatInput").value,
       respuestas:[...document.querySelectorAll(".qa")].map(a=>a.value),
-      paso:pasoActual
+      v:2
     }));
   }catch(e){/* sesión llena o bloqueada: no es motivo para romper la app */}
 }
@@ -564,7 +603,7 @@ if(FREE_MODE){
 }
 
 function currentKey(){
-  return (HAS_EMBEDDED && !modoClavePropia) ? CONFIG.EMBEDDED_KEY.trim() : $("apiKey").value.trim();
+  return $("apiKey").value.trim();
 }
 function currentModel(){
   return (FREE_MODE && !modoClavePropia) ? CONFIG.MODEL : $("model").value;
@@ -576,19 +615,32 @@ let panelClaveListo = false;
 function prepararPanelClave(){
   if(panelClaveListo) return; panelClaveListo = true;
   const refreshBadge=()=>{const b=$("keyBadge"),has=$("apiKey").value.trim().length>10;
-    b.className="keybadge "+(has?"yes":"no");b.textContent=has?"Key lista":"Sin key";};
-  const k=localStorage.getItem("sp_key"); if(k){$("apiKey").value=k;$("remember").checked=true;}
-  const m=localStorage.getItem("sp_model"); if(m)$("model").value=m;
+    b.className="keybadge "+(has?"yes":"no");b.textContent=has?"API key lista":"Sin API key";};
+  /* Con cookies o datos de sitio bloqueados, localStorage lanza excepción.
+     Sin este envoltorio, el panel de la clave no llegaba a mostrarse y el
+     usuario quedaba sin salida. */
+  const leer=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+  const escribir=(k,v)=>{try{ v===null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){}};
+  const k=leer("sp_key"); if(k){$("apiKey").value=k;$("remember").checked=true;}
+  const m=leer("sp_model"); if(m&&[...$("model").options].some(o=>o.value===m))$("model").value=m;
   refreshBadge();
   $("remember").addEventListener("change",e=>{
-    if(e.target.checked)localStorage.setItem("sp_key",$("apiKey").value.trim());
-    else localStorage.removeItem("sp_key");});
-  $("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)localStorage.setItem("sp_key",$("apiKey").value.trim());});
-  $("model").addEventListener("change",()=>localStorage.setItem("sp_model",$("model").value));
-  $("toggleKey").addEventListener("click",()=>{const f=$("apiKey");f.type=f.type==="password"?"text":"password";});
+    escribir("sp_key",e.target.checked?$("apiKey").value.trim():null);});
+  $("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)escribir("sp_key",$("apiKey").value.trim());});
+  $("model").addEventListener("change",()=>escribir("sp_model",$("model").value));
+  $("toggleKey").addEventListener("click",()=>{
+    const f=$("apiKey"), ver=f.type==="password"; f.type=ver?"text":"password";
+    $("toggleKey").setAttribute("aria-pressed",ver?"true":"false");
+    $("toggleKey").setAttribute("aria-label",ver?"Ocultar la API key":"Mostrar la API key");
+  });
+  $("olvidarClave").addEventListener("click",()=>{
+    olvidarClave(); $("apiKey").value=""; $("remember").checked=false; refreshBadge();
+    setStatus($("statusClave"),"✓ Listo: este navegador ya no recuerda tu API key.","ok");
+  });
 }
 
-/* La IA gratis no puede seguir: se abre el panel y se explica por qué, con
+function olvidarClave(){ try{ localStorage.removeItem("sp_key"); localStorage.removeItem("sp_model"); }catch(e){} }
+/* La IA incluida no puede seguir: se abre el panel y se explica por qué, con
    el enlace para sacar una clave gratis. Se hace una sola vez por sesión. */
 function ofrecerClavePropia(motivo){
   if(modoClavePropia) return;
@@ -599,17 +651,42 @@ function ofrecerClavePropia(motivo){
   $("cfg").open = true;
   const aviso=$("cfgAviso");
   aviso.innerHTML='<span class="fico">⚠️</span><div><b>'+motivo+'</b><br>'+
-    'Puedes seguir ahora mismo con tu propia clave gratis de Gemini: se saca en un minuto en '+
+    'Puedes seguir ahora mismo con tu propia API key gratuita de Gemini (un código de acceso, no tu contraseña): se saca con tu cuenta de Google, en unos minutos, en '+
     '<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, '+
-    'no cuesta nada y se queda solo en este navegador.</div>';
+    'no cuesta nada y se queda solo en este navegador.'+
+    (HAS_PROXY?'<br><button type="button" class="linkbtn" id="volverGratis">Volver a intentar con la IA incluida</button>':'')+
+    '</div>';
   aviso.classList.remove("hidden");
-  $("cfg").scrollIntoView({behavior:"smooth",block:"center"});
+  const v=$("volverGratis"); if(v) v.addEventListener("click",volverAIaIncluida);
+  // El foco va al aviso (que se desplaza a la vista), no se queda en un botón fuera de pantalla.
+  aviso.setAttribute("tabindex","-1"); setTimeout(()=>aviso.focus({preventScroll:true}),350);
+  $("cfg").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* La caída de la IA incluida puede ser pasajera: el usuario puede volver
+   a ella sin recargar la página. */
+function volverAIaIncluida(){
+  modoClavePropia = false;
+  $("cfgAviso").classList.add("hidden");
+  $("cfg").classList.add("hidden");
+  $("freeBanner").classList.remove("hidden");
 }
 
 /* Selector de tipo. Son divs, no radios, así que el teclado hay que
    dárselo a mano: un solo tabulador entra al grupo (tabindex móvil) y
    las flechas cambian de opción, como en un grupo de radios de verdad. */
 const tipos=[...document.querySelectorAll(".type")];
+/* Si la idea o el tipo cambian después de generar las preguntas, esas
+   preguntas (y el prompt) ya no corresponden: se bloquean hasta regenerar. */
+function revisarVigencia(){
+  if(!state.questions.length) return;
+  const vigente = $("idea").value.trim()===state.ideaPreguntas && state.type===state.tipoPreguntas;
+  ["card2","card3"].forEach(id=>{
+    if(!vigente){ $(id).classList.add("locked"); $(id).setAttribute("inert",""); }
+  });
+  if(vigente){ unlock("card2"); if(state.currentPrompt) unlock("card3"); setStatus($("status1"),"",""); }
+  else setStatus($("status1"),"Cambiaste la idea o el tipo: vuelve a generar las preguntas.","warn");
+}
 function elegirTipo(t,conFoco){
   tipos.forEach(x=>{
     const activo = x===t;
@@ -619,9 +696,10 @@ function elegirTipo(t,conFoco){
   });
   state.type=t.dataset.type;
   if(conFoco) t.focus();
+  if(conFoco!==null) revisarVigencia();
 }
 $("types").addEventListener("click",e=>{
-  const t=e.target.closest(".type"); if(t) elegirTipo(t,false);
+  const t=e.target.closest(".type"); if(t){ elegirTipo(t,false); if(e.detail>0) t.blur(); }
 });
 $("types").addEventListener("keydown",e=>{
   const t=e.target.closest(".type"); if(!t)return;
@@ -635,14 +713,6 @@ $("types").addEventListener("keydown",e=>{
 });
 
 // progreso
-function setStep(n){
-  pasoActual=n;
-  document.querySelectorAll(".pstep").forEach(s=>{
-    const v=+s.dataset.s; s.classList.toggle("on",v===n); s.classList.toggle("done",v<n);
-    s.querySelector(".pdot").textContent=(v<n)?"✓":v;
-  });
-  document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
-}
 
 // ¿la cuota se agotó de verdad? Entonces reintentar NO sirve de nada:
 // no es una saturación pasajera, es que no queda saldo/cuota hasta mañana.
@@ -667,17 +737,31 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
    botón quedaba deshabilitado sin vuelta atrás. El Worker corta a los 10 s
    por modelo, así que 30 s aquí solo salta si algo va muy mal. */
 const TIMEOUT_CLIENTE=30000;
+/* Peticiones en vuelo: "Empezar de nuevo", "Cancelar" o una petición nueva
+   del paso 1 las abortan, para que no dejen botones bloqueados ni
+   resultados de otra idea. */
+const enVuelo=new Set();
+let cancelaciones=0;   // sube con cada cancelación: callAI lo revisa tras sus pausas
+function cancelarTodo(){ cancelaciones++; enVuelo.forEach(c=>{ c.cancelado=true; c.abort(); }); enVuelo.clear(); }
 async function pedir(url,opciones){
-  const ctrl=new AbortController();
+  const ctrl=new AbortController(); enVuelo.add(ctrl);
   const reloj=setTimeout(()=>ctrl.abort(),TIMEOUT_CLIENTE);
   try{
-    return await fetch(url,{...opciones,signal:ctrl.signal});
+    const res=await fetch(url,{...opciones,signal:ctrl.signal});
+    // La lectura del cuerpo también queda bajo el mismo corte.
+    const texto=await res.text();
+    return {ok:res.ok,status:res.status,statusText:res.statusText,
+            json:async()=>JSON.parse(texto)};
   }catch(e){
+    if(ctrl.cancelado){ const c=new Error("Cancelado."); c.cancelado=true; throw c; }
     const corto = e && e.name==="AbortError";
-    const err=new Error(corto?"La IA tardó demasiado en responder.":"No se pudo contactar el servicio de IA.");
+    const err=new Error(corto?"La IA no respondió a tiempo.":"No se pudo contactar el servicio de IA.");
     err.status=corto?504:0; err.transient=true;
+    // El Worker corta solo a los 25 s: si el navegador llega a 30, el
+    // servicio está colgado y la salida es la clave propia.
+    err.caido=corto;
     throw err;
-  }finally{ clearTimeout(reloj); }
+  }finally{ clearTimeout(reloj); enVuelo.delete(ctrl); }
 }
 
 // una sola llamada (proxy oculto  ó  key directa)
@@ -685,97 +769,156 @@ async function callOnce({system,user,max_tokens,json}){
   if(usaProxy()){
     const res=await pedir(CONFIG.PROXY_URL.trim(),{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({model:CONFIG.MODEL,system,user,max_tokens,json})});
-    let data={}; try{data=await res.json();}catch(e){}
+    let data={}, legible=true; try{data=await res.json();}catch(e){legible=false;}
+    if(!data||typeof data!=="object") { data={}; legible=false; }
     if(!res.ok||data.error){
       const status=data.status||res.status;
-      const emsg=data.error||("Error "+status);
+      const emsg=(status===400||!data.error)?"Algo falló de nuestro lado al procesar la petición. Inténtalo de nuevo.":data.error;
       const err=new Error(emsg); err.status=status;
+      const delWorker = typeof data.error==="string";
+      err.delWorker = delWorker;
+      // Una página de error de Cloudflare (502/520 en HTML) no es el Worker:
+      // el servicio está caído y la salida es la clave propia.
+      err.caido = !delWorker && status>=500;
       // El Worker ya sabe si agotó TODO el pool de claves (quota) o si fue
       // un bache pasajero (transient). Le hacemos caso en vez de adivinar.
       err.quota = data.quota===true || isQuota(emsg,status);
       err.rate = data.rate===true;
+      if(err.rate && data.retryAfter) err.esperaMin=Math.max(1,Math.ceil(data.retryAfter/60));
       // rate:true = freno por IP del Worker. Reintentar solo empeora la
       // situación, así que tampoco cuenta como saturación pasajera.
+      // Si respondió el Worker, su transient manda: sin transient:true es una
+      // avería (mantenimiento) y no un bache, y la app ofrece la clave propia.
       err.transient = (data.quota===true || data.rate===true) ? false
-                    : (data.transient===true || isTransient(emsg,status));
+                    : delWorker ? data.transient===true
+                    : (isTransient(emsg,status) || undefined);
       throw err;
     }
-    if(!data.text){const err=new Error("La IA no devolvió texto. Intenta de nuevo.");err.transient=true;throw err;}
+    if(!data.text){
+      const err=new Error(legible?"La IA no pudo responder esta vez. Inténtalo de nuevo.":"El servicio de IA respondió algo ilegible. Inténtalo de nuevo.");
+      err.status=502; err.transient=legible; err.caido=!legible; throw err;
+    }
     // truncated lo marca el Worker cuando Google corta por MAX_TOKENS.
     return {text:data.text, truncado:data.truncated===true};
   }
   const key=currentKey();
-  if(!key)throw new Error("Configura primero tu API Key gratis de Gemini.");
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${currentModel()}:generateContent?key=${encodeURIComponent(key)}`;
+  if(!key)throw new Error("Pega primero tu API key gratuita de Gemini en el panel de arriba.");
+  // La clave va en cabecera, no en la URL: las URL quedan en historiales y registros.
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(currentModel())}:generateContent`;
   const body={
     system_instruction:{parts:[{text:system}]},
     contents:[{role:"user",parts:[{text:user}]}],
-    generationConfig:{maxOutputTokens:max_tokens,temperature:0.7}
+    generationConfig:{maxOutputTokens:max_tokens}
   };
   if(json) body.generationConfig.responseMimeType="application/json";
-  const res=await pedir(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  const res=await pedir(url,{method:"POST",headers:{"content-type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
   if(!res.ok){
-    let detail=""; try{const j=await res.json();detail=j.error?.message||JSON.stringify(j);}catch(e){detail=res.statusText;}
-    if(res.status===400&&/API key/i.test(detail))throw new Error("API Key inválida o restringida.");
+    let detail=""; try{const j=await res.json();detail=(j.error?.message||"")+" "+JSON.stringify(j.error?.details||[]);}catch(e){detail=res.statusText;}
+    if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(detail)))throw new Error("Tu API key de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
+    const porMinuto=res.status===429 && !/perday|per day/i.test(detail) && /perminute|per minute|retry in \d/i.test(detail);
+    if(porMinuto){ const e=new Error("Tu API key llegó a su límite por minuto. Espera un minuto e inténtalo de nuevo."); e.status=429; e.transient=false; throw e; }
     const agotada=isQuota(detail,res.status);
     // Sin exponer el detalle crudo de Google (que incluye datos de facturación).
-    const err=new Error(agotada?"Tu clave agotó su cuota gratuita por hoy.":("Error "+res.status+": "+detail));
+    // Ni el detalle crudo de Google (en inglés, con datos de facturación)
+    // ni un "Error 500": un mensaje que el usuario pueda entender.
+    const err=new Error(agotada?"Tu API key agotó su uso gratuito de hoy; se reinicia en unas horas (a medianoche, hora del Pacífico).":"La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.");
     err.status=res.status; err.quota=agotada; err.transient=agotada?false:isTransient(detail,res.status);
     throw err;
   }
-  const data=await res.json();
-  const cand=data.candidates?.[0]||{};
+  let data;
+  try{ data=await res.json(); }
+  catch(e){ const er=new Error("La IA respondió algo ilegible (¿estás en un wifi que pide iniciar sesión?). Inténtalo de nuevo."); er.status=502; throw er; }
+  const cand=data?.candidates?.[0]||{};
   const parts=cand.content?.parts||[];
   const txt=parts.map(p=>p.text||"").join("").trim();
   const razon=cand.finishReason||"";
   if(!txt){
-    if(razon==="SAFETY")throw new Error("La IA bloqueó esta petición por sus filtros de contenido. Reformula la idea.");
-    const err=new Error("La IA no devolvió texto. Intenta de nuevo.");err.transient=true;throw err;
+    if(razon==="SAFETY")throw new Error("Los filtros de Google frenaron esta petición (a veces pasa con temas sensibles). Prueba a contarlo con otras palabras.");
+    const err=new Error("La IA no pudo responder esta vez. Inténtalo de nuevo.");err.transient=true;throw err;
   }
   return {text:txt, truncado:razon==="MAX_TOKENS"};
 }
 
 // ¿Este fallo significa que la IA incluida no puede atender ahora mismo?
 // (cuota agotada, freno por IP, Worker caído o inalcanzable)
+/* Fallos de red seguidos (status 0). Uno solo suele ser el wifi; solo
+   cuando se repite con el equipo en línea se trata como servicio caído. */
+let fallosRed=0;
 function iaGratisCaida(err){
   const s = err.status||0;
+  if(s===0 && !err.caido){
+    if(!navigator.onLine) return false;
+    if(!err.contado){ err.contado=true; fallosRed++; }
+    return fallosRed>=3;
+  }
+  // El freno por red compartida pide esperar, no cambiar de modo.
+  if(err.rate) return false;
+  if(err.quota || err.caido) return true;
+  // Un bache pasajero (salón lleno, timeout) NO es caída: se reintenta.
+  // Antes cualquier 503 sacaba al usuario de la IA gratis para siempre.
+  if(err.transient && s!==0) return false;
   // 404 incluido: si el Worker se borra o se renombra, la URL deja de
   // existir y el usuario merece una salida, no un "Error 404".
-  return !!err.quota || !!err.rate ||
-    s===0 || s===401 || s===403 || s===404 || s===429 || s>=500;
+  // 422 (filtro de contenido) y 502 (respuesta vacía) son de la petición, no del servicio.
+  return s===0 || s===401 || s===403 || s===404 || s===429 || (s>=500 && s!==502);
 }
 function motivoCaida(err){
-  if(err.quota) return "Se agotó la cuota gratuita de IA por hoy.";
-  if(err.rate)  return "Demasiadas peticiones desde tu conexión.";
-  if(!err.status) return "No se pudo contactar el servicio de IA incluido.";
-  return "El servicio de IA incluido no está disponible ahora.";
+  if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy.";
+  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi de un salón o de una oficina). Espera "+(err.esperaMin?("unos "+err.esperaMin+" min"):"unos minutos")+" e inténtalo de nuevo.";
+  if(!err.status) return "No se pudo contactar la IA incluida varias veces seguidas. Si tu internet funciona (abre otra página para comprobarlo), puedes seguir con tu propia API key.";
+  return "La IA incluida no está disponible ahora.";
 }
 
 // llamada a la IA con reintentos automáticos ante saturaciones temporales
 async function callAI({system,user,max_tokens=1500,json=false}){
-  const MAX=4;
+  const t0=Date.now(), c0=cancelaciones;
+  /* Si se pasó a clave propia pero no hay clave escrita, el botón del paso
+     vuelve a intentar con la IA incluida (p. ej. tras un corte de wifi). */
+  if(HAS_PROXY && modoClavePropia && currentKey().length<=10) volverAIaIncluida();
+  /* El Worker ya rota claves y modelos por dentro: aquí basta un reintento.
+     Más intentos solo alargan el spinner. */
+  const MAX=2;
   for(let intento=1;intento<=MAX;intento++){
     try{
-      return await callOnce({system,user,max_tokens,json});
+      const r=await callOnce({system,user,max_tokens,json});
+      fallosRed=0;
+      return r;
     }catch(err){
+      // Tras un timeout (504) no se reintenta: el Worker ya rotó claves y
+      // modelos por dentro, y otro intento solo duplica la espera.
+      if(err.cancelado) throw err;
+      // Solo se reintenta si el primer intento fue rápido: si ya se esperó
+      // más de 8 s, otro intento solo duplica la espera.
+      const pasajero = !err.quota && !err.rate && err.status!==504 && err.transient!==false &&
+        (err.transient || err.caido || (!err.delWorker && isTransient(err.message,err.status||0)));
+      if(pasajero && intento<MAX && Date.now()-t0<8000){
+        await sleep(1500 + Math.random()*800);
+        if(cancelaciones!==c0){ const c=new Error("Cancelado."); c.cancelado=true; throw c; }
+        continue;
+      }
       /* La IA incluida no puede seguir. En vez de dejar al usuario sin
          salida, se abre el panel y se le ofrece su propia clave gratis.
          Si ya tenía una guardada, ni se entera: se reintenta con ella. */
+      if(usaProxy() && err.rate) throw new Error(motivoCaida(err));
+      if(usaProxy() && (err.status||0)===0 && !err.caido && !iaGratisCaida(err))
+        throw new Error(navigator.onLine
+          ? "No pudimos conectar con la IA incluida. Revisa tu wifi; si funciona, inténtalo de nuevo en un momento."
+          : "No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
       if(usaProxy() && iaGratisCaida(err)){
         ofrecerClavePropia(motivoCaida(err));
         if(currentKey().length>10) return await callOnce({system,user,max_tokens,json});
-        throw new Error(motivoCaida(err)+" Pega arriba tu clave gratis de Gemini y vuelve a intentarlo.");
+        throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega arriba tu API key gratuita de Gemini e inténtalo de nuevo.");
       }
       // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
       // decimos la verdad, en vez de 7 segundos de spinner y "espera un momento".
       if(err.quota||isQuota(err.message,err.status||0)) throw err;
 
-      const reintentable = err.transient || isTransient(err.message,err.status||0);
-      if(reintentable && intento<MAX){
-        await sleep(900*intento + Math.random()*500);   // espera creciente
-        continue;
+      const reintentable = err.transient!==false && (err.transient || (!err.delWorker && isTransient(err.message,err.status||0)));
+      if(reintentable){
+        if(err.status===504) throw new Error("La IA está tardando más de lo normal. Inténtalo de nuevo en un momento.");
+        if(err.delWorker) throw err;   // el Worker ya explicó la causa
+        throw new Error("La IA está muy solicitada ahora mismo. Inténtalo de nuevo en un momento.");
       }
-      if(reintentable) throw new Error("El servicio de IA está muy solicitado ahora mismo. Espera unos segundos e inténtalo de nuevo.");
       throw err;
     }
   }
@@ -788,9 +931,30 @@ function extractJSON(txt){
 }
 /* El mensaje puede venir de un error de la IA, así que entra como texto y
    no como HTML. Lo único que se construye es el spinner. */
+/* Tras 8 s de espera el estado dice cuánto lleva, para que nadie crea
+   que la app se colgó. */
+const relojes=new Map();
 function setStatus(el,msg,kind){
+  clearInterval(relojes.get(el)); relojes.delete(el);
   el.className="status"+(kind?(" "+kind):"");
   el.textContent="";
+  if(kind==="loading"){
+    // En celular el estado puede quedar bajo el borde: se trae a la vista.
+    try{ el.scrollIntoView({block:"nearest",behavior:"smooth"}); }catch(e){}
+    const t0=Date.now();
+    relojes.set(el,setInterval(()=>{
+      const sg=Math.round((Date.now()-t0)/1000);
+      if(sg>=8 && el.lastChild){
+        if(el.lastChild.nodeType===3) el.lastChild.textContent=msg+" ("+sg+" s) ";
+        if(!el.querySelector(".linkbtn")){
+          const b=document.createElement("button"); b.type="button"; b.className="linkbtn"; b.textContent="Cancelar";
+          b.addEventListener("click",()=>{ cancelarTodo(); setStatus(el,"Cancelado.",""); });
+          el.appendChild(b);
+        }
+        const tx=[...el.childNodes].find(n=>n.nodeType===3); if(tx) tx.textContent=msg+" ("+sg+" s) ";
+      }
+    },1000));
+  }
   if(kind==="loading"){
     const s=document.createElement("span"); s.className="spin"; el.appendChild(s);
   }
@@ -802,28 +966,51 @@ function setStatus(el,msg,kind){
 function unlock(id){const c=$(id);c.classList.remove("locked");c.removeAttribute("inert");}
 
 // Paso 1 -> preguntas
+/* Cada "Empezar de nuevo" sube la generación. Una respuesta que llega
+   después de reiniciar pertenece a la generación anterior y se descarta. */
+/* Un contador por paso: preguntas (q), prompt (p) y ajuste (c). Pedir
+   preguntas nuevas invalida el prompt y los ajustes; crear el prompt
+   invalida los ajustes; un ajuste no toca los pasos anteriores. */
+const G={q:0,p:0,c:0};
+let gen=0;
 $("genQuestions").addEventListener("click",async()=>{
+  cancelarTodo();             // un prompt en vuelo de la idea anterior ya no sirve
+  const g=++G.q; G.p++; G.c++; const r0=gen;
   state.idea=$("idea").value.trim();
-  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");return;}
+  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");$("idea").setAttribute("aria-invalid","true");$("idea").focus();return;}
+  $("idea").removeAttribute("aria-invalid");
   const btn=$("genQuestions");btn.disabled=true;
   setStatus($("status1"),"Analizando tu idea…","loading");
   try{
-    const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves, inteligentes y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (extrayendo rol/persona, formato de salida, audiencia, tono, restricciones o contexto faltante). Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
-    const r=await callAI({system,user:state.idea,max_tokens:600,json:true});
+    const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (para quién es, qué tono, qué forma debe tener el resultado, qué evitar o qué contexto falta). Formula las preguntas en el idioma de la idea, en lenguaje cotidiano y tuteando, como se las haría una persona; no uses las palabras prompt, rol, formato de salida ni restricciones. No pidas nombres, datos personales, cifras confidenciales ni información sensible: pregunta por el tipo de público y el propósito, no por la identidad. Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
+    const r=await callAI({system,user:`"""${state.idea}"""`,max_tokens:1000,json:true});
+    if(g!==G.q||r0!==gen){ setStatus($("status1"),"",""); return; }
     const j=extractJSON(r.text);
-    if(!j||!Array.isArray(j.questions)||!j.questions.length){
+    const preguntas = (j&&Array.isArray(j.questions)?j.questions:[])
+      .filter(q=>typeof q==="string" && q.trim()).map(q=>q.trim());
+    if(!preguntas.length){
       // Si la IA se quedó sin tokens, el JSON llega partido: dilo tal cual
       // en vez del "intenta de nuevo" genérico, que aquí no arregla nada.
       throw new Error(r.truncado
-        ? "La respuesta se cortó por longitud. Describe tu idea de forma más breve e inténtalo otra vez."
-        : "No se pudieron generar las preguntas. Intenta de nuevo.");
+        ? "La respuesta de la IA salió incompleta. Inténtalo de nuevo."
+        : "No se pudieron generar las preguntas. Inténtalo de nuevo.");
     }
-    state.questions=j.questions.slice(0,3); renderQuestions();
-    unlock("card2"); setStep(2); guardar();
+    state.questions=preguntas.slice(0,3); renderQuestions();
+    state.ideaPreguntas=state.idea; state.tipoPreguntas=state.type;
+    // Preguntas nuevas = idea nueva: el prompt anterior ya no corresponde.
+    // Antes el paso 3 seguía abierto con el prompt viejo, listo para copiar.
+    state.currentPrompt=""; state.versiones=[]; state.chat=[]; state.truncado=false;
+    $("result").textContent=""; $("chatlog").textContent="";
+    $("card3").classList.add("locked"); $("card3").setAttribute("inert","");
+    ["status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
+    $("estadoPrompt").classList.add("hidden");
+    actualizarUndo();
+    unlock("card2"); guardar();
     $("card2").scrollIntoView({behavior:"smooth",block:"center"});
+    const q0=$("qa0"); if(q0) q0.focus({preventScroll:true});
     setStatus($("status1"),"✓ Preguntas generadas","ok");
-  }catch(err){setStatus($("status1"),err.message,"err");}
-  finally{btn.disabled=false;}
+  }catch(err){ setStatus($("status1"), g===G.q&&r0===gen ? err.message : "", g===G.q&&r0===gen ? "err" : ""); }
+  finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 /* Construido con textContent en vez de innerHTML: el escapado a mano solo
    cubría "<", así que un "&" en una pregunta salía roto en pantalla. Con
@@ -836,7 +1023,7 @@ function renderQuestions(){
     etiqueta.htmlFor="qa"+i; etiqueta.textContent=(i+1)+". "+q;
     const campo=document.createElement("input");
     campo.type="text"; campo.id="qa"+i; campo.className="qa"; campo.dataset.i=i;
-    campo.placeholder="Tu respuesta (opcional pero recomendado)";
+    campo.placeholder="Tu respuesta (opcional)";
     fila.append(etiqueta,campo); cont.appendChild(fila);
   });
 }
@@ -852,42 +1039,65 @@ function mensajeChat(texto,quien){
 
 // Paso 2 -> prompt
 $("genPrompt").addEventListener("click",async()=>{
+  const g=++G.p; G.c++; const gq=G.q, r0=gen;
   const answers=[...document.querySelectorAll(".qa")].map((a,i)=>({q:state.questions[i],a:a.value.trim()}));
   const btn=$("genPrompt");btn.disabled=true;
   setStatus($("status2"),"Redactando tu Super Prompt…","loading");
   try{
-    const qa=answers.map(x=>`- ${x.q}\n  Respuesta: ${x.a||"(sin respuesta / usa tu mejor criterio)"}`).join("\n");
-    const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla para las entradas del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
+    const qa=answers.map(x=>`- ${x.q}\n  Respuesta: ${x.a||"(sin respuesta)"}`).join("\n");
+    const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla solo si la tarea recibe un texto o dato del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica, con marcadores en lugar de datos concretos. Si el usuario no respondió algún detalle, NO inventes datos, cifras ni audiencias: deja un marcador visible escrito como pregunta sencilla y tuteando, por ejemplo [COMPLETAR: ¿para quién es?]. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
     const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
     const r=await callAI({system,user,max_tokens:2000});
-    state.versiones=[]; state.chat=[];        // prompt nuevo: historial limpio
-    setPrompt(r.text);
-    unlock("card3"); setStep(3); $("chatlog").textContent="";
+    if(g!==G.p||gq!==G.q||r0!==gen){ setStatus($("status2"),"",""); return; }
+    /* Prompt nuevo: el anterior queda como versión (no se pierde), y el
+       chat empieza de cero para el prompt nuevo. */
+    if(state.currentPrompt) state.versiones.push({prompt:state.currentPrompt, chat:state.chat.slice(), truncado:state.truncado});
+    state.chat=[]; state.currentPrompt="";
+    state.respuestasPrompt=answers.map(x=>x.a).join("\u0001");
+    setPrompt(r.text, r.truncado);
+    unlock("card3"); $("chatlog").textContent=""; guardar();
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
-    // Un prompt cortado a la mitad no es un éxito: se dice, no se disimula.
-    if(r.truncado) setStatus($("status2"),"⚠ El prompt se cortó por el límite de longitud. Vuelve a crearlo o acorta tu idea y tus respuestas.","warn");
+    $("result").focus({preventScroll:true});
+    if(r.truncado) setStatus($("status2"),"⚠ La respuesta de la IA salió incompleta. Vuelve a crearlo; si se repite, pide una versión más corta en el ajuste.","warn");
     else setStatus($("status2"),"✓ Super Prompt creado","ok");
-  }catch(err){setStatus($("status2"),err.message,"err");}
-  finally{btn.disabled=false;}
+  }catch(err){ const vale=g===G.p&&gq===G.q&&r0===gen; setStatus($("status2"), vale?err.message:"", vale?"err":""); }
+  finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 
 /* Cada refinamiento sobrescribía el prompt sin vuelta atrás: si la IA lo
    empeoraba, no había forma de recuperarlo. Ahora se apilan las versiones. */
-function setPrompt(txt){
-  if(state.currentPrompt && state.currentPrompt!==txt) state.versiones.push(state.currentPrompt);
-  state.currentPrompt=txt; $("result").textContent=txt;
-  actualizarUndo(); guardar();
+/* La etiqueta solo dice "listo para usar" si de verdad lo está. */
+function marcarEstado(){
+  const truncado=state.truncado;
+  const pendiente = /\[(COMPLETAR|COMPLETE|TO ?DO|FILL)[^\]]*\]/i.test(state.currentPrompt||"");
+  const e=$("estadoPrompt"); e.classList.toggle("hidden",!state.currentPrompt);
+  e.textContent = truncado ? "salió incompleto" : pendiente ? "revisa los [COMPLETAR]" : "listo para usar";
+}
+/* Cada versión guarda también los ajustes que llevaba y si salió cortada,
+   para que "Versión anterior" deshaga de verdad (y el chat no los repita). */
+function setPrompt(txt,truncado){
+  if(state.currentPrompt && state.currentPrompt!==txt)
+    state.versiones.push({prompt:state.currentPrompt, chat:state.chat.slice(), truncado:state.truncado});
+  state.currentPrompt=txt; state.truncado=!!truncado; $("result").textContent=txt;
+  marcarEstado(); actualizarUndo(); guardar();
+}
+function pintarChat(){
+  $("chatlog").textContent="";
+  state.chat.forEach(m=> m.yo ? mensajeChat(m.yo,"me") : mensajeChat(m.ia||"","ai"));
 }
 function actualizarUndo(){
   const n=state.versiones.length;
-  $("undoBtn").disabled = n===0;
+  $("undoBtn").disabled = n===0 || $("chatSend").disabled;
+  $("undoBtn").classList.toggle("hidden", n===0);
   $("undoBtn").textContent = n>1 ? `↶ Versión anterior (${n})` : "↶ Versión anterior";
 }
 $("undoBtn").addEventListener("click",()=>{
   if(!state.versiones.length) return;
-  state.currentPrompt=state.versiones.pop();
+  const v=state.versiones.pop();
+  if(typeof v==="string"){ state.currentPrompt=v; state.truncado=false; }   // sesiones guardadas antes
+  else { state.currentPrompt=v.prompt; state.chat=v.chat||[]; state.truncado=!!v.truncado; }
   $("result").textContent=state.currentPrompt;
-  actualizarUndo(); guardar();
+  pintarChat(); marcarEstado(); actualizarUndo(); guardar();
   setStatus($("status3"),"↶ Volviste a la versión anterior","ok");
 });
 
@@ -903,52 +1113,87 @@ $("downloadBtn").addEventListener("click",()=>{
 // copiar / reiniciar
 $("copyBtn").addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(state.currentPrompt);setStatus($("status3"),"✓ Copiado al portapapeles","ok");}
-  catch(e){setStatus($("status3"),"No se pudo copiar automáticamente.","err");}
+  catch(e){
+    const r=document.createRange(); r.selectNodeContents($("result"));
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    setStatus($("status3"),"No se pudo copiar solo: el texto quedó seleccionado; cópialo con Ctrl+C (o mantén pulsado en el celular), o usa «Descargar .txt».","err");
+  }
 });
-$("restartBtn").addEventListener("click",()=>{
+function empezarDeNuevo(){
+  if(!confirm("¿Borrar tu idea, tus respuestas, el prompt y la API key recordada, para empezar de nuevo?")) return;
+  cancelarTodo(); gen++; G.q++; G.p++; G.c++; olvidarClave();
+  $("apiKey").value=""; $("remember").checked=false;
+  ["genQuestions","genPrompt","chatSend"].forEach(id=>$(id).disabled=false);
+  $("chatInput").value=""; state.truncado=false; state.ideaPreguntas=""; state.tipoPreguntas="";
   state.questions=[];state.currentPrompt="";state.idea="";state.versiones=[];state.chat=[];
   $("idea").value="";$("questions").textContent="";$("result").textContent="";$("chatlog").textContent="";
   ["card2","card3"].forEach(id=>{$(id).classList.add("locked");$(id).setAttribute("inert","");});
-  elegirTipo(tipos[0],false);   // el tipo tambien vuelve al inicio
-  ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
+  elegirTipo(tipos[0],null);   // el tipo tambien vuelve al inicio
+  ["status1","status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
+  $("estadoPrompt").classList.add("hidden");
   actualizarUndo(); olvidar();
-  setStep(1); window.scrollTo({top:0,behavior:"smooth"});
-});
+  window.scrollTo({top:0,behavior:"smooth"});
+  $("idea").focus({preventScroll:true});
+}
+$("restartBtn").addEventListener("click",empezarDeNuevo);
+$("borrarAhora").addEventListener("click",empezarDeNuevo);
 
 // chat de refinamiento
 async function refine(){
+  const g=++G.c, gp=G.p, r0=gen;
   const instr=$("chatInput").value.trim(); if(!instr)return;
   if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
-  state.chat.push({yo:instr});
-  mensajeChat(instr,"me");
-  $("chatInput").value="";guardar();
-  const btn=$("chatSend");btn.disabled=true;
+  mensajeChat(instr,"me");      // se ve ya, pero entra al historial solo si sale bien
+  const btn=$("chatSend");btn.disabled=true; $("undoBtn").disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
     /* El chat se llamaba "continuo" pero mandaba solo el prompt actual y la
        instrucción: "hazlo más corto" seguido de "ahora en inglés" no
        acumulaba nada. Ahora viajan también los ajustes ya pedidos, para que
        la IA no deshaga sin querer lo que acaba de aplicar. */
-    const previos=state.chat.filter(m=>m.yo).map(m=>m.yo).slice(0,-1);
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual, los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const previos=state.chat.filter(m=>m.yo).map(m=>m.yo).slice(-6);
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual (entre <prompt_actual> y </prompt_actual>), los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. No inventes datos, cifras ni audiencias: conserva los marcadores exactamente como [COMPLETAR: …] (sin traducir la palabra COMPLETAR), salvo que la instrucción los llene. Si agregas uno, escríbelo como pregunta sencilla y tuteando. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Mantén el idioma del prompt salvo que la instrucción pida otro. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
     const historia=previos.length?`AJUSTES YA PEDIDOS (en orden):\n${previos.map((p,i)=>`${i+1}. ${p}`).join("\n")}\n\n`:"";
-    const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
+    const base=state.currentPrompt;
+    const user=`<prompt_actual>\n${base}\n</prompt_actual>\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
     const r=await callAI({system,user,max_tokens:2000});
-    setPrompt(r.text);
-    const eco=r.truncado?"⚠ El prompt ajustado se cortó por longitud":"✓ Prompt actualizado arriba";
-    state.chat.push({ia:eco}); guardar();
+    if(g!==G.c||gp!==G.p||r0!==gen){ setStatus($("status4"),"",""); const log=$("chatlog"); if(log.lastChild&&log.lastChild.classList.contains("me")) log.removeChild(log.lastChild); return; }
+    if(state.currentPrompt!==base){
+      // El prompt cambió mientras se ajustaba: aplicar el ajuste pisaría el nuevo.
+      const log=$("chatlog"); if(log.lastChild&&log.lastChild.classList.contains("me")) log.removeChild(log.lastChild);
+      setStatus($("status4"),"El prompt cambió mientras se ajustaba: vuelve a pedir el ajuste.","warn");
+      return;
+    }
+    $("chatInput").value="";
+    setPrompt(r.text, r.truncado);
+    $("result").scrollIntoView({behavior:"smooth",block:"start"});
+    const eco=r.truncado?"⚠ La versión ajustada salió incompleta":"✓ Prompt actualizado arriba";
+    state.chat.push({yo:instr},{ia:eco}); guardar();
     mensajeChat(eco,"ai");
-    setStatus($("status4"),r.truncado?"⚠ La versión ajustada quedó incompleta. Pide un cambio más corto o vuelve a intentarlo.":"",r.truncado?"warn":"");
-  }catch(err){setStatus($("status4"),err.message,"err");}
-  finally{btn.disabled=false;}
+    setStatus($("status4"),r.truncado?"⚠ La respuesta de la IA salió incompleta. Inténtalo de nuevo.":"",r.truncado?"warn":"");
+  }catch(err){
+    const log=$("chatlog"); if(log.lastChild) log.removeChild(log.lastChild);   // el ajuste no se aplicó
+    const vale=g===G.c&&gp===G.p&&r0===gen; setStatus($("status4"), vale?err.message:"", vale?"err":"");
+  }
+  finally{btn.disabled=false; actualizarUndo(); if(document.activeElement===document.body) $("chatInput").focus({preventScroll:true});}
 }
 $("chatSend").addEventListener("click",refine);
-$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")refine();});
+$("chatInput").addEventListener("input",guardar);
+// Sin estas guardas, Enter repetido lanzaba otra petición con una en vuelo,
+// y Enter al confirmar un acento o un carácter compuesto también enviaba.
+$("chatInput").addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.isComposing||e.keyCode===229||$("chatSend").disabled) return;
+  e.preventDefault(); refine();
+});
 
 /* Guardado continuo de lo que el usuario escribe. Sin debounce agresivo:
    sessionStorage es síncrono pero estos textos son diminutos. */
-$("idea").addEventListener("input",()=>{state.idea=$("idea").value;guardar();});
-$("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa")) guardar(); });
+$("idea").addEventListener("input",()=>{state.idea=$("idea").value;guardar();revisarVigencia();});
+$("questions").addEventListener("input",e=>{
+  if(!e.target.classList.contains("qa")) return;
+  guardar();
+  if(state.currentPrompt) setStatus($("status2"),"Cambiaste tus respuestas: vuelve a crear el prompt para incluirlas.","warn");
+});
 
 /* Recuperar lo que hubiera antes de la recarga. */
 (function restaurar(){
@@ -958,12 +1203,14 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
 
   state.type=d.type||state.type;
   state.idea=d.idea;
-  state.questions=Array.isArray(d.questions)?d.questions:[];
-  state.currentPrompt=d.currentPrompt||"";
-  state.versiones=Array.isArray(d.versiones)?d.versiones:[];
-  state.chat=Array.isArray(d.chat)?d.chat:[];
+  const okMsg=m=>m&&typeof m==="object"&&(typeof m.yo==="string"||typeof m.ia==="string");
+  state.questions=Array.isArray(d.questions)?d.questions.filter(q=>typeof q==="string"):[];
+  state.currentPrompt=typeof d.currentPrompt==="string"?d.currentPrompt:"";
+  state.versiones=Array.isArray(d.versiones)?d.versiones.filter(v=>typeof v==="string"||(v&&typeof v.prompt==="string")):[];
+  state.chat=Array.isArray(d.chat)?d.chat.filter(okMsg):[];
+  state.truncado=!!d.truncado; state.ideaPreguntas=d.ideaPreguntas||d.idea; state.tipoPreguntas=d.tipoPreguntas||d.type||state.type;
 
-  const t=tipos.find(x=>x.dataset.type===state.type); if(t) elegirTipo(t,false);
+  const t=tipos.find(x=>x.dataset.type===state.type); if(t) elegirTipo(t,null);
   $("idea").value=state.idea;
 
   if(state.questions.length){
@@ -973,17 +1220,17 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
   }
   if(state.currentPrompt){
     $("result").textContent=state.currentPrompt;
-    unlock("card3");
-    state.chat.forEach(m=> m.yo ? mensajeChat(m.yo,"me") : mensajeChat(m.ia||"","ai"));
+    unlock("card3"); marcarEstado(); pintarChat();
+    if(typeof d.ajustePendiente==="string") $("chatInput").value=d.ajustePendiente;
   }
   actualizarUndo();
-  setStep(d.paso||1);
-  setStatus($("status1"),"↻ Recuperado lo que tenías antes de recargar","ok");
+  revisarVigencia();   // si la idea había cambiado, no se mezclan ideas
+  if(!$("status1").textContent) setStatus($("status1"),"↻ Recuperado lo que tenías antes de recargar","ok");
 })();
 
 // red de seguridad: contenido siempre visible aunque fallen las animaciones
-setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
-  if(el.classList.contains("hidden"))return;
+setTimeout(()=>{document.querySelectorAll("header.top,.card,.q,.free-banner").forEach(el=>{
+  if(el.classList.contains("hidden")||el.classList.contains("locked"))return;
   const cs=getComputedStyle(el); if(parseFloat(cs.opacity)<.9){el.style.opacity="1";el.style.transform="none";}
 });},900);
 </script>

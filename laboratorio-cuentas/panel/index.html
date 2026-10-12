@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tablero del Taller · Módulo 1 | ICONE ialabs</title>
+<title>Tablero del Taller · Módulo 1 | ICONEialabs</title>
 <style>
 :root{--navy:#050d1f;--cyan:#00d4ff;--purple:#7b2fff;--orange:#ff8c00;--green:#00d48a;--red:#ff4757;--yellow:#ffc542;
 --muted:rgba(255,255,255,.55);--muted2:rgba(255,255,255,.33);--card:rgba(255,255,255,.04);--bd:rgba(0,212,255,.18)}
@@ -70,7 +70,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
 </head>
 <body>
 <header><div class="wrap">
-  <div class="logo">ICONE ialabs · Politécnico Grancolombiano</div>
+  <div class="logo">ICONEialabs · Politécnico Grancolombiano</div>
   <h1>Tablero del Taller <span class="gt">· Módulo 1</span></h1>
   <p>Ver antes de vender · Reportes del equipo Comercial B2B-B2C</p>
 </div></header>
@@ -79,7 +79,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
   <div id="login">
     <div class="card">
       <h2>Acceso del facilitador</h2>
-      <p class="sub">Este tablero solo lo ve quien tenga la clave. Los participantes nunca llegan aquí.</p>
+      <p class="sub">Este tablero solo muestra datos a quien tenga la clave.</p>
       <label for="k">Clave</label>
       <input id="k" type="password" placeholder="Clave del taller" onkeydown="if(event.key==='Enter')entrar()">
       <div id="lmsg"></div>
@@ -91,7 +91,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
     <div class="stats" id="stats"></div>
     <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:14px">
-        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">Uno por participante, en el cierre de la sesión.</p></div>
+        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">El último envío de cada participante, desde el cierre de la sesión.</p></div>
         <div class="row">
           <button class="btn btn-g" onclick="cargar()">↻ Actualizar</button>
           <button class="btn btn-g" onclick="window.print()">🖨 Imprimir</button>
@@ -105,7 +105,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
 </div>
 
 <footer><div class="wrap">
-  Taller Habilidades Comerciales Potenciadas con IA · Diseño y facilitación: Jorge Hugo Pérez · ICONE ialabs
+  Taller Habilidades Comerciales Potenciadas con IA · Diseño y facilitación: Jorge Hugo Pérez · ICONEialabs
 </div></footer>
 
 <script>
@@ -140,7 +140,15 @@ async function entrar(){
 async function cargar(){ try{ DATOS=await pedir(CLAVE); render(); }catch(e){ alert(e.message); } }
 
 function render(){
-  const d=DATOS.filter(x=>x.modulo===1);
+  /* Cada envío es una fila: se cuenta solo el último de cada comercial,
+     para que un doble envío no cuente doble ni desvíe los promedios. */
+  const ult=new Map();
+  DATOS.filter(x=>x.modulo===1).forEach(x=>{
+    const k=String(x.comercial||"").trim().toLowerCase();
+    const prev=ult.get(k);
+    if(!prev||String(x.creado_en||"")>=String(prev.creado_en||"")) ult.set(k,x);
+  });
+  const d=[...ult.values()];
   const bases=d.map(x=>num(x.base_min)).filter(v=>v!==null&&v>0);
   const talls=d.map(x=>num(x.taller_min)).filter(v=>v!==null&&v>0);
   const pb=bases.length?bases.reduce((a,b)=>a+b,0)/bases.length:null;
@@ -188,16 +196,15 @@ function render(){
   let L=`<h2>Lectura para la Dirección</h2><p class="sub">Generada de los reportes de arriba.</p>`;
   if(delta!==null){
     L+=`<div class="callout"><b>Tiempo de investigación por cuenta: ${Math.round(pb)} → ${Math.round(pt)} minutos (${delta>0?"−"+delta+"%":"+"+Math.abs(delta)+"%"}).</b> `+
-      (delta>=40?"Por encima de la meta de −40% que fijamos en el diseño del taller."
-       :delta>0?"Va en la dirección correcta, aunque por debajo de la meta de −40%."
+      (delta>0?"El tiempo bajó."
        :"El tiempo no bajó. Vale la pena revisar si el laboratorio alcanzó o si hubo problemas técnicos.")+
       `</div>`;
   }
-  L+=`<div class="callout"><b>${dos} dossiers y ${gan} ganchos producidos en la sesión.</b> Son entregables reales, no apuntes: cada participante se llevó su PDF.</div>`;
+  L+=`<div class="callout"><b>${dos} dossiers y ${gan} ganchos producidos en la sesión.</b> Son entregables reales, no apuntes.</div>`;
   if(sinGancho.length) L+=`<div class="callout"><b>Seguimiento:</b> ${sinGancho.map(x=>esc(x.comercial)).join(", ")} no completó los 3 ganchos. Conviene cerrarlo antes del Módulo 2.</div>`;
   if(sinFecha.length) L+=`<div class="callout"><b>Sin fecha de contacto:</b> ${sinFecha.map(x=>esc(x.comercial)).join(", ")}. El compromiso sin fecha no se cumple.</div>`;
   if(flojos.length) L+=`<div class="callout"><b>Regla de datos por debajo de 6/8:</b> ${flojos.map(x=>esc(x.comercial)).join(", ")}. Repasar los casos de datos personales y tarifas.</div>`;
-  L+=`<div class="callout"><b>Próximo hito:</b> repetir estas mismas cifras a las 4 semanas y el diagnóstico completo a las 6, con los mismos 25 ítems.</div>`;
+  L+=`<div class="callout"><b>Próximo hito:</b> repetir estas mismas cifras a las 4 semanas y repetir el diagnóstico a las 6.</div>`;
   document.getElementById("lectura").innerHTML=L;
 }
 
