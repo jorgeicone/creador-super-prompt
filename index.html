@@ -116,7 +116,7 @@
     text-transform:uppercase;letter-spacing:.7px}
   input[type=text],input[type=password],textarea,select{
     width:100%;background:rgba(6,14,30,.75);border:1px solid var(--border);color:var(--txt);
-    border-radius:13px;padding:13px 15px;font-size:.98rem;font-family:inherit;outline:none;
+    border-radius:13px;padding:13px 15px;font-size:max(16px,1rem);font-family:inherit;outline:none;
     transition:border-color .18s, box-shadow .18s, background .18s}
   textarea{resize:vertical;min-height:104px}
   input::placeholder,textarea::placeholder{color:#8396bd}
@@ -160,6 +160,7 @@
   .btn.ghost:hover{border-color:var(--cyan);background:rgba(0,212,255,.08)}
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .grow{flex:1 1 auto}
+  .row > input.grow{flex:1 1 0;min-width:0;width:auto}
 
   .q{margin-bottom:16px;opacity:0;transform:translateX(-10px);animation:slideIn .45s forwards}
   .q:nth-child(2){animation-delay:.1s}.q:nth-child(3){animation-delay:.2s}
@@ -177,10 +178,10 @@
   .msg.me{align-self:flex-end;background:linear-gradient(135deg,rgba(123,47,255,.35),rgba(123,47,255,.15));border:1px solid var(--purple)}
   .msg.ai{align-self:flex-start;background:rgba(0,212,255,.1);border:1px solid var(--border);color:var(--muted)}
 
-  .settings{display:grid;grid-template-columns:1fr 220px;gap:14px}
+  .settings{display:grid;grid-template-columns:1fr minmax(260px,auto);gap:14px}
   .keyrow{display:flex;gap:8px;align-items:stretch}
   .note{font-size:.79rem;color:var(--muted);margin-top:10px;line-height:1.5}
-  .note a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed var(--border-str)}
+  .note a,.legal-fine a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed var(--border-str);padding:12px 0}
   .status{font-size:.86rem;margin-top:10px;min-height:1.2em;transition:.2s}
   .status.err{color:var(--err)} .status.ok{color:var(--ok)} .status.warn{color:var(--orange)}
   .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.22);
@@ -204,7 +205,7 @@
   .free-banner b{color:var(--ok)}
   .free-banner span{font-size:.86rem;color:var(--muted)}
   .free-banner .privacidad{display:block;margin-top:6px;font-size:.84rem;line-height:1.5;color:var(--muted)}
-  .free-banner .privacidad summary{cursor:pointer;list-style:none}
+  .free-banner .privacidad summary{cursor:pointer;list-style:none;padding:8px 0;min-height:44px;box-sizing:border-box}
   .free-banner .privacidad summary::-webkit-details-marker{display:none}
   .linkbtn{margin-top:8px;background:none;border:none;padding:0;color:var(--cyan);font:inherit;
     font-weight:700;text-decoration:underline;cursor:pointer}
@@ -243,7 +244,9 @@
     .type .ico{display:inline;font-size:1.1rem;margin:0}
     /* En celular la barra de progreso sin etiquetas solo repetía el número
        que ya lleva cada tarjeta: se oculta y se gana espacio arriba. */
-    h1{font-size:1.6rem}.progress{display:none}
+    h1{font-size:1.35rem}.progress{display:none}
+    header.top{margin-bottom:16px}
+    header.top .sub{font-size:.85rem}
   }
 </style>
 </head>
@@ -293,7 +296,7 @@
         <div>
           <label for="apiKey">Tu clave gratuita de Google Gemini</label>
           <div class="keyrow">
-            <input type="password" id="apiKey" class="grow" placeholder="AQ.… (o AIza… en claves antiguas)" autocomplete="off" />
+            <input type="password" id="apiKey" class="grow" placeholder="Pega aquí tu clave" autocomplete="off" />
             <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
             <span class="keybadge no" id="keyBadge">Sin clave</span>
           </div>
@@ -330,7 +333,7 @@
     <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para LinkedIn sobre inteligencia artificial para emprendedores..."></textarea>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="genQuestions">Generar preguntas →</button>
-      <span class="status" id="status1"></span>
+      <span class="status" id="status1" role="status" aria-live="polite"></span>
     </div>
   </section>
 
@@ -343,7 +346,7 @@
     <div id="questions"></div>
     <div class="row" style="margin-top:6px">
       <button class="btn" id="genPrompt">Crear Super Prompt ✨</button>
-      <span class="status" id="status2"></span>
+      <span class="status" id="status2" role="status" aria-live="polite"></span>
     </div>
   </section>
 
@@ -351,7 +354,7 @@
   <section class="card locked" id="card3" inert>
     <div class="card-head">
       <div class="step-num">3</div>
-      <div><h2>Tu Super Prompt <span class="pill" id="estadoPrompt">listo para usar</span></h2><p>Le dice a la IA quién ser, qué sabe de tu caso, qué evitar y cómo entregarte el resultado.</p></div>
+      <div><h2>Tu Super Prompt <span class="pill hidden" id="estadoPrompt"></span></h2><p>Le dice a la IA quién ser, qué sabe de tu caso, qué evitar y cómo entregarte el resultado.</p></div>
     </div>
     <div class="result" id="result"></div>
     <p class="siguiente">👉 <b>Siguiente paso:</b> cópialo y pégalo en ChatGPT, Gemini, Copilot o la IA que uses. Si ves un <code>[COMPLETAR: …]</code>, llénalo antes de enviarlo.</p>
@@ -360,17 +363,17 @@
       <button class="btn ghost" id="downloadBtn">⬇ Descargar .txt</button>
       <button class="btn ghost" id="undoBtn" disabled title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
       <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
-      <span class="status" id="status3"></span>
+      <span class="status" id="status3" role="status" aria-live="polite"></span>
     </div>
 
     <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
       <label for="chatInput">💬 Pide un ajuste al prompt</label>
       <div class="chatlog" id="chatlog"></div>
       <div class="row">
-        <input type="text" id="chatInput" class="grow" placeholder='"hazlo más corto", "cambia el tono a divertido", "en inglés"...' />
+        <input type="text" id="chatInput" class="grow" placeholder='Ej.: "hazlo más corto"' />
         <button class="btn" id="chatSend">Ajustar</button>
       </div>
-      <span class="status" id="status4"></span>
+      <span class="status" id="status4" role="status" aria-live="polite"></span>
     </div>
   </section>
 
@@ -703,8 +706,11 @@ async function pedir(url,opciones){
     return await fetch(url,{...opciones,signal:ctrl.signal});
   }catch(e){
     const corto = e && e.name==="AbortError";
-    const err=new Error(corto?"La IA tardó demasiado en responder.":"No se pudo contactar el servicio de IA.");
+    const err=new Error(corto?"La IA no respondió a tiempo.":"No se pudo contactar el servicio de IA.");
     err.status=corto?504:0; err.transient=true;
+    // El Worker corta solo a los 25 s: si el navegador llega a 30, el
+    // servicio está colgado y la salida es la clave propia.
+    err.caido=corto;
     throw err;
   }finally{ clearTimeout(reloj); }
 }
@@ -842,9 +848,20 @@ function extractJSON(txt){
 }
 /* El mensaje puede venir de un error de la IA, así que entra como texto y
    no como HTML. Lo único que se construye es el spinner. */
+/* Tras 8 s de espera el estado dice cuánto lleva, para que nadie crea
+   que la app se colgó. */
+const relojes=new Map();
 function setStatus(el,msg,kind){
+  clearInterval(relojes.get(el)); relojes.delete(el);
   el.className="status"+(kind?(" "+kind):"");
   el.textContent="";
+  if(kind==="loading"){
+    const t0=Date.now();
+    relojes.set(el,setInterval(()=>{
+      const sg=Math.round((Date.now()-t0)/1000);
+      if(sg>=8 && el.lastChild) el.lastChild.textContent=msg+" ("+sg+" s)";
+    },1000));
+  }
   if(kind==="loading"){
     const s=document.createElement("span"); s.className="spin"; el.appendChild(s);
   }
@@ -862,7 +879,8 @@ let gen=0;
 $("genQuestions").addEventListener("click",async()=>{
   const g=gen;
   state.idea=$("idea").value.trim();
-  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");return;}
+  if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");$("idea").setAttribute("aria-invalid","true");$("idea").focus();return;}
+  $("idea").removeAttribute("aria-invalid");
   const btn=$("genQuestions");btn.disabled=true;
   setStatus($("status1"),"Analizando tu idea…","loading");
   try{
@@ -885,7 +903,8 @@ $("genQuestions").addEventListener("click",async()=>{
     state.currentPrompt=""; state.versiones=[]; state.chat=[];
     $("result").textContent=""; $("chatlog").textContent="";
     $("card3").classList.add("locked"); $("card3").setAttribute("inert","");
-    ["status2","status3","status4"].forEach(s=>$(s).textContent="");
+    ["status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
+    $("estadoPrompt").classList.add("hidden");
     actualizarUndo();
     unlock("card2"); setStep(2); guardar();
     $("card2").scrollIntoView({behavior:"smooth",block:"center"});
@@ -904,7 +923,7 @@ function renderQuestions(){
     etiqueta.htmlFor="qa"+i; etiqueta.textContent=(i+1)+". "+q;
     const campo=document.createElement("input");
     campo.type="text"; campo.id="qa"+i; campo.className="qa"; campo.dataset.i=i;
-    campo.placeholder="Tu respuesta (opcional, pero ayuda mucho)";
+    campo.placeholder="Tu respuesta (opcional)";
     fila.append(etiqueta,campo); cont.appendChild(fila);
   });
 }
@@ -947,7 +966,7 @@ $("genPrompt").addEventListener("click",async()=>{
 /* La etiqueta solo dice "listo para usar" si de verdad lo está. */
 function marcarEstado(truncado){
   const pendiente = /\[COMPLETAR/i.test(state.currentPrompt||"");
-  const e=$("estadoPrompt");
+  const e=$("estadoPrompt"); e.classList.toggle("hidden",!state.currentPrompt);
   e.textContent = truncado ? "salió incompleto" : pendiente ? "revisa los [COMPLETAR]" : "listo para usar";
 }
 function setPrompt(txt){
@@ -988,7 +1007,8 @@ $("restartBtn").addEventListener("click",()=>{
   $("idea").value="";$("questions").textContent="";$("result").textContent="";$("chatlog").textContent="";
   ["card2","card3"].forEach(id=>{$(id).classList.add("locked");$(id).setAttribute("inert","");});
   elegirTipo(tipos[0],false);   // el tipo tambien vuelve al inicio
-  ["status1","status2","status3","status4"].forEach(s=>$(s).innerHTML="");
+  ["status1","status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
+  $("estadoPrompt").classList.add("hidden");
   actualizarUndo(); olvidar();
   setStep(1); window.scrollTo({top:0,behavior:"smooth"});
 });
@@ -1000,7 +1020,7 @@ async function refine(){
   if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
   state.chat.push({yo:instr});
   mensajeChat(instr,"me");
-  $("chatInput").value="";guardar();
+  guardar();
   const btn=$("chatSend");btn.disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
@@ -1014,6 +1034,7 @@ async function refine(){
     const user=`PROMPT ACTUAL:\n"""${state.currentPrompt}"""\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
     const r=await callAI({system,user,max_tokens:2000});
     if(g!==gen) return;
+    $("chatInput").value="";
     setPrompt(r.text); marcarEstado(r.truncado);
     $("result").scrollIntoView({behavior:"smooth",block:"start"});
     const eco=r.truncado?"⚠ La versión ajustada salió incompleta":"✓ Prompt actualizado arriba";
@@ -1059,7 +1080,7 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
   }
   if(state.currentPrompt){
     $("result").textContent=state.currentPrompt;
-    unlock("card3");
+    unlock("card3"); marcarEstado(false);
     state.chat.forEach(m=> m.yo ? mensajeChat(m.yo,"me") : mensajeChat(m.ia||"","ai"));
   }
   actualizarUndo();
