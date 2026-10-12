@@ -2,9 +2,9 @@ Copyright (c) 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs
 
 Todos los derechos reservados.
 
-Este aviso cubre la aplicación «Creador de Super Prompt»: index.html,
-worker/superprompt-worker.js y assets/. No cubre la carpeta
-laboratorio-cuentas/, que es otra pieza con sus propios acuerdos.
+Este aviso cubre la aplicación «Creador de Super Prompt»: todo el
+repositorio salvo la carpeta laboratorio-cuentas/, que tiene sus propios
+acuerdos.
 
 El código, el diseño, los textos y las imágenes de la aplicación son obra
 de su autor. Que el repositorio sea público permite leerlo, pero no concede

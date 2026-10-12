@@ -33,13 +33,13 @@
    ==================================================================== */
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
-/* Corte por modelo: a los 10 s se pasa al siguiente. El peor caso total
+/* Corte por modelo: a los 12 s se pasa al siguiente. El peor caso total
    lo acota PRESUPUESTO_MS (25 s), incluida la lectura de la respuesta. */
-const TIMEOUT_MS = 10000;
-const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (Laboratorio)
+const TIMEOUT_MS = 12000;
+const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas
 /* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
-   prueben. Debe quedar por debajo del corte del navegador (30 s en la app
-   principal, 100 s en el Laboratorio) para que la app reciba un mensaje
+   prueben. Debe quedar por debajo del corte del navegador de cada app
+   (30 s en el Creador de Super Prompt) para que la app reciba un mensaje
    honesto en vez de cortar ella y culpar a la conexión. */
 const PRESUPUESTO_MS = 25000;
 const PRESUPUESTO_LARGO_MS = 90000;
@@ -47,7 +47,7 @@ const PRESUPUESTO_LARGO_MS = 90000;
 /* Topes de entrada. */
 const MAX_USER = 20000;
 const MAX_SYSTEM = 8000;
-const MAX_CUERPO = 64 * 1024;     // bytes del cuerpo de la petición, antes de leerlo
+const MAX_CUERPO = 64 * 1024;     // tope aproximado del cuerpo; con Content-Length se corta antes de leerlo
 
 /* Solo estos modelos; cualquier otro se sustituye por el de por defecto. */
 const MODELOS_PERMITIDOS = new Set([
@@ -75,7 +75,7 @@ function origenPermitido(request) {
 }
 
 /* Modelos. Google jubila modelos y mueve los alias -latest de un modelo a
-   otro sin avisar (en septiembre de 2026 flash-lite-latest apuntaba a
+   otro con poco aviso (en septiembre de 2026 flash-lite-latest apuntaba a
    gemini-3.5-flash-lite). Por eso nunca se fija uno solo: si el modelo
    pedido está retirado, devuelve vacío o rechaza la petición, se pasa al
    siguiente de la cadena (hasta 4: el pedido, el último que funcionó y
@@ -115,9 +115,10 @@ function demasiadasPeticiones(ip) {
 }
 /* Una petición que Google no pudo atender (bache pasajero) no cuenta para
    el freno: si no, una tormenta de 503 de Google expulsaba al salón entero. */
+const DEVOLUCIONES_MAX = 150;      // por IP y ventana: el freno nunca queda anulado
 function devolverVisita(ip) {
   const v = visitas.get(ip);
-  if (v && v.n > 0) v.n--;
+  if (v && v.n > 0 && (v.devueltas || 0) < DEVOLUCIONES_MAX) { v.n--; v.devueltas = (v.devueltas || 0) + 1; }
 }
 
 function hoyUTC() {
@@ -172,8 +173,8 @@ function json(data, status, origen) {
    duda, es pasajero: nunca un "vuelve mañana" en falso. */
 function tipo429(detalle) {
   const d = (detalle || "").toLowerCase();
+  if (/perday|per day/.test(d)) return "dia";       // si aparece la diaria, manda
   if (/perminute|per minute/.test(d)) return "minuto";
-  if (/perday|per day/.test(d)) return "dia";
   if (/credits are depleted|prepayment|credit balance/.test(d)) return "dia";
   return "minuto";
 }
@@ -213,8 +214,8 @@ function modeloMuerto(status, detalle) {
 /* Modelos a probar, en orden, sin repetir. */
 function cadenaDeModelos(pedido) {
   const lista = [];
-  /* Primero el que pidió la app (el Laboratorio pide uno más capaz que la
-     app principal); luego el último que funcionó y los de respaldo. */
+  /* Primero el que pidió la app; luego el último que funcionó y los de
+     respaldo. */
   for (const m of [pedido, modeloVivo, ...MODELOS_RESPALDO]) {
     if (m && MODELOS_PERMITIDOS.has(m) && !lista.includes(m)) lista.push(m);
   }
@@ -233,13 +234,13 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
      ignoran y Google anuncia que generaciones futuras responderán 400. */
   if (temperature !== undefined) body.generationConfig.temperature = temperature;
   if (system) body.system_instruction = { parts: [{ text: system }] };
-  /* La búsqueda en Google y el modo JSON no se pueden pedir a la vez:
-     con búsqueda, la app recibe texto y lo parsea ella. */
+  /* Por diseño no se combinan búsqueda en Google y modo JSON: con
+     búsqueda, la app recibe texto y lo interpreta ella. */
   if (grounded) body.tools = [{ google_search: {} }];
   else if (wantJson) body.generationConfig.responseMimeType = "application/json";
 
-  /* Un dossier con búsqueda y 4.000 tokens tarda más que un prompt corto:
-     10 s lo cortaría siempre. */
+  /* Una respuesta larga o con búsqueda tarda más que un prompt corto:
+     12 s lo cortaría siempre. */
   const porModelo = (grounded || (max_tokens || 0) > 2000) ? TIMEOUT_LARGO_MS : TIMEOUT_MS;
   const limite = Math.max(1000, Math.min(porModelo, restante || porModelo));
   const ctrl = new AbortController();
@@ -298,6 +299,7 @@ async function leerRespuesta(res) {
   try {
     data = await res.json();
   } catch (e) {
+    if (e && e.name === "AbortError") throw e;   // se convierte en 504 arriba
     const err = new Error("La IA devolvió una respuesta ilegible.");
     err.status = 502;
     err.modeloFlojo = true;
@@ -312,8 +314,9 @@ async function leerRespuesta(res) {
        · SAFETY  → la IA bloqueó el contenido: cambiar de modelo no ayuda.
        · lo demás → este modelo no está rindiendo (le pasa hoy a
          3.5-flash-lite): se prueba el siguiente, sin tocar la clave. */
+  const bloqueo = (data && data.promptFeedback && data.promptFeedback.blockReason) || "";
   if (!texto) {
-    if (razon === "SAFETY") {
+    if (bloqueo || ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"].includes(razon)) {
       const err = new Error("Los filtros de Google frenaron esta petición (a veces pasa con temas sensibles). Prueba a contarlo con otras palabras.");
       err.status = 422;
       err.noRotar = true;
@@ -536,7 +539,7 @@ export default {
     if (huboBache && !todasQuemadas) {
       devolverVisita(ip);
       return json({
-        error: "El servicio de IA está saturado en este momento.",
+        error: "La IA está muy solicitada en este momento. Espera unos segundos e inténtalo de nuevo.",
         status: estadoBache,
         transient: true
       }, estadoBache, origen);
@@ -554,7 +557,7 @@ export default {
     /* Todos los modelos rechazaron la petición (400 que no es de clave). */
     if (hubo400 && !todasQuemadas) {
       return json({
-        error: "La IA no pudo procesar esta petición. Inténtalo de nuevo; si se repite, puedes usar tu propia clave gratis.",
+        error: "La IA no pudo procesar esta petición. Inténtalo de nuevo en un momento.",
         status: 502
       }, 502, origen);
     }
@@ -602,7 +605,7 @@ export default {
       }, 503, origen);
     }
     return json({
-      error: "Se agotó la cuota gratuita de IA por hoy. Se reinicia mañana.",
+      error: "Se acabó el uso gratuito de la IA incluida por hoy. Se reinicia en unas horas (a medianoche, hora del Pacífico).",
       status: 429,
       quota: true
     }, 429, origen);

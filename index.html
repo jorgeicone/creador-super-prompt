@@ -67,7 +67,7 @@
 
   header.top{margin-bottom:26px;opacity:0;transform:translateY(14px);animation:rise .7s .05s forwards}
   .brand{display:flex;align-items:center;gap:14px}
-  .logo{width:52px;height:52px;border-radius:15px;position:relative;
+  .logo{flex:0 0 52px;width:52px;height:52px;border-radius:15px;position:relative;
     background:linear-gradient(135deg,var(--cyan),var(--purple));
     display:grid;place-items:center;font-weight:800;font-size:22px;color:#04101f;
     box-shadow:var(--glow-cyan);animation:float 5s ease-in-out infinite}
@@ -79,21 +79,6 @@
     filter:drop-shadow(0 0 18px rgba(0,212,255,.25))}
   .sub{color:var(--muted);font-size:1rem;margin:4px 0 0}
 
-  /* La barra de pasos repetía los títulos y números de las tarjetas. */
-  .progress{display:none!important;align-items:center;gap:0;margin:24px 0 26px;
-    opacity:0;transform:translateY(14px);animation:rise .7s .15s forwards}
-  .pstep{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-  .pdot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
-    font-weight:700;font-size:.95rem;border:1.5px solid var(--border);color:var(--muted);
-    background:rgba(8,19,39,.8);transition:.4s}
-  .pstep.on .pdot{border-color:var(--cyan);color:#04101f;
-    background:linear-gradient(135deg,var(--cyan),var(--purple));box-shadow:var(--glow-cyan)}
-  .pstep.done .pdot{border-color:var(--ok);color:var(--ok);background:rgba(34,211,166,.12)}
-  .plabel{font-size:.82rem;color:var(--muted);font-weight:600}
-  .pstep.on .plabel{color:var(--txt)}
-  .pline{flex:1 1 auto;height:2px;background:var(--border);margin:0 12px;min-width:20px;position:relative;overflow:hidden}
-  .pline::after{content:"";position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .5s}
-  .pline.fill::after{width:100%}
 
   .card{position:relative;background:var(--panel);backdrop-filter:blur(16px) saturate(140%);
     -webkit-backdrop-filter:blur(16px) saturate(140%);
@@ -157,7 +142,7 @@
   .siguiente code{font-size:.85rem;color:var(--orange)}
   /* Proyectado en sala (1920 px): más ancho y letra más grande. */
   @media (min-width:1600px){
-    html{font-size:18px}
+    html{font-size:20px}
     .wrap{max-width:1180px}
     .result{font-size:1.25rem}
     .status{font-size:1rem}
@@ -202,16 +187,16 @@
   .note{font-size:.79rem;color:var(--muted);margin-top:10px;line-height:1.5}
   /* Subrayado con text-decoration (no border+padding): el borde caía sobre
      la línea siguiente y parecía tachar el texto. */
-  .note a,.legal-fine a{color:var(--cyan);text-decoration:underline dashed;text-underline-offset:3px;
+  .note a,.legal-fine a,.privacidad a{color:var(--cyan);text-decoration:underline dashed;text-underline-offset:3px;
     text-decoration-color:var(--border-str);display:inline-block;padding:4px 0}
   .status{font-size:.86rem;margin-top:10px;min-height:1.2em;transition:.2s}
   .status.err{color:var(--err)} .status.ok{color:var(--ok)} .status.warn{color:var(--orange)}
   .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.22);
     border-top-color:var(--cyan);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
-  details.cfg summary{cursor:pointer;min-height:44px;font-size:1.1rem;font-weight:700;color:var(--txt);user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
-  details.cfg summary::-webkit-details-marker{display:none}
-  details.cfg summary::before{content:"⚙️";font-size:1.1rem}
-  details.cfg[open] summary .chev{transform:rotate(90deg)}
+  details.cfg > summary{cursor:pointer;min-height:44px;font-size:1.1rem;font-weight:700;color:var(--txt);user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
+  details.cfg > summary::-webkit-details-marker{display:none}
+  details.cfg > summary::before{content:"⚙️";font-size:1.1rem}
+  details.cfg[open] > summary .chev{transform:rotate(90deg)}
   .chev{display:inline-block;transition:.25s;color:var(--muted);margin-left:auto;font-size:.9rem}
   .pill{display:inline-block;font-size:.75rem;padding:3px 10px;border-radius:20px;vertical-align:middle;
     background:rgba(255,140,0,.15);border:1px solid var(--orange);color:var(--orange);font-weight:700}
@@ -229,9 +214,10 @@
   .free-banner .privacidad{display:block;margin-top:6px;font-size:.84rem;line-height:1.5;color:var(--muted)}
   .free-banner .privacidad summary{cursor:pointer;list-style:none;padding:8px 0;min-height:44px;box-sizing:border-box}
   .free-banner .privacidad summary::-webkit-details-marker{display:none}
+  .privacidad .linkbtn{display:inline;min-height:0;margin:0;padding:2px 0}
   .linkbtn{margin-top:8px;background:none;border:none;padding:0 2px;color:var(--cyan);font:inherit;
     font-weight:700;text-decoration:underline;cursor:pointer;min-height:44px}
-  .status .linkbtn{margin:0 0 0 6px;min-height:0}
+  .status .linkbtn{margin:0 0 0 6px;min-height:44px;padding:0 10px}
   /* aviso cuando la IA gratis no puede atender y se ofrece la clave propia */
   .cfg-aviso{display:flex;align-items:flex-start;gap:11px;padding:13px 16px;border-radius:12px;
     background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.45);
@@ -256,7 +242,7 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   @media(prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
-    header.top,.progress,.card,.q,.free-banner{opacity:1!important;transform:none!important}
+    header.top,.card,.q,.free-banner{opacity:1!important;transform:none!important}
   }
   @media(max-width:640px){
     /* En celular las 4 tarjetas de tipo en 2x2 empujaban el campo de la
@@ -273,7 +259,7 @@
   }
   @media (max-width:640px) and (max-height:700px){
     .wrap{padding-top:16px}
-    header.top .sub{display:none}
+    header.top .sub .promesa{display:none}
     .free-banner{padding:9px 12px;margin-bottom:12px}
     .card{padding-top:18px}
     .card-head{margin-bottom:10px}.card-head p{display:none}
@@ -297,18 +283,10 @@
       <div class="logo">SP</div>
       <div>
         <h1>Creador de <span class="accent">Super Prompt</span></h1>
-        <p class="sub">Convierte cualquier idea en un prompt profesional en tres pasos ·&nbsp;<span class="marca">ICONEialabs</span></p>
+        <p class="sub"><span class="promesa">Convierte cualquier idea en un prompt profesional en tres pasos ·&nbsp;</span><span class="marca">ICONEialabs</span></p>
       </div>
     </div>
   </header>
-
-  <div class="progress" id="progress">
-    <div class="pstep on" data-s="1"><div class="pdot">1</div><span class="plabel">Tu idea</span></div>
-    <div class="pline" data-l="1"></div>
-    <div class="pstep" data-s="2"><div class="pdot">2</div><span class="plabel">Un poco más</span></div>
-    <div class="pline" data-l="2"></div>
-    <div class="pstep" data-s="3"><div class="pdot">3</div><span class="plabel">Tu Super Prompt</span></div>
-  </div>
 
   <!-- Banner cuando la IA viene incluida gratis -->
   <div class="free-banner hidden" id="freeBanner">
@@ -319,7 +297,7 @@
            del celular y dejaba fuera el campo para escribir. El detalle,
            plegado. -->
       <details class="privacidad"><summary>🔒 No escribas datos personales ni confidenciales. <u>Ver por qué</u></summary>
-        Tu texto (idea, respuestas y ajustes) pasa por nuestro sistema en Cloudflare y de ahí a Google (Gemini), que lo procesan por encargo de ICONEialabs para generar el prompt; la dirección de tu conexión se usa solo para evitar el uso excesivo. Nosotros no guardamos tu texto, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. Lo que escribas se guarda solo en esta pestaña del navegador. <button type="button" class="linkbtn" id="borrarAhora">Borrar lo que escribí</button> · Preguntas sobre tus datos: <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a></details>
+        Tu texto (idea, respuestas y ajustes) pasa por nuestro sistema en Cloudflare y de ahí a Google (Gemini), para generar el prompt: Cloudflare lo procesa por encargo de ICONEialabs y Google lo recibe bajo sus propios términos; la dirección de tu conexión se usa solo para evitar el uso excesivo. Nosotros no guardamos tu texto, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. Lo que escribas se guarda solo en esta pestaña del navegador. <button type="button" class="linkbtn" id="borrarAhora">Borrar lo que escribí</button> · Preguntas sobre tus datos: <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a></details>
     </div>
   </div>
 
@@ -330,11 +308,12 @@
     <div style="margin-top:18px">
       <div class="settings">
         <div>
-          <label for="apiKey">Tu clave gratuita de Google Gemini</label>
+          <label for="apiKey">Tu código de acceso a Gemini (API key)</label>
+          <p class="aviso-chico" style="margin:0 0 8px">No es la contraseña de tu cuenta de Google: nunca escribas tu contraseña aquí.</p>
           <div class="keyrow">
-            <input type="password" id="apiKey" class="grow" placeholder="Pega aquí tu clave" autocomplete="off" />
-            <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
-            <span class="keybadge no" id="keyBadge">Sin clave</span>
+            <input type="password" id="apiKey" class="grow" placeholder="Pega aquí tu API key" autocomplete="off" />
+            <button class="btn ghost" id="toggleKey" title="Mostrar u ocultar" aria-label="Mostrar la API key" aria-pressed="false" style="padding:0 16px;min-height:44px">👁</button>
+            <span class="keybadge no" id="keyBadge">Sin API key</span>
           </div>
         </div>
       </div>
@@ -349,8 +328,10 @@
           </select>
       </details>
       <label style="margin-top:14px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">
-        <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la clave en este navegador <span class="aviso-chico">(no lo marques en un computador compartido ni mientras proyectas)</span></label>
-      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu clave se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos y revisores humanos pueden leerlo.</p>
+        <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la API key en este navegador <span class="aviso-chico">(no lo marques en un computador compartido ni mientras proyectas)</span></label>
+      <button type="button" class="linkbtn" id="olvidarClave">Olvidar mi API key en este navegador</button>
+      <span class="status" id="statusClave" role="status" aria-live="polite"></span>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu API key se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos y revisores humanos pueden leerlo.</p>
     </div>
   </details>
 
@@ -368,7 +349,7 @@
       <div class="type"        data-type="General"   role="radio" aria-checked="false" tabindex="-1"><span class="ico" aria-hidden="true">✨</span>General</div>
     </div>
     <label for="idea">¿Qué necesitas?</label>
-    <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para LinkedIn sobre inteligencia artificial para emprendedores..."></textarea>
+    <textarea id="idea" placeholder="Ej: Quiero un plan de contenidos para redes sociales sobre inteligencia artificial para emprendedores..."></textarea>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="genQuestions">Generar preguntas →</button>
       <span class="status" id="status1" role="status" aria-live="polite"></span>
@@ -395,13 +376,11 @@
       <div><h2>Tu Super Prompt <span class="pill hidden" id="estadoPrompt"></span></h2><p>Le dice a la IA quién ser, qué sabe de tu caso, qué evitar y cómo entregarte el resultado.</p></div>
     </div>
     <div class="result" id="result" tabindex="-1"></div>
-    <p class="siguiente">👉 <b>Siguiente paso:</b> cópialo y pégalo en ChatGPT, Gemini, Copilot o la IA que uses. Si ves un <code>[COMPLETAR: …]</code>, llénalo antes de enviarlo.</p>
-    <p class="siguiente">¿Quieres sacarle más provecho a la IA? Conoce más de ICONEialabs en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>.</p>
+    <p class="siguiente">👉 <b>Siguiente paso:</b> cópialo y pégalo en ChatGPT, Gemini, Copilot o la IA que uses. Si ves un <code>[COMPLETAR: …]</code>, llénalo antes de enviarlo, o escríbelo abajo en «Pide un ajuste» (ej.: «es para clientes de 40 a 60 años»).</p>
     <div class="row" style="margin-top:16px">
       <button class="btn" id="copyBtn">📋 Copiar</button>
       <button class="btn ghost" id="downloadBtn">⬇ Descargar .txt</button>
-      <button class="btn ghost" id="undoBtn" disabled title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
-      <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
+      <button class="btn ghost hidden" id="undoBtn" title="Vuelve a la versión anterior del prompt">↶ Versión anterior</button>
       <span class="status" id="status3" role="status" aria-live="polite"></span>
     </div>
 
@@ -414,14 +393,17 @@
       </div>
       <span class="status" id="status4" role="status" aria-live="polite"></span>
     </div>
+    <div class="row" style="margin-top:20px">
+      <button class="btn ghost" id="restartBtn">↺ Empezar de nuevo</button>
+    </div>
+    <p class="siguiente">¿Quieres sacarle más provecho a la IA? Conoce más de ICONEialabs en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>.</p>
   </section>
 
   <footer>
     <div class="legal">
       <p class="legal-main">© 2026 <strong>Ing.&nbsp;Jorge Hugo Pérez&nbsp;Gaona</strong>&nbsp;·&nbsp;ICONEialabs</p>
-      <p class="legal-fine">Úsala libremente para crear tus prompts. El código, el diseño y los textos de esta aplicación son de Jorge Hugo Pérez Gaona · ICONEialabs: para copiarlos o adaptarlos, escríbenos en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>. Google y Gemini son marcas de Google LLC, ChatGPT de OpenAI y Copilot de Microsoft; ICONEialabs no está afiliada a ellas.</p>
+      <p class="legal-fine">Úsala libremente para crear tus prompts. El código, el diseño y los textos de esta aplicación son de su autor: para copiarlos o adaptarlos, escríbenos en <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>. Google y Gemini son marcas de Google LLC, ChatGPT de OpenAI, Copilot de Microsoft y Cloudflare de Cloudflare, Inc.; ICONEialabs no está afiliada a ellas.</p>
     </div>
-    <p class="legal-brand">Hecho con IA <span class="dot">●</span> ICONEialabs</p>
   </footer>
 </div>
 
@@ -432,7 +414,7 @@
    Las claves de la IA incluida viven SOLO como secrets del Worker y nunca
    llegan al navegador. Las claves del pool no se pegan en esta página
    (la única clave que se escribe aquí es la propia del usuario).
-     · Si PROXY_URL tiene URL -> IA gratis vía el Worker.
+     · Si PROXY_URL tiene URL -> IA incluida vía el Worker.
      · Si está vacía          -> la app pide al usuario su propia clave.
    ==================================================================== */
 const CONFIG = {
@@ -441,7 +423,7 @@ const CONFIG = {
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
-console.log("%c© 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs — Todos los derechos reservados.","color:#00d4ff;font-weight:bold;font-size:13px");
+console.log("%c© 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs. Todos los derechos reservados.","color:#00d4ff;font-weight:bold;font-size:13px");
 
 /* ============ FONDO: red neuronal + partículas discretas ============ */
 (function neuralBG(){
@@ -585,7 +567,6 @@ const $=id=>document.getElementById(id);
 const HAS_PROXY = !!(CONFIG.PROXY_URL && /^https?:\/\//.test(CONFIG.PROXY_URL.trim()));
 const FREE_MODE = HAS_PROXY;
 let state={type:"Redacción",idea:"",questions:[],currentPrompt:"",versiones:[],chat:[],truncado:false,ideaPreguntas:"",tipoPreguntas:""};
-let pasoActual=1;
 
 /* Antes, una recarga del navegador borraba todo el trabajo. Se guarda en
    sessionStorage (no localStorage: al cerrar la pestaña se va, que es lo
@@ -598,7 +579,7 @@ function guardar(){
       currentPrompt:state.currentPrompt, versiones:state.versiones, chat:state.chat,
       truncado:state.truncado, ideaPreguntas:state.ideaPreguntas, tipoPreguntas:state.tipoPreguntas,
       respuestas:[...document.querySelectorAll(".qa")].map(a=>a.value),
-      paso:pasoActual
+      v:2
     }));
   }catch(e){/* sesión llena o bloqueada: no es motivo para romper la app */}
 }
@@ -633,7 +614,7 @@ let panelClaveListo = false;
 function prepararPanelClave(){
   if(panelClaveListo) return; panelClaveListo = true;
   const refreshBadge=()=>{const b=$("keyBadge"),has=$("apiKey").value.trim().length>10;
-    b.className="keybadge "+(has?"yes":"no");b.textContent=has?"Clave lista":"Sin clave";};
+    b.className="keybadge "+(has?"yes":"no");b.textContent=has?"API key lista":"Sin API key";};
   /* Con cookies o datos de sitio bloqueados, localStorage lanza excepción.
      Sin este envoltorio, el panel de la clave no llegaba a mostrarse y el
      usuario quedaba sin salida. */
@@ -646,10 +627,19 @@ function prepararPanelClave(){
     escribir("sp_key",e.target.checked?$("apiKey").value.trim():null);});
   $("apiKey").addEventListener("input",()=>{refreshBadge();if($("remember").checked)escribir("sp_key",$("apiKey").value.trim());});
   $("model").addEventListener("change",()=>escribir("sp_model",$("model").value));
-  $("toggleKey").addEventListener("click",()=>{const f=$("apiKey");f.type=f.type==="password"?"text":"password";});
+  $("toggleKey").addEventListener("click",()=>{
+    const f=$("apiKey"), ver=f.type==="password"; f.type=ver?"text":"password";
+    $("toggleKey").setAttribute("aria-pressed",ver?"true":"false");
+    $("toggleKey").setAttribute("aria-label",ver?"Ocultar la API key":"Mostrar la API key");
+  });
+  $("olvidarClave").addEventListener("click",()=>{
+    olvidarClave(); $("apiKey").value=""; $("remember").checked=false; refreshBadge();
+    setStatus($("statusClave"),"✓ Listo: este navegador ya no recuerda tu API key.","ok");
+  });
 }
 
-/* La IA gratis no puede seguir: se abre el panel y se explica por qué, con
+function olvidarClave(){ try{ localStorage.removeItem("sp_key"); localStorage.removeItem("sp_model"); }catch(e){} }
+/* La IA incluida no puede seguir: se abre el panel y se explica por qué, con
    el enlace para sacar una clave gratis. Se hace una sola vez por sesión. */
 function ofrecerClavePropia(motivo){
   if(modoClavePropia) return;
@@ -660,14 +650,14 @@ function ofrecerClavePropia(motivo){
   $("cfg").open = true;
   const aviso=$("cfgAviso");
   aviso.innerHTML='<span class="fico">⚠️</span><div><b>'+motivo+'</b><br>'+
-    'Puedes seguir ahora mismo con tu propia clave gratis de Gemini: se saca con tu cuenta de Google, en unos minutos, en '+
+    'Puedes seguir ahora mismo con tu propia API key gratuita de Gemini (un código de acceso, no tu contraseña): se saca con tu cuenta de Google, en unos minutos, en '+
     '<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, '+
     'no cuesta nada y se queda solo en este navegador.'+
     (HAS_PROXY?'<br><button type="button" class="linkbtn" id="volverGratis">Volver a intentar con la IA incluida</button>':'')+
     '</div>';
   aviso.classList.remove("hidden");
   const v=$("volverGratis"); if(v) v.addEventListener("click",volverAIaIncluida);
-  $("cfg").scrollIntoView({behavior:"smooth",block:"center"});
+  $("cfg").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* La caída de la IA incluida puede ser pasajera: el usuario puede volver
@@ -692,7 +682,7 @@ function revisarVigencia(){
     if(!vigente){ $(id).classList.add("locked"); $(id).setAttribute("inert",""); }
   });
   if(vigente){ unlock("card2"); if(state.currentPrompt) unlock("card3"); setStatus($("status1"),"",""); }
-  else setStatus($("status1"),"Cambiaste tu idea: vuelve a generar las preguntas.","warn");
+  else setStatus($("status1"),"Cambiaste la idea o el tipo: vuelve a generar las preguntas.","warn");
 }
 function elegirTipo(t,conFoco){
   tipos.forEach(x=>{
@@ -706,7 +696,7 @@ function elegirTipo(t,conFoco){
   if(conFoco!==null) revisarVigencia();
 }
 $("types").addEventListener("click",e=>{
-  const t=e.target.closest(".type"); if(t) elegirTipo(t,false);
+  const t=e.target.closest(".type"); if(t){ elegirTipo(t,false); if(e.detail>0) t.blur(); }
 });
 $("types").addEventListener("keydown",e=>{
   const t=e.target.closest(".type"); if(!t)return;
@@ -720,14 +710,6 @@ $("types").addEventListener("keydown",e=>{
 });
 
 // progreso
-function setStep(n){
-  pasoActual=n;
-  document.querySelectorAll(".pstep").forEach(s=>{
-    const v=+s.dataset.s; s.classList.toggle("on",v===n); s.classList.toggle("done",v<n);
-    s.querySelector(".pdot").textContent=(v<n)?"✓":v;
-  });
-  document.querySelectorAll(".pline").forEach(l=>l.classList.toggle("fill",+l.dataset.l<n));
-}
 
 // ¿la cuota se agotó de verdad? Entonces reintentar NO sirve de nada:
 // no es una saturación pasajera, es que no queda saldo/cuota hasta mañana.
@@ -756,7 +738,8 @@ const TIMEOUT_CLIENTE=30000;
    del paso 1 las abortan, para que no dejen botones bloqueados ni
    resultados de otra idea. */
 const enVuelo=new Set();
-function cancelarTodo(){ enVuelo.forEach(c=>{ c.cancelado=true; c.abort(); }); enVuelo.clear(); }
+let cancelaciones=0;   // sube con cada cancelación: callAI lo revisa tras sus pausas
+function cancelarTodo(){ cancelaciones++; enVuelo.forEach(c=>{ c.cancelado=true; c.abort(); }); enVuelo.clear(); }
 async function pedir(url,opciones){
   const ctrl=new AbortController(); enVuelo.add(ctrl);
   const reloj=setTimeout(()=>ctrl.abort(),TIMEOUT_CLIENTE);
@@ -787,7 +770,7 @@ async function callOnce({system,user,max_tokens,json}){
     if(!data||typeof data!=="object") { data={}; legible=false; }
     if(!res.ok||data.error){
       const status=data.status||res.status;
-      const emsg=(status===400||!data.error)?"Algo no salió bien al enviar tu texto. Inténtalo de nuevo.":data.error;
+      const emsg=(status===400||!data.error)?"Algo falló de nuestro lado al procesar la petición. Inténtalo de nuevo.":data.error;
       const err=new Error(emsg); err.status=status;
       const delWorker = typeof data.error==="string";
       err.delWorker = delWorker;
@@ -804,7 +787,7 @@ async function callOnce({system,user,max_tokens,json}){
       // avería (mantenimiento) y no un bache, y la app ofrece la clave propia.
       err.transient = (data.quota===true || data.rate===true) ? false
                     : delWorker ? data.transient===true
-                    : isTransient(emsg,status);
+                    : (isTransient(emsg,status) || undefined);
       throw err;
     }
     if(!data.text){
@@ -815,7 +798,7 @@ async function callOnce({system,user,max_tokens,json}){
     return {text:data.text, truncado:data.truncated===true};
   }
   const key=currentKey();
-  if(!key)throw new Error("Pega primero tu clave gratuita de Gemini en el panel de arriba.");
+  if(!key)throw new Error("Pega primero tu API key gratuita de Gemini en el panel de arriba.");
   // La clave va en cabecera, no en la URL: las URL quedan en historiales y registros.
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(currentModel())}:generateContent`;
   const body={
@@ -827,14 +810,14 @@ async function callOnce({system,user,max_tokens,json}){
   const res=await pedir(url,{method:"POST",headers:{"content-type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
   if(!res.ok){
     let detail=""; try{const j=await res.json();detail=(j.error?.message||"")+" "+JSON.stringify(j.error?.details||[]);}catch(e){detail=res.statusText;}
-    if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(detail)))throw new Error("Tu clave de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
+    if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(detail)))throw new Error("Tu API key de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
     const porMinuto=res.status===429 && !/perday|per day/i.test(detail) && /perminute|per minute|retry in \d/i.test(detail);
-    if(porMinuto){ const e=new Error("Tu clave llegó a su límite por minuto. Espera un minuto e inténtalo de nuevo."); e.status=429; e.transient=false; throw e; }
+    if(porMinuto){ const e=new Error("Tu API key llegó a su límite por minuto. Espera un minuto e inténtalo de nuevo."); e.status=429; e.transient=false; throw e; }
     const agotada=isQuota(detail,res.status);
     // Sin exponer el detalle crudo de Google (que incluye datos de facturación).
     // Ni el detalle crudo de Google (en inglés, con datos de facturación)
     // ni un "Error 500": un mensaje que el usuario pueda entender.
-    const err=new Error(agotada?"Tu clave agotó su uso gratuito de hoy; se reinicia mañana.":"La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.");
+    const err=new Error(agotada?"Tu API key agotó su uso gratuito de hoy; se reinicia en unas horas (a medianoche, hora del Pacífico).":"La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.");
     err.status=res.status; err.quota=agotada; err.transient=agotada?false:isTransient(detail,res.status);
     throw err;
   }
@@ -876,14 +859,14 @@ function iaGratisCaida(err){
 }
 function motivoCaida(err){
   if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy.";
-  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi del salón). Espera unos minutos (hasta 10) e inténtalo de nuevo.";
-  if(!err.status) return "No se pudo contactar el servicio de IA incluido.";
-  return "El servicio de IA incluido no está disponible ahora.";
+  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi de un salón o de una oficina). Espera unos minutos (hasta 10) e inténtalo de nuevo.";
+  if(!err.status) return "No se pudo contactar la IA incluida.";
+  return "La IA incluida no está disponible ahora.";
 }
 
 // llamada a la IA con reintentos automáticos ante saturaciones temporales
 async function callAI({system,user,max_tokens=1500,json=false}){
-  const t0=Date.now();
+  const t0=Date.now(), c0=cancelaciones;
   /* Si se pasó a clave propia pero no hay clave escrita, el botón del paso
      vuelve a intentar con la IA incluida (p. ej. tras un corte de wifi). */
   if(HAS_PROXY && modoClavePropia && currentKey().length<=10) volverAIaIncluida();
@@ -901,10 +884,11 @@ async function callAI({system,user,max_tokens=1500,json=false}){
       if(err.cancelado) throw err;
       // Solo se reintenta si el primer intento fue rápido: si ya se esperó
       // más de 8 s, otro intento solo duplica la espera.
-      const pasajero = !err.quota && !err.rate && err.status!==504 &&
-        (err.transient || (!err.delWorker && isTransient(err.message,err.status||0)));
+      const pasajero = !err.quota && !err.rate && err.status!==504 && err.transient!==false &&
+        (err.transient || err.caido || (!err.delWorker && isTransient(err.message,err.status||0)));
       if(pasajero && intento<MAX && Date.now()-t0<8000){
         await sleep(1500 + Math.random()*800);
+        if(cancelaciones!==c0){ const c=new Error("Cancelado."); c.cancelado=true; throw c; }
         continue;
       }
       /* La IA incluida no puede seguir. En vez de dejar al usuario sin
@@ -912,17 +896,19 @@ async function callAI({system,user,max_tokens=1500,json=false}){
          Si ya tenía una guardada, ni se entera: se reintenta con ella. */
       if(usaProxy() && err.rate) throw new Error(motivoCaida(err));
       if(usaProxy() && (err.status||0)===0 && !err.caido && !iaGratisCaida(err))
-        throw new Error("No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
+        throw new Error(navigator.onLine
+          ? "No pudimos conectar con la IA incluida. Revisa tu wifi; si funciona, inténtalo de nuevo en un momento."
+          : "No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
       if(usaProxy() && iaGratisCaida(err)){
         ofrecerClavePropia(motivoCaida(err));
         if(currentKey().length>10) return await callOnce({system,user,max_tokens,json});
-        throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega arriba tu clave gratis de Gemini e inténtalo de nuevo.");
+        throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega arriba tu API key gratuita de Gemini e inténtalo de nuevo.");
       }
       // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
       // decimos la verdad, en vez de 7 segundos de spinner y "espera un momento".
       if(err.quota||isQuota(err.message,err.status||0)) throw err;
 
-      const reintentable = err.transient || (!err.delWorker && isTransient(err.message,err.status||0));
+      const reintentable = err.transient!==false && (err.transient || (!err.delWorker && isTransient(err.message,err.status||0)));
       if(reintentable){
         if(err.status===504) throw new Error("La IA está tardando más de lo normal. Inténtalo de nuevo en un momento.");
         if(err.delWorker) throw err;   // el Worker ya explicó la causa
@@ -948,6 +934,8 @@ function setStatus(el,msg,kind){
   el.className="status"+(kind?(" "+kind):"");
   el.textContent="";
   if(kind==="loading"){
+    // En celular el estado puede quedar bajo el borde: se trae a la vista.
+    try{ el.scrollIntoView({block:"nearest",behavior:"smooth"}); }catch(e){}
     const t0=Date.now();
     relojes.set(el,setInterval(()=>{
       const sg=Math.round((Date.now()-t0)/1000);
@@ -975,10 +963,14 @@ function unlock(id){const c=$(id);c.classList.remove("locked");c.removeAttribute
 // Paso 1 -> preguntas
 /* Cada "Empezar de nuevo" sube la generación. Una respuesta que llega
    después de reiniciar pertenece a la generación anterior y se descarta. */
+/* Un contador por paso: preguntas (q), prompt (p) y ajuste (c). Pedir
+   preguntas nuevas invalida el prompt y los ajustes; crear el prompt
+   invalida los ajustes; un ajuste no toca los pasos anteriores. */
+const G={q:0,p:0,c:0};
 let gen=0;
 $("genQuestions").addEventListener("click",async()=>{
   cancelarTodo();             // un prompt en vuelo de la idea anterior ya no sirve
-  const g=++gen;
+  const g=++G.q; G.p++; G.c++; const r0=gen;
   state.idea=$("idea").value.trim();
   if(!state.idea){setStatus($("status1"),"Describe primero tu necesidad.","err");$("idea").setAttribute("aria-invalid","true");$("idea").focus();return;}
   $("idea").removeAttribute("aria-invalid");
@@ -986,8 +978,8 @@ $("genQuestions").addEventListener("click",async()=>{
   setStatus($("status1"),"Analizando tu idea…","loading");
   try{
     const system=`Eres un experto mundial en ingeniería de prompts. El usuario quiere crear un prompt del tipo "${state.type}". Genera EXACTAMENTE 3 preguntas breves y personalizadas a su idea, cuyas respuestas te permitan construir un prompt profesional (para quién es, qué tono, qué forma debe tener el resultado, qué evitar o qué contexto falta). Formula las preguntas en el idioma de la idea, en lenguaje cotidiano y tuteando, como se las haría una persona; no uses las palabras prompt, rol, formato de salida ni restricciones. No pidas nombres, datos personales, cifras confidenciales ni información sensible: pregunta por el tipo de público y el propósito, no por la identidad. Responde SOLO con JSON válido: {"questions":["...","...","..."]}. Sin texto adicional.`;
-    const r=await callAI({system,user:state.idea,max_tokens:1000,json:true});
-    if(g!==gen) return;
+    const r=await callAI({system,user:`"""${state.idea}"""`,max_tokens:1000,json:true});
+    if(g!==G.q||r0!==gen){ setStatus($("status1"),"",""); return; }
     const j=extractJSON(r.text);
     const preguntas = (j&&Array.isArray(j.questions)?j.questions:[])
       .filter(q=>typeof q==="string" && q.trim()).map(q=>q.trim());
@@ -1008,11 +1000,11 @@ $("genQuestions").addEventListener("click",async()=>{
     ["status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
     $("estadoPrompt").classList.add("hidden");
     actualizarUndo();
-    unlock("card2"); setStep(2); guardar();
+    unlock("card2"); guardar();
     $("card2").scrollIntoView({behavior:"smooth",block:"center"});
     const q0=$("qa0"); if(q0) q0.focus({preventScroll:true});
     setStatus($("status1"),"✓ Preguntas generadas","ok");
-  }catch(err){if(g===gen) setStatus($("status1"),err.message,"err");}
+  }catch(err){ setStatus($("status1"), g===G.q&&r0===gen ? err.message : "", g===G.q&&r0===gen ? "err" : ""); }
   finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 /* Construido con textContent en vez de innerHTML: el escapado a mano solo
@@ -1042,7 +1034,7 @@ function mensajeChat(texto,quien){
 
 // Paso 2 -> prompt
 $("genPrompt").addEventListener("click",async()=>{
-  const g=++gen;
+  const g=++G.p; G.c++; const gq=G.q, r0=gen;
   const answers=[...document.querySelectorAll(".qa")].map((a,i)=>({q:state.questions[i],a:a.value.trim()}));
   const btn=$("genPrompt");btn.disabled=true;
   setStatus($("status2"),"Redactando tu Super Prompt…","loading");
@@ -1051,15 +1043,19 @@ $("genPrompt").addEventListener("click",async()=>{
     const system=`Eres un ingeniero de prompts de élite. Construye UN prompt final, profesional y listo para copiar y pegar en cualquier LLM. Aplica técnicas avanzadas: (1) asignación de un rol/persona experto, (2) contexto de ejecución claro, (3) delimitadores triple comilla solo si la tarea recibe un texto o dato del usuario, (4) restricciones explícitas contra alucinaciones, (5) formato de salida esperado, y (6) un ejemplo breve solo si aplica, con marcadores en lugar de datos concretos. Si el usuario no respondió algún detalle, NO inventes datos, cifras ni audiencias: deja un marcador visible escrito como pregunta sencilla y tuteando, por ejemplo [COMPLETAR: ¿para quién es?]. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Escribe el prompt en el mismo idioma de la idea del usuario. Devuelve ÚNICAMENTE el texto del prompt final, sin explicaciones, sin encabezados como "Aquí tienes", sin comentarios meta.`;
     const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n"""${state.idea}"""\n\nDETALLES ADICIONALES:\n${qa}`;
     const r=await callAI({system,user,max_tokens:2000});
-    if(g!==gen) return;
-    state.versiones=[]; state.chat=[]; state.currentPrompt="";   // prompt nuevo: historial limpio
+    if(g!==G.p||gq!==G.q||r0!==gen){ setStatus($("status2"),"",""); return; }
+    /* Prompt nuevo: el anterior queda como versión (no se pierde), y el
+       chat empieza de cero para el prompt nuevo. */
+    if(state.currentPrompt) state.versiones.push({prompt:state.currentPrompt, chat:state.chat.slice(), truncado:state.truncado});
+    state.chat=[]; state.currentPrompt="";
+    state.respuestasPrompt=answers.map(x=>x.a).join("\u0001");
     setPrompt(r.text, r.truncado);
-    unlock("card3"); setStep(3); $("chatlog").textContent=""; guardar();
+    unlock("card3"); $("chatlog").textContent=""; guardar();
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     $("result").focus({preventScroll:true});
     if(r.truncado) setStatus($("status2"),"⚠ La respuesta de la IA salió incompleta. Vuelve a crearlo; si se repite, pide una versión más corta en el ajuste.","warn");
     else setStatus($("status2"),"✓ Super Prompt creado","ok");
-  }catch(err){if(g===gen) setStatus($("status2"),err.message,"err");}
+  }catch(err){ const vale=g===G.p&&gq===G.q&&r0===gen; setStatus($("status2"), vale?err.message:"", vale?"err":""); }
   finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 
@@ -1068,7 +1064,7 @@ $("genPrompt").addEventListener("click",async()=>{
 /* La etiqueta solo dice "listo para usar" si de verdad lo está. */
 function marcarEstado(){
   const truncado=state.truncado;
-  const pendiente = /\[COMPLETAR/i.test(state.currentPrompt||"");
+  const pendiente = /\[(COMPLETAR|COMPLETE|TO ?DO|FILL)[^\]]*\]/i.test(state.currentPrompt||"");
   const e=$("estadoPrompt"); e.classList.toggle("hidden",!state.currentPrompt);
   e.textContent = truncado ? "salió incompleto" : pendiente ? "revisa los [COMPLETAR]" : "listo para usar";
 }
@@ -1086,7 +1082,8 @@ function pintarChat(){
 }
 function actualizarUndo(){
   const n=state.versiones.length;
-  $("undoBtn").disabled = n===0;
+  $("undoBtn").disabled = n===0 || $("chatSend").disabled;
+  $("undoBtn").classList.toggle("hidden", n===0);
   $("undoBtn").textContent = n>1 ? `↶ Versión anterior (${n})` : "↶ Versión anterior";
 }
 $("undoBtn").addEventListener("click",()=>{
@@ -1118,8 +1115,9 @@ $("copyBtn").addEventListener("click",async()=>{
   }
 });
 function empezarDeNuevo(){
-  if(!confirm("¿Borrar tu idea, tus respuestas y el prompt para empezar de nuevo?")) return;
-  cancelarTodo(); gen++;
+  if(!confirm("¿Borrar tu idea, tus respuestas, el prompt y la API key recordada, para empezar de nuevo?")) return;
+  cancelarTodo(); gen++; G.q++; G.p++; G.c++; olvidarClave();
+  $("apiKey").value=""; $("remember").checked=false;
   ["genQuestions","genPrompt","chatSend"].forEach(id=>$(id).disabled=false);
   $("chatInput").value=""; state.truncado=false; state.ideaPreguntas=""; state.tipoPreguntas="";
   state.questions=[];state.currentPrompt="";state.idea="";state.versiones=[];state.chat=[];
@@ -1129,7 +1127,7 @@ function empezarDeNuevo(){
   ["status1","status2","status3","status4"].forEach(s=>setStatus($(s),"",""));
   $("estadoPrompt").classList.add("hidden");
   actualizarUndo(); olvidar();
-  setStep(1); window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo({top:0,behavior:"smooth"});
   $("idea").focus({preventScroll:true});
 }
 $("restartBtn").addEventListener("click",empezarDeNuevo);
@@ -1137,11 +1135,11 @@ $("borrarAhora").addEventListener("click",empezarDeNuevo);
 
 // chat de refinamiento
 async function refine(){
-  const g=++gen;
+  const g=++G.c, gp=G.p, r0=gen;
   const instr=$("chatInput").value.trim(); if(!instr)return;
   if(!state.currentPrompt){setStatus($("status4"),"Primero crea un prompt.","err");return;}
   mensajeChat(instr,"me");      // se ve ya, pero entra al historial solo si sale bien
-  const btn=$("chatSend");btn.disabled=true;
+  const btn=$("chatSend");btn.disabled=true; $("undoBtn").disabled=true;
   setStatus($("status4"),"Ajustando…","loading");
   try{
     /* El chat se llamaba "continuo" pero mandaba solo el prompt actual y la
@@ -1149,11 +1147,18 @@ async function refine(){
        acumulaba nada. Ahora viajan también los ajustes ya pedidos, para que
        la IA no deshaga sin querer lo que acaba de aplicar. */
     const previos=state.chat.filter(m=>m.yo).map(m=>m.yo).slice(-6);
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual (entre <prompt_actual> y </prompt_actual>), los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. No inventes datos, cifras ni audiencias: conserva los marcadores [COMPLETAR: …] salvo que la instrucción los llene. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual (entre <prompt_actual> y </prompt_actual>), los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. No inventes datos, cifras ni audiencias: conserva los marcadores exactamente como [COMPLETAR: …] (sin traducir la palabra COMPLETAR), salvo que la instrucción los llene. Si agregas uno, escríbelo como pregunta sencilla y tuteando. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Mantén el idioma del prompt salvo que la instrucción pida otro. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
     const historia=previos.length?`AJUSTES YA PEDIDOS (en orden):\n${previos.map((p,i)=>`${i+1}. ${p}`).join("\n")}\n\n`:"";
-    const user=`<prompt_actual>\n${state.currentPrompt}\n</prompt_actual>\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
+    const base=state.currentPrompt;
+    const user=`<prompt_actual>\n${base}\n</prompt_actual>\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
     const r=await callAI({system,user,max_tokens:2000});
-    if(g!==gen) return;
+    if(g!==G.c||gp!==G.p||r0!==gen){ setStatus($("status4"),"",""); const log=$("chatlog"); if(log.lastChild&&log.lastChild.classList.contains("me")) log.removeChild(log.lastChild); return; }
+    if(state.currentPrompt!==base){
+      // El prompt cambió mientras se ajustaba: aplicar el ajuste pisaría el nuevo.
+      const log=$("chatlog"); if(log.lastChild&&log.lastChild.classList.contains("me")) log.removeChild(log.lastChild);
+      setStatus($("status4"),"El prompt cambió mientras se ajustaba: vuelve a pedir el ajuste.","warn");
+      return;
+    }
     $("chatInput").value="";
     setPrompt(r.text, r.truncado);
     $("result").scrollIntoView({behavior:"smooth",block:"start"});
@@ -1163,9 +1168,9 @@ async function refine(){
     setStatus($("status4"),r.truncado?"⚠ La respuesta de la IA salió incompleta. Inténtalo de nuevo.":"",r.truncado?"warn":"");
   }catch(err){
     const log=$("chatlog"); if(log.lastChild) log.removeChild(log.lastChild);   // el ajuste no se aplicó
-    if(g===gen) setStatus($("status4"),err.message,"err");
+    const vale=g===G.c&&gp===G.p&&r0===gen; setStatus($("status4"), vale?err.message:"", vale?"err":"");
   }
-  finally{btn.disabled=false; if(document.activeElement===document.body) $("chatInput").focus({preventScroll:true});}
+  finally{btn.disabled=false; actualizarUndo(); if(document.activeElement===document.body) $("chatInput").focus({preventScroll:true});}
 }
 $("chatSend").addEventListener("click",refine);
 // Sin estas guardas, Enter repetido lanzaba otra petición con una en vuelo,
@@ -1178,7 +1183,11 @@ $("chatInput").addEventListener("keydown",e=>{
 /* Guardado continuo de lo que el usuario escribe. Sin debounce agresivo:
    sessionStorage es síncrono pero estos textos son diminutos. */
 $("idea").addEventListener("input",()=>{state.idea=$("idea").value;guardar();revisarVigencia();});
-$("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa")) guardar(); });
+$("questions").addEventListener("input",e=>{
+  if(!e.target.classList.contains("qa")) return;
+  guardar();
+  if(state.currentPrompt) setStatus($("status2"),"Cambiaste tus respuestas: vuelve a crear el prompt para incluirlas.","warn");
+});
 
 /* Recuperar lo que hubiera antes de la recarga. */
 (function restaurar(){
@@ -1188,10 +1197,11 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
 
   state.type=d.type||state.type;
   state.idea=d.idea;
-  state.questions=Array.isArray(d.questions)?d.questions:[];
-  state.currentPrompt=d.currentPrompt||"";
-  state.versiones=Array.isArray(d.versiones)?d.versiones:[];
-  state.chat=Array.isArray(d.chat)?d.chat:[];
+  const okMsg=m=>m&&typeof m==="object"&&(typeof m.yo==="string"||typeof m.ia==="string");
+  state.questions=Array.isArray(d.questions)?d.questions.filter(q=>typeof q==="string"):[];
+  state.currentPrompt=typeof d.currentPrompt==="string"?d.currentPrompt:"";
+  state.versiones=Array.isArray(d.versiones)?d.versiones.filter(v=>typeof v==="string"||(v&&typeof v.prompt==="string")):[];
+  state.chat=Array.isArray(d.chat)?d.chat.filter(okMsg):[];
   state.truncado=!!d.truncado; state.ideaPreguntas=d.ideaPreguntas||d.idea; state.tipoPreguntas=d.tipoPreguntas||d.type||state.type;
 
   const t=tipos.find(x=>x.dataset.type===state.type); if(t) elegirTipo(t,null);
@@ -1207,12 +1217,12 @@ $("questions").addEventListener("input",e=>{ if(e.target.classList.contains("qa"
     unlock("card3"); marcarEstado(); pintarChat();
   }
   actualizarUndo();
-  setStep(d.paso||1);
-  setStatus($("status1"),"↻ Recuperado lo que tenías antes de recargar","ok");
+  revisarVigencia();   // si la idea había cambiado, no se mezclan ideas
+  if(!$("status1").textContent) setStatus($("status1"),"↻ Recuperado lo que tenías antes de recargar","ok");
 })();
 
 // red de seguridad: contenido siempre visible aunque fallen las animaciones
-setTimeout(()=>{document.querySelectorAll("header.top,.progress,.card,.q,.free-banner").forEach(el=>{
+setTimeout(()=>{document.querySelectorAll("header.top,.card,.q,.free-banner").forEach(el=>{
   if(el.classList.contains("hidden")||el.classList.contains("locked"))return;
   const cs=getComputedStyle(el); if(parseFloat(cs.opacity)<.9){el.style.opacity="1";el.style.transform="none";}
 });},900);
