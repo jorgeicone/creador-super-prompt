@@ -286,7 +286,7 @@
       </div>
       <label style="margin-top:14px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">
         <input type="checkbox" id="remember" style="width:auto;margin-right:7px;vertical-align:-1px" />Recordar la key en este navegador</label>
-      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu clave se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas.</p>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu clave se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos.</p>
     </div>
   </details>
 
@@ -367,14 +367,16 @@
       pega tu clave de Gemini entre las comillas de EMBEDDED_KEY.
         EMBEDDED_KEY: "AQ.Ab8...tu_clave..."
 
-   Antes de publicarla, para que NUNCA te cobren y nadie la abuse:
+   Antes de publicarla, para que NUNCA te cobren y sea más difícil abusarla
+   (el referrer se puede falsificar: la restricción frena, no blinda):
      1) NO actives facturación en el proyecto de Google.
      2) Restringe la clave por dominio (super-prompt.iconeialabs.com/*).
 
-   La app decide sola:
-     · Si EMBEDDED_KEY tiene clave -> IA gratis incluida (config oculta).
-     · Si está vacía              -> le pide al usuario su propia clave.
-   (PROXY_URL apunta al Worker que guarda el pool de claves; si se vacía, la app usa la clave del usuario.)
+   La app decide sola, en este orden:
+     · Si PROXY_URL tiene URL      -> IA gratis vía el Worker (pool de claves
+                                      en secrets). Es el modo activo hoy.
+     · Si EMBEDDED_KEY tiene clave -> IA gratis con esa clave (config oculta).
+     · Si ambas están vacías       -> le pide al usuario su propia clave.
    ==================================================================== */
 const CONFIG = {
   EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI

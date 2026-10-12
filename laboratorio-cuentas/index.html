@@ -426,7 +426,7 @@ select.icone-input option{background:var(--navy2);color:#fff}
   </div>
 
   <div class="callout green">
-    <b>Tu trabajo se guarda en tu propio navegador.</b> Los dossiers, las cuentas y los ganchos no se guardan en ningún servidor del taller. Ojo: lo que ejecutas con IA (los datos de la cuenta, lo que pegas, los dossiers y los ganchos) viaja a Google (Gemini) para procesarse, y con las claves gratuitas del taller Google puede usarlo para mejorar sus productos: no pegues datos personales ni confidenciales de clientes. Al final descargas tu PDF y un respaldo por si cambias de computador — si borras el historial del navegador se pierde, así que descarga el respaldo antes de cerrar. Lo único que se envía al facilitador son tus <b>números</b> del cierre, y solo cuando tú le das al botón.
+    <b>Tu trabajo se guarda en tu propio navegador.</b> Los dossiers, las cuentas y los ganchos no se guardan en ningún servidor del taller. Ojo: lo que ejecutas con IA (los datos de la cuenta, lo que pegas, los dossiers y los ganchos) viaja a Google (Gemini) para procesarse, y con las claves gratuitas del taller Google puede usarlo para mejorar sus productos: no pegues datos personales ni confidenciales de clientes. Al final descargas tu PDF y un respaldo por si cambias de computador — si borras el historial del navegador se pierde, así que descarga el respaldo antes de cerrar. Al cierre, y solo cuando tú le das al botón, se envía un reporte al tablero del facilitador y de la Dirección (guardado en Supabase): tu nombre, tus números y los nombres de las empresas que vas a contactar.
   </div>
 </div>
 
@@ -476,7 +476,7 @@ select.icone-input option{background:var(--navy2);color:#fff}
       </label>
       <div class="btn-row">
         <button class="btn btn-primary" id="btn-sugerir" onclick="runSugerir()">⚡ Proponme candidatas</button>
-        <button class="btn btn-outline btn-sm" onclick="copiarPromptSugerir()">📋 Copiar el prompt P1.5</button>
+        <button class="btn btn-outline btn-sm" onclick="copiarPromptSugerir()">📋 Copiar el prompt para encontrarlas</button>
       </div>
       <div id="sug-msg"></div>
       <div id="sug-out"></div>
@@ -750,7 +750,7 @@ select.icone-input option{background:var(--navy2);color:#fff}
     </div>
     <div id="e-rep-msg"></div>
     <div class="callout" style="margin:14px 0 0">
-      <b>Qué se envía exactamente:</b> tu nombre, los dos tiempos, cuántos dossiers y ganchos terminaste, los nombres de las empresas que vas a contactar, tu fecha de compromiso, tu meta semanal de cuentas y cuántos casos acertaste en la regla de datos. <b>El contenido de tus dossiers no se le envía al facilitador</b> — eso se queda contigo y en tu PDF.
+      <b>Qué se envía exactamente</b> (a una base de datos en Supabase, que leen el facilitador y la Dirección): tu nombre, los dos tiempos, cuántos dossiers y ganchos terminaste, los nombres de las empresas que vas a contactar, tu fecha de compromiso, tu meta semanal de cuentas y cuántos casos acertaste en la regla de datos. <b>El contenido de tus dossiers no se le envía al facilitador</b> — eso se queda contigo y en tu PDF.
     </div>
   </div>
 
@@ -885,9 +885,12 @@ const POOL_B64=[
 const POOL=POOL_B64.map(b=>{ try{ return atob(b); }catch(e){ return ""; } }).filter(Boolean);
 const DEFAULT_API_KEY=POOL[0]||"";
 const POOL_STORE="icone_pool_idx";
-function poolIdx(){ try{ return Math.min(POOL.length-1,Math.max(0,parseInt(localStorage.getItem(POOL_STORE)||"0",10)||0)); }catch(e){ return 0; } }
-function setPoolIdx(i){ try{ localStorage.setItem(POOL_STORE,String(i)); }catch(e){} }
-const MODEL_CANDIDATES=["gemini-flash-latest","gemini-2.5-flash","gemini-flash-lite-latest"];
+/* El índice se guarda con la fecha del Pacífico, que es cuando Google reinicia
+   la cuota diaria: al cambiar el día, la rotación vuelve a la primera clave. */
+function diaPacifico(){ try{ return new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){ return new Date().toISOString().slice(0,10); } }
+function poolIdx(){ try{ const [d,i]=(localStorage.getItem(POOL_STORE)||"").split("|"); if(d!==diaPacifico()) return 0; return Math.min(POOL.length-1,Math.max(0,parseInt(i,10)||0)); }catch(e){ return 0; } }
+function setPoolIdx(i){ try{ localStorage.setItem(POOL_STORE,diaPacifico()+"|"+i); }catch(e){} }
+const MODEL_CANDIDATES=["gemini-flash-latest","gemini-3.6-flash","gemini-flash-lite-latest"];
 const API_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
 const KEY_STORE="icone_gemini_key";
 let apiKey="", workingModel=null;
@@ -898,9 +901,10 @@ function hayKey(){ return !!(loadKeyStored()||POOL.length); }
 let lastSources=[];
 /* Orquesta la rotación: la clave propia primero; si falla por cuota, las del taller
    una tras otra. Solo cuando se agotan todas se le muestra el error al participante. */
-async function callGemini(userPrompt,systemInstruction,wantJson,grounded){
+async function callGemini(userPrompt,systemInstruction,wantJson,grounded,soloClave){
   const propia=loadKeyStored();
-  const cadena=propia?[propia].concat(POOL.slice(poolIdx())):POOL.slice(poolIdx());
+  // soloClave: verificar una clave nueva sin caer a las del taller.
+  const cadena=soloClave?[soloClave]:propia?[propia].concat(POOL.slice(poolIdx())):POOL.slice(poolIdx());
   if(!cadena.length) throw {fatal:true,msg:"Primero conecta tu clave de Google Gemini."};
   let ultimo=null;
   for(let i=0;i<cadena.length;i++){
@@ -910,8 +914,10 @@ async function callGemini(userPrompt,systemInstruction,wantJson,grounded){
     }catch(e){
       ultimo=e;
       if(!e||!e.cuota||i===cadena.length-1) throw e;
-      // esta clave se quedó sin cuota: pasamos a la siguiente del taller
-      if(!(propia&&i===0)) setPoolIdx(Math.min(POOL.length-1,poolIdx()+1));
+      // esta clave se quedó sin cuota: pasamos a la siguiente del taller.
+      // Solo se recuerda el salto si fue la cuota DIARIA; un límite por
+      // minuto se pasa solo y no debe dejar el navegador en la última clave.
+      if(!(propia&&i===0)&&e.diaria) setPoolIdx(Math.min(POOL.length-1,poolIdx()+1));
       workingModel=null;
       if(propia&&i===0) toast("Tu clave se quedó sin cuota. Sigo con la del taller.","err");
     }
@@ -949,7 +955,7 @@ async function intentoGemini(userPrompt,systemInstruction,wantJson,grounded){
         if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(txt))
           throw {fatal:true,msg:"Tu clave de Gemini no es válida. Revísala y vuelve a activarla."};
         if(res.status===429||/RESOURCE_EXHAUSTED/i.test(txt))
-          throw {fatal:true,cuota:true,msg:"Se agotó la cuota gratuita de todas las claves disponibles por hoy. Se reinicia mañana. Mientras tanto copia el prompt y ejecútalo en tu herramienta de IA — la app sigue sirviendo igual."};
+          throw {fatal:true,cuota:true,diaria:/PerDay|per day/i.test(txt),msg:"Se agotó la cuota gratuita de todas las claves disponibles por hoy. Se reinicia mañana. Mientras tanto copia el prompt y ejecútalo en tu herramienta de IA — la app sigue sirviendo igual."};
         if(res.status===403)
           throw {fatal:true,msg:"Tu clave no tiene permiso sobre la API de Gemini. Genera una nueva en aistudio.google.com/apikey."};
         lastErr="HTTP "+res.status+": "+txt.slice(0,140); continue;
@@ -1053,7 +1059,7 @@ async function guardarKey(){
   errBox("key-msg","");
   const prev=apiKey; apiKey=v; workingModel=null;
   try{
-    await callGemini("Responde solamente: ok","Eres un verificador de conexión.");
+    await callGemini("Responde solamente: ok","Eres un verificador de conexión.",false,false,v);
     saveKey(v); renderKeyChip(); cerrarKey();
     toast("Cerebro de IA conectado","ok");
   }catch(e){
@@ -1289,7 +1295,7 @@ Restricción crítica: no inventes empresas. Prefiero 4 reales que 8 inventadas.
 
 Formato: tabla con Empresa / Señal / Por dónde entrar. Tono directo, sin adjetivos de marketing.`;
 }
-function copiarPromptSugerir(){ copyText(promptSugerir(datosSugerir()),"Prompt P1.5 copiado. Pégalo en tu herramienta de IA."); }
+function copiarPromptSugerir(){ copyText(promptSugerir(datosSugerir()),"Prompt copiado. Pégalo en tu herramienta de IA."); }
 
 async function runSugerir(){
   const v=datosSugerir();
@@ -1321,7 +1327,7 @@ Procura que no sean todas del mismo subsector ni del mismo tamaño.`;
       const data=parseJson(raw);
       arr=data&&Array.isArray(data.empresas)?data.empresas.filter(e=>e&&e.nombre):null;
     }
-    if(!arr||!arr.length) throw {fatal:true,msg:"No devolvió candidatas legibles. Copia el prompt P1.5 y ejecútalo en tu herramienta de IA."};
+    if(!arr||!arr.length) throw {fatal:true,msg:"No devolvió candidatas legibles. Copia el prompt y ejecútalo en tu herramienta de IA."};
     SUGS=arr; busco=buscar&&lastSources.length>0; fuentesHTML=buscar?bloqueFuentes():"";
     renderSugerencias();
     const conf=arr.filter(e=>e.confirmado).length;
@@ -2182,7 +2188,13 @@ function copiarResumen(){
 
 /* ---------- ARRANQUE ---------- */
 window.addEventListener("beforeunload",()=>{ stopTimer(); });
-document.addEventListener("visibilitychange",()=>{ if(document.hidden) stopTimer(); });
+/* Al salir de la pestaña (p. ej. para pegar el prompt en otra IA) el cronómetro
+   se pausa; al volver, sigue contando en el mismo dossier. */
+let timerPausado=null;
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ if(timerIdx!==null){ timerPausado=timerIdx; stopTimer(); } }
+  else if(timerPausado!==null){ const i=timerPausado; timerPausado=null; startTimer(i); }
+});
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") cerrarKey(); });
 (function(){
   apiKey=loadKeyStored()||DEFAULT_API_KEY;

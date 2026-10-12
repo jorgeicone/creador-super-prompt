@@ -22,8 +22,10 @@
      · Usa la primera clave viva.
      · Si esa clave agota su cuota diaria (o su proyecto se queda sin
        créditos), pasa sola a la siguiente sin que el usuario lo note.
-     · Solo cuando TODAS están agotadas devuelve error, con quota:true
-       para que la app muestre el mensaje honesto y NO reintente en vano.
+     · Si TODAS se agotan en la misma petición devuelve quota:true, para
+       que la app muestre el mensaje honesto y NO reintente en vano. Otros
+       fallos (saturación, respuesta vacía, modelos jubilados, claves
+       inválidas, origen o petición inválidos) tienen su propio mensaje.
    ==================================================================== */
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
@@ -59,7 +61,7 @@ function origenPermitido(request) {
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
-/* Modelos que sabemos rotos: pedirlos es gastar un viaje a Google para
+/* Modelos vetados: pedirlos es gastar un viaje a Google para
    nada. Si el cliente pide uno (una pestaña vieja en caché, por ejemplo)
    se sustituye por el de por defecto sin discutir.
    gemini-2.5-flash-lite no tiene medición registrada aquí: comprobarlo
@@ -137,8 +139,13 @@ function json(data, status, origen) {
 
 /* ¿Este fallo significa "esta clave está quemada, prueba la siguiente"? */
 function claveQuemada(status, detalle) {
+  return status === 429;                                  // cuota diaria o créditos agotados
+}
+
+/* ¿La clave no sirve (inválida o sin permiso)? También se rota, pero no es
+   cuota: si todas fallan así, "vuelve mañana" sería mentira. */
+function claveInvalida(status, detalle) {
   const d = (detalle || "").toLowerCase();
-  if (status === 429) return true;                        // cuota diaria o créditos agotados
   if (status === 403) return true;                        // sin permiso sobre la API
   if (status === 400 && /api.?key|api_key_invalid/.test(d)) return true;
   return false;
@@ -305,6 +312,7 @@ export default {
        "se acabó la cuota" con ella convertía un bache en un falso
        "vuelve mañana". Solo es cuota si TODAS se quemaron aquí. */
     let quemadasAhora = 0;
+    let invalidasAhora = 0;
     /* Un modelo que ya falló no se vuelve a probar con las demás claves:
        si está jubilado o devuelve vacío, no es cuestión de clave, y
        reintentarlo convierte una petición de 1 s en una de 20 s. */
@@ -351,6 +359,11 @@ export default {
             estadoBache = err.status;
             continue;
           }
+          if (claveInvalida(err.status, err.detalle)) {
+            invalidasAhora++;
+            claveAgotada = true;    // siguiente clave del pool
+            continue;
+          }
           if (claveQuemada(err.status, err.detalle)) {
             agotadasHoy.add(id);
             quemadasAhora++;
@@ -364,7 +377,7 @@ export default {
       }
     }
 
-    const todasQuemadas = quemadasAhora >= cadena.length;
+    const todasQuemadas = quemadasAhora > 0 && quemadasAhora + invalidasAhora >= cadena.length;
 
     /* Ningún modelo respondió y el motivo fue saturación o timeout:
        aquí sí tiene sentido que la app reintente dentro de un rato. */
@@ -397,6 +410,12 @@ export default {
     /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
        la app NO reintente 4 veces ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
+    if (invalidasAhora && !quemadasAhora) {
+      return json({
+        error: "El servicio de IA necesita mantenimiento: las claves configuradas no son válidas.",
+        status: 503
+      }, 503, origen);
+    }
     if (!todasQuemadas) {
       return json({
         error: "El servicio de IA no respondió. Inténtalo de nuevo en un momento.",

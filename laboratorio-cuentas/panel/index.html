@@ -91,7 +91,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
     <div class="stats" id="stats"></div>
     <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:14px">
-        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">Uno por participante, en el cierre de la sesión.</p></div>
+        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">Cada envío desde el cierre de la sesión es una fila.</p></div>
         <div class="row">
           <button class="btn btn-g" onclick="cargar()">↻ Actualizar</button>
           <button class="btn btn-g" onclick="window.print()">🖨 Imprimir</button>
@@ -193,7 +193,7 @@ function render(){
        :"El tiempo no bajó. Vale la pena revisar si el laboratorio alcanzó o si hubo problemas técnicos.")+
       `</div>`;
   }
-  L+=`<div class="callout"><b>${dos} dossiers y ${gan} ganchos producidos en la sesión.</b> Son entregables reales, no apuntes: cada participante se llevó su PDF.</div>`;
+  L+=`<div class="callout"><b>${dos} dossiers y ${gan} ganchos producidos en la sesión.</b> Son entregables reales, no apuntes.</div>`;
   if(sinGancho.length) L+=`<div class="callout"><b>Seguimiento:</b> ${sinGancho.map(x=>esc(x.comercial)).join(", ")} no completó los 3 ganchos. Conviene cerrarlo antes del Módulo 2.</div>`;
   if(sinFecha.length) L+=`<div class="callout"><b>Sin fecha de contacto:</b> ${sinFecha.map(x=>esc(x.comercial)).join(", ")}. El compromiso sin fecha no se cumple.</div>`;
   if(flojos.length) L+=`<div class="callout"><b>Regla de datos por debajo de 6/8:</b> ${flojos.map(x=>esc(x.comercial)).join(", ")}. Repasar los casos de datos personales y tarifas.</div>`;
