@@ -196,8 +196,7 @@ function render(){
   let L=`<h2>Lectura para la Dirección</h2><p class="sub">Generada de los reportes de arriba.</p>`;
   if(delta!==null){
     L+=`<div class="callout"><b>Tiempo de investigación por cuenta: ${Math.round(pb)} → ${Math.round(pt)} minutos (${delta>0?"−"+delta+"%":"+"+Math.abs(delta)+"%"}).</b> `+
-      (delta>=40?"Por encima de la meta de −40% que fijamos en el diseño del taller."
-       :delta>0?"Va en la dirección correcta, aunque por debajo de la meta de −40%."
+      (delta>0?"El tiempo bajó."
        :"El tiempo no bajó. Vale la pena revisar si el laboratorio alcanzó o si hubo problemas técnicos.")+
       `</div>`;
   }
@@ -205,7 +204,7 @@ function render(){
   if(sinGancho.length) L+=`<div class="callout"><b>Seguimiento:</b> ${sinGancho.map(x=>esc(x.comercial)).join(", ")} no completó los 3 ganchos. Conviene cerrarlo antes del Módulo 2.</div>`;
   if(sinFecha.length) L+=`<div class="callout"><b>Sin fecha de contacto:</b> ${sinFecha.map(x=>esc(x.comercial)).join(", ")}. El compromiso sin fecha no se cumple.</div>`;
   if(flojos.length) L+=`<div class="callout"><b>Regla de datos por debajo de 6/8:</b> ${flojos.map(x=>esc(x.comercial)).join(", ")}. Repasar los casos de datos personales y tarifas.</div>`;
-  L+=`<div class="callout"><b>Próximo hito:</b> repetir estas mismas cifras a las 4 semanas y el diagnóstico completo a las 6, con los mismos 25 ítems.</div>`;
+  L+=`<div class="callout"><b>Próximo hito:</b> repetir estas mismas cifras a las 4 semanas y repetir el diagnóstico a las 6.</div>`;
   document.getElementById("lectura").innerHTML=L;
 }
 
