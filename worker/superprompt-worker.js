@@ -1,6 +1,6 @@
 /* ====================================================================
    Worker · Creador de Super Prompt
-   © 2026 Ing. Jorge Hugo Pérez Gaona — ICONEialabs. Todos los derechos reservados.
+   © 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs. Todos los derechos reservados.
    --------------------------------------------------------------------
    Proxy hacia Gemini con POOL DE CLAVES EN ROTACIÓN.
 
@@ -17,10 +17,9 @@
                     (repite por cada clave; el orden define la rotación)
 
    Comportamiento:
-     · Solo atiende a los orígenes de la lista, y EXIGE cabecera Origin.
-       Eso frena a navegadores en otros sitios, pero un script puede
-       escribir esa cabecera a mano: fuera del navegador la defensa real
-       es el freno por IP.
+     · Solo atiende a los orígenes de la lista y exige cabecera Origin.
+       El control de abuso de fondo se configura en Cloudflare (reglas de
+       límite de peticiones), no en este archivo.
      · Usa la primera clave viva.
      · Si esa clave agota su cuota diaria (o su proyecto se queda sin
        créditos), pasa sola a la siguiente sin que el usuario lo note.
@@ -34,10 +33,8 @@
    ==================================================================== */
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
-/* 45 s era un secuestro: con Google lento el usuario miraba el spinner
-   tres cuartos de minuto para acabar en error. A los 10 s se corta y se
-   prueba el siguiente modelo. El peor caso total lo acota
-   PRESUPUESTO_MS (25 s), en vez de los 40 s medidos el 2026-08-24. */
+/* Corte por modelo: a los 10 s se pasa al siguiente. El peor caso total
+   lo acota PRESUPUESTO_MS (25 s), incluida la lectura de la respuesta. */
 const TIMEOUT_MS = 10000;
 const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (Laboratorio)
 /* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
@@ -47,26 +44,21 @@ const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (La
 const PRESUPUESTO_MS = 25000;
 const PRESUPUESTO_LARGO_MS = 90000;
 
-/* Topes de entrada: nadie escribe 20.000 caracteres en una idea, y sin tope
-   cualquiera podía usar el Worker para mandar documentos enteros a Gemini. */
+/* Topes de entrada. */
 const MAX_USER = 20000;
 const MAX_SYSTEM = 8000;
+const MAX_CUERPO = 64 * 1024;     // bytes del cuerpo de la petición, antes de leerlo
 
-/* Solo estos modelos. Antes se aceptaba cualquier nombre que mandara el
-   cliente, y con un Origin falsificado se podía gastar el pool en otros. */
+/* Solo estos modelos; cualquier otro se sustituye por el de por defecto. */
 const MODELOS_PERMITIDOS = new Set([
   "gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash"
 ]);
 
 /* Orígenes que pueden usar este proxy. */
 const ORIGEN_PRINCIPAL = "https://jorgeicone.github.io";
-/* Lista exacta. Antes valía cualquier *.iconeialabs.com: un subdominio
-   abandonado (o apuntado a otro servicio) heredaba el acceso al pool.
-   Si otra app de ICONEialabs usa este Worker, agrega aquí su origen. */
-/* jorgeicone.github.io es UN solo origen para todos los repos de GitHub
-   Pages de esa cuenta: cualquier página publicada ahí puede usar el pool.
-   Se mantiene por las apps de ICONEialabs que aún viven en github.io;
-   cuando ninguna lo necesite, quitarlo. */
+/* Lista exacta de orígenes. Si otra app de ICONEialabs usa este Worker,
+   agrega aquí su origen. jorgeicone.github.io cubre todas las páginas de
+   esa cuenta de GitHub Pages: quitarlo cuando ninguna app lo necesite. */
 const ORIGENES_EXACTOS = [
   ORIGEN_PRINCIPAL,
   "https://iconeialabs.com",
@@ -82,27 +74,15 @@ function origenPermitido(request) {
   return "";
 }
 
-/* Google jubila modelos sin avisar, y a veces algo peor: los deja vivos
-   pero devolviendo vacío. Medido contra producción el 2026-08-24 (los
-   alias -latest cambian de modelo con el tiempo: hay que volver a medir;
-   en septiembre de 2026 flash-lite-latest ya apuntaba a 3.5-flash-lite):
-     · gemini-flash-lite-latest → 0,9 s, responde bien   ← por defecto
-     · gemini-3.6-flash         → 1,5 s, gasta tokens pensando (trunca)
-     · gemini-3.5-flash-lite    → 200 OK con texto VACÍO
-   Por eso nunca se fija UNO solo: si el modelo pedido está muerto o
-   devuelve vacío, se pasa al siguiente de la lista. La cadena es corta
-   a propósito (hasta 4 modelos: el pedido, el último que funcionó y los
-   2 de respaldo, sin repetir), y el tiempo total lo acota PRESUPUESTO_MS. */
+/* Modelos. Google jubila modelos y mueve los alias -latest de un modelo a
+   otro sin avisar (en septiembre de 2026 flash-lite-latest apuntaba a
+   gemini-3.5-flash-lite). Por eso nunca se fija uno solo: si el modelo
+   pedido está retirado, devuelve vacío o rechaza la petición, se pasa al
+   siguiente de la cadena (hasta 4: el pedido, el último que funcionó y
+   los 2 de respaldo, sin repetir). El tiempo total lo acota
+   PRESUPUESTO_MS. Antes de cambiar el modelo por defecto, medirlo en vivo. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
-
-/* Modelos vetados: pedirlos es gastar un viaje a Google para
-   nada. Si el cliente pide uno (una pestaña vieja en caché, por ejemplo)
-   se sustituye por el de por defecto sin discutir.
-   gemini-2.5-flash-lite no tiene medición registrada aquí: comprobarlo
-   en vivo antes de mantenerlo o quitarlo del veto.
-   Para readmitir uno, bórralo de aquí y compruébalo antes en vivo. */
-const MODELOS_VETADOS = new Set(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
 
 /* Recuerda el modelo que sí funcionó, para no volver a probar los muertos. */
 let modeloVivo = "";
@@ -114,11 +94,9 @@ let modeloVivo = "";
 let agotadasHoy = new Set();
 let diaDeLaMemoria = "";
 
-/* Freno por IP, también en memoria del isolate. No sustituye a un límite
-   real con KV o Durable Objects (un atacante repartido entre muchos
-   isolates lo diluye), pero encarece el abuso desde una sola máquina. */
-/* Un salón entero sale por la misma IP del wifi: con 30 personas usando
-   el Laboratorio, 40 peticiones se iban en minutos. */
+/* Freno básico por IP en memoria del isolate (un salón entero comparte
+   la IP del wifi, por eso el número es alto). Complementa, no sustituye,
+   las reglas de límite de Cloudflare. */
 const LIMITE_POR_IP = 300;         // peticiones…
 const VENTANA_MS = 10 * 60 * 1000; // …por cada 10 minutos
 const visitas = new Map();
@@ -183,7 +161,10 @@ function json(data, status, origen) {
 
 /* ¿Este fallo significa "esta clave está quemada, prueba la siguiente"? */
 function claveQuemada(status, detalle) {
-  return status === 429 && !limitePorMinuto(status, detalle);  // cuota diaria o créditos agotados
+  // Solo es cuota del día si Google lo dice (PerDay) o habla de créditos.
+  // Un 429 sin detalles se trata como pasajero: no "vuelve mañana" en falso.
+  const d = (detalle || "").toLowerCase();
+  return status === 429 && /perday|per day|credit|billing/.test(d);
 }
 
 /* Un 429 por minuto no es la cuota del día: en un salón lleno se pasa solo
@@ -191,8 +172,7 @@ function claveQuemada(status, detalle) {
 function limitePorMinuto(status, detalle) {
   const d = (detalle || "").toLowerCase();
   if (status !== 429) return false;
-  if (/perday|per day/.test(d)) return false;      // cuota diaria, aunque diga "retry in"
-  return /perminute|per minute|retry in \d/.test(d);
+  return !/perday|per day|credit|billing/.test(d);  // todo 429 que no es del día
 }
 
 /* ¿La clave no sirve (inválida o sin permiso)? También se rota, pero no es
@@ -224,7 +204,7 @@ function cadenaDeModelos(pedido) {
   /* Primero el que pidió la app (el Laboratorio pide uno más capaz que la
      app principal); luego el último que funcionó y los de respaldo. */
   for (const m of [pedido, modeloVivo, ...MODELOS_RESPALDO]) {
-    if (m && !MODELOS_VETADOS.has(m) && !lista.includes(m)) lista.push(m);
+    if (m && MODELOS_PERMITIDOS.has(m) && !lista.includes(m)) lista.push(m);
   }
   return lista.length ? lista : [MODELO_POR_DEFECTO];
 }
@@ -266,8 +246,23 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
     err.status = 504;
     throw err;
   }
-  clearTimeout(to);
+  /* El corte sigue activo mientras se lee la respuesta: si Google manda
+     las cabeceras y luego se cuelga, el presupuesto se respeta igual. */
+  try {
+    return await leerRespuesta(res);
+  } catch (e) {
+    if (e && e.name === "AbortError") {
+      const err = new Error("La IA tardó demasiado en responder.");
+      err.status = 504;
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearTimeout(to);
+  }
+}
 
+async function leerRespuesta(res) {
   if (!res.ok) {
     let detalle = "";
     try {
@@ -359,7 +354,15 @@ export default {
 
     let entrada;
     try {
-      entrada = await request.json();
+      const largoDeclarado = parseInt(request.headers.get("content-length") || "0", 10);
+      if (largoDeclarado > MAX_CUERPO) {
+        return json({ error: "El texto es demasiado largo. Resúmelo e inténtalo de nuevo.", status: 413 }, 413, origen);
+      }
+      const crudo = await request.text();
+      if (crudo.length > MAX_CUERPO) {
+        return json({ error: "El texto es demasiado largo. Resúmelo e inténtalo de nuevo.", status: 413 }, 413, origen);
+      }
+      entrada = JSON.parse(crudo);
     } catch (e) {
       return json({ error: "Petición inválida" }, 400, origen);
     }
@@ -403,7 +406,9 @@ export default {
        por si Google ya reinició su cuota diaria. */
     const frescas = pool.filter(k => !agotadasHoy.has(k.id));
     const quemadas = pool.filter(k => agotadasHoy.has(k.id));
-    const cadena = frescas.concat(quemadas);
+    /* Si todas constan agotadas hoy, basta probar una (por si Google ya
+       reinició): recorrerlas todas solo alarga la espera. */
+    const cadena = frescas.length ? frescas.concat(quemadas) : quemadas.slice(0, 1);
 
     const modelos = cadenaDeModelos(modelo);
     let modelosMuertos = 0;
@@ -417,6 +422,7 @@ export default {
     let quemadasAhora = 0;
     let invalidasAhora = 0;
     let huboMinuto = false;
+    let hubo400 = false;
     /* Un modelo que ya falló no se vuelve a probar con las demás claves:
        si está jubilado o devuelve vacío, no es cuestión de clave, y
        reintentarlo convierte una petición de 1 s en una de 20 s. */
@@ -466,6 +472,7 @@ export default {
             if (modeloVivo === m) modeloVivo = "";
             descartados.add(m);
             modelosMuertos++;
+            probadosEnEstaClave--;  // un modelo retirado no dice nada de la cuota de la clave
             continue;               // misma clave, siguiente modelo
           }
           if (esBacheTemporal(err.status)) {
@@ -493,7 +500,15 @@ export default {
           }
           /* Error desconocido: no insistimos, y no se filtra el detalle
              crudo de Google (que incluye datos de facturación). */
-          return json({ error: "La IA devolvió un error inesperado.", status: err.status || 500 }, err.status || 500, origen);
+          if (err.status === 400) {
+            /* Un 400 que no es de la clave suele ser un parámetro que ese
+               modelo ya no acepta: se prueba el siguiente modelo. */
+            descartados.add(m);
+            hubo400 = true;
+            probadosEnEstaClave--;
+            continue;
+          }
+          return json({ error: "La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.", status: err.status || 500 }, err.status || 500, origen);
         }
       }
       if (!claveAgotada && probadosEnEstaClave && cuotaEnEstaClave === probadosEnEstaClave) {
@@ -518,7 +533,15 @@ export default {
        Decirlo tal cual, para que la app no reintente en vano. */
     if (huboVacio && !todasQuemadas) {
       return json({
-        error: "La IA no devolvió texto. Reformula la idea e inténtalo de nuevo.",
+        error: "La IA no pudo responder esta vez. Inténtalo de nuevo en un momento.",
+        status: 502
+      }, 502, origen);
+    }
+
+    /* Todos los modelos rechazaron la petición (400 que no es de clave). */
+    if (hubo400 && !todasQuemadas) {
+      return json({
+        error: "La IA no pudo procesar esta petición. Inténtalo de nuevo; si se repite, puedes usar tu propia clave gratis.",
         status: 502
       }, 502, origen);
     }

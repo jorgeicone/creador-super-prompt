@@ -2,10 +2,15 @@ Copyright (c) 2026 Ing. Jorge Hugo Pérez Gaona · ICONEialabs
 
 Todos los derechos reservados.
 
-El código, el diseño, los textos y las imágenes de este repositorio son obra
+Este aviso cubre la aplicación «Creador de Super Prompt»: index.html,
+worker/superprompt-worker.js y assets/. No cubre la carpeta
+laboratorio-cuentas/, que es otra pieza con sus propios acuerdos.
+
+El código, el diseño, los textos y las imágenes de la aplicación son obra
 de su autor. Que el repositorio sea público permite leerlo, pero no concede
 licencia para copiarlo, modificarlo, redistribuirlo ni publicarlo, total o
-parcialmente, sin autorización escrita del autor.
+parcialmente, sin autorización escrita del autor. Para pedirla, escribe a
+través de https://iconeialabs.com.
 
 Cualquier persona puede usar la aplicación publicada en
 https://super-prompt.iconeialabs.com/ para crear sus propios prompts.
