@@ -91,7 +91,7 @@ th,td{color:#111;border-color:#bbb}.btn,#login,footer .no{display:none}.callout{
     <div class="stats" id="stats"></div>
     <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:14px">
-        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">Cada envío desde el cierre de la sesión es una fila.</p></div>
+        <div><h2>Reportes recibidos</h2><p class="sub" style="margin-bottom:0">El último envío de cada participante, desde el cierre de la sesión.</p></div>
         <div class="row">
           <button class="btn btn-g" onclick="cargar()">↻ Actualizar</button>
           <button class="btn btn-g" onclick="window.print()">🖨 Imprimir</button>
@@ -140,7 +140,15 @@ async function entrar(){
 async function cargar(){ try{ DATOS=await pedir(CLAVE); render(); }catch(e){ alert(e.message); } }
 
 function render(){
-  const d=DATOS.filter(x=>x.modulo===1);
+  /* Cada envío es una fila: se cuenta solo el último de cada comercial,
+     para que un doble envío no cuente doble ni desvíe los promedios. */
+  const ult=new Map();
+  DATOS.filter(x=>x.modulo===1).forEach(x=>{
+    const k=String(x.comercial||"").trim().toLowerCase();
+    const prev=ult.get(k);
+    if(!prev||String(x.creado_en||"")>=String(prev.creado_en||"")) ult.set(k,x);
+  });
+  const d=[...ult.values()];
   const bases=d.map(x=>num(x.base_min)).filter(v=>v!==null&&v>0);
   const talls=d.map(x=>num(x.taller_min)).filter(v=>v!==null&&v>0);
   const pb=bases.length?bases.reduce((a,b)=>a+b,0)/bases.length:null;

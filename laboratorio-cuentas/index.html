@@ -426,7 +426,7 @@ select.icone-input option{background:var(--navy2);color:#fff}
   </div>
 
   <div class="callout green">
-    <b>Tu trabajo se guarda en tu propio navegador.</b> Los dossiers, las cuentas y los ganchos no se guardan en ningún servidor del taller. Ojo: lo que ejecutas con IA (los datos de la cuenta, lo que pegas, los dossiers y los ganchos) viaja a Google (Gemini) para procesarse, y con las claves gratuitas del taller Google puede usarlo para mejorar sus productos: no pegues datos personales ni confidenciales de clientes. Al final descargas tu PDF y un respaldo por si cambias de computador — si borras el historial del navegador se pierde, así que descarga el respaldo antes de cerrar. Al cierre, y solo cuando tú le das al botón, se envía un reporte al tablero del facilitador y de la Dirección (guardado en Supabase): tu nombre, tus números y los nombres de las empresas que vas a contactar.
+    <b>Tu trabajo se guarda en tu propio navegador.</b> Los dossiers, las cuentas y los ganchos no se guardan en ningún servidor del taller. Ojo: lo que ejecutas con IA (los datos de la cuenta, lo que pegas, los dossiers y los ganchos) viaja a Google (Gemini) para procesarse, y con las claves gratuitas del taller Google puede usarlo para mejorar sus productos y revisores humanos pueden leerlo: no pegues datos personales ni confidenciales de clientes. Al final descargas tu PDF y un respaldo por si cambias de computador — si borras el historial del navegador se pierde, así que descarga el respaldo antes de cerrar. Al cierre, y solo cuando tú le das al botón, se envía un reporte al tablero del facilitador y de la Dirección (guardado en Supabase): tu nombre, tus números y los nombres de las empresas que vas a contactar.
   </div>
 </div>
 
@@ -833,9 +833,10 @@ select.icone-input option{background:var(--navy2);color:#fff}
    Proceso: arma prompts con estructura ICONE (6 partes) · cronometra por cuenta ·
             calcula puntaje ponderado = Σ(nota_i × peso_i) / Σ(5 × peso_i) × 100
    Output:  3 dossiers, lista priorizada con orden de llamada, 1 gancho por cuenta, PDF + respaldo JSON
-   Estados: inicio · cuentas · dossier(4 pasos) · matriz · ganchos · kit · entrega
+   Estados: inicio · cuentas · dossier(4 pasos) · matriz · ganchos · datos · kit · entrega
    Datos:   guardados en el dispositivo (localStorage con degradación a memoria);
-             lo que se ejecuta con IA viaja a Google Gemini
+             lo que se ejecuta con IA viaja a Google Gemini; el reporte de cierre
+             va a Supabase (rpc taller_poli_reportar) para el tablero
 ==================================================== */
 
 const QS = [
@@ -955,7 +956,9 @@ async function intentoGemini(userPrompt,systemInstruction,wantJson,grounded){
         if(res.status===400&&/API key not valid|API_KEY_INVALID/i.test(txt))
           throw {fatal:true,msg:"Tu clave de Gemini no es válida. Revísala y vuelve a activarla."};
         if(res.status===429||/RESOURCE_EXHAUSTED/i.test(txt))
-          throw {fatal:true,cuota:true,diaria:/PerDay|per day/i.test(txt),msg:"Se agotó la cuota gratuita de todas las claves disponibles por hoy. Se reinicia mañana. Mientras tanto copia el prompt y ejecútalo en tu herramienta de IA — la app sigue sirviendo igual."};
+          throw (/PerMinute|per minute|retry in \d/i.test(txt)&&!/PerDay|per day/i.test(txt))
+            ? {fatal:true,cuota:true,diaria:false,msg:"Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo."}
+            : {fatal:true,cuota:true,diaria:/PerDay|per day/i.test(txt),msg:"Se agotó la cuota gratuita de todas las claves disponibles por hoy. Se reinicia mañana. Mientras tanto copia el prompt y ejecútalo en tu herramienta de IA — la app sigue sirviendo igual."};
         if(res.status===403)
           throw {fatal:true,msg:"Tu clave no tiene permiso sobre la API de Gemini. Genera una nueva en aistudio.google.com/apikey."};
         lastErr="HTTP "+res.status+": "+txt.slice(0,140); continue;

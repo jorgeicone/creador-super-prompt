@@ -17,8 +17,10 @@
                     (repite por cada clave; el orden define la rotación)
 
    Comportamiento:
-     · Solo atiende a los orígenes de la lista, y EXIGE cabecera Origin:
-       sin Origin no se pasa (curl, scripts y bots quedan fuera).
+     · Solo atiende a los orígenes de la lista, y EXIGE cabecera Origin.
+       Eso frena a navegadores en otros sitios, pero un script puede
+       escribir esa cabecera a mano: fuera del navegador la defensa real
+       es el freno por IP.
      · Usa la primera clave viva.
      · Si esa clave agota su cuota diaria (o su proyecto se queda sin
        créditos), pasa sola a la siguiente sin que el usuario lo note.
@@ -74,7 +76,8 @@ let modeloVivo = "";
 
 /* Memoria del isolate: recuerda qué claves ya se agotaron HOY para no
    volver a golpearlas en cada petición. Es gratis (no requiere KV) y se
-   reinicia sola al cambiar el día o al reciclarse el isolate. */
+   reinicia al cambiar el día en hora del Pacífico (cuando Google reinicia
+   la cuota diaria) o al reciclarse el isolate. */
 let agotadasHoy = new Set();
 let diaDeLaMemoria = "";
 
@@ -99,7 +102,13 @@ function demasiadasPeticiones(ip) {
 }
 
 function hoyUTC() {
-  return new Date().toISOString().slice(0, 10);
+  /* Nombre histórico: devuelve el día en hora del Pacífico, que es cuando
+     Google reinicia la cuota diaria de la API de Gemini. */
+  try {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  } catch (e) {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 function limpiarSiCambioElDia() {
@@ -139,7 +148,14 @@ function json(data, status, origen) {
 
 /* ¿Este fallo significa "esta clave está quemada, prueba la siguiente"? */
 function claveQuemada(status, detalle) {
-  return status === 429;                                  // cuota diaria o créditos agotados
+  return status === 429 && !limitePorMinuto(status, detalle);  // cuota diaria o créditos agotados
+}
+
+/* Un 429 por minuto no es la cuota del día: en un salón lleno se pasa solo
+   en segundos. No quema la clave y no debe decir "vuelve mañana". */
+function limitePorMinuto(status, detalle) {
+  const d = (detalle || "").toLowerCase();
+  return status === 429 && /per.?minute|perminute|retry in \d/.test(d);
 }
 
 /* ¿La clave no sirve (inválida o sin permiso)? También se rota, pero no es
@@ -256,9 +272,9 @@ export default {
       return json({ error: "Método no permitido" }, 405, origen);
     }
 
-    /* Punto 2: se exige Origin permitido. Sin cabecera Origin —curl, un
-       script, un servidor, un bot— no se pasa. Origin solo lo mandan los
-       navegadores, así que permitir su ausencia era permitirlo todo. */
+    /* Punto 2: se exige Origin permitido. Frena a páginas de otros sitios
+       y a clientes que no lo envían; quien lo falsifique a mano choca con
+       el freno por IP. */
     if (!origen) {
       return json({ error: "Origen no permitido" }, 403, "");
     }
@@ -313,6 +329,7 @@ export default {
        "vuelve mañana". Solo es cuota si TODAS se quemaron aquí. */
     let quemadasAhora = 0;
     let invalidasAhora = 0;
+    let huboMinuto = false;
     /* Un modelo que ya falló no se vuelve a probar con las demás claves:
        si está jubilado o devuelve vacío, no es cuestión de clave, y
        reintentarlo convierte una petición de 1 s en una de 20 s. */
@@ -357,6 +374,11 @@ export default {
             descartados.add(m);
             huboBache = true;
             estadoBache = err.status;
+            continue;
+          }
+          if (limitePorMinuto(err.status, err.detalle)) {
+            huboMinuto = true;
+            claveAgotada = true;    // otra clave (otro proyecto) puede tener cupo
             continue;
           }
           if (claveInvalida(err.status, err.detalle)) {
@@ -410,6 +432,13 @@ export default {
     /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
        la app NO reintente 4 veces ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
+    if (huboMinuto && !todasQuemadas) {
+      return json({
+        error: "Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo.",
+        status: 503,
+        transient: true
+      }, 503, origen);
+    }
     if (invalidasAhora && !quemadasAhora) {
       return json({
         error: "El servicio de IA necesita mantenimiento: las claves configuradas no son válidas.",
