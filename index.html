@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="author" content="Ingeniero Jorge Hugo Pérez - ICONE ialabs" />
-<meta name="copyright" content="© Jorge Hugo Pérez - ICONE ialabs. Todos los derechos reservados. Prohibida la reproducción o copia sin autorización." />
+<meta name="author" content="Ingeniero Jorge Hugo Pérez - ICONEialabs" />
+<meta name="copyright" content="© Jorge Hugo Pérez - ICONEialabs. Todos los derechos reservados. Prohibida la reproducción o copia sin autorización." />
 <meta name="rights" content="Todos los derechos reservados" />
-<title>Creador de Super Prompt · ICONE</title>
+<title>Creador de Super Prompt · ICONEialabs</title>
 
 <!-- Cómo se ve el enlace al compartirlo. Sin esto, pegarlo en WhatsApp o
      LinkedIn salía como un rectángulo gris sin título ni imagen. -->
-<meta name="description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis, sin registro y sin instalar nada." />
+<meta name="description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
 <link rel="canonical" href="https://super-prompt.iconeialabs.com/" />
 <meta name="theme-color" content="#050d1f" />
 
@@ -19,16 +19,16 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="ICONE ialabs" />
+<meta property="og:site_name" content="ICONEialabs" />
 <meta property="og:locale" content="es_ES" />
 <meta property="og:url" content="https://super-prompt.iconeialabs.com/" />
 <meta property="og:title" content="Creador de Super Prompt" />
-<meta property="og:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis, sin registro y sin instalar nada." />
+<meta property="og:description" content="Convierte cualquier idea en un prompt profesional en tres pasos, listo para pegar en cualquier IA. Gratis y sin instalar nada." />
 <meta property="og:image" content="https://super-prompt.iconeialabs.com/assets/og-image.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Creador de Super Prompt · ICONE ialabs" />
+<meta property="og:image:alt" content="Creador de Super Prompt · ICONEialabs" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Creador de Super Prompt" />
@@ -36,7 +36,7 @@
 <meta name="twitter:image" content="https://super-prompt.iconeialabs.com/assets/og-image.png" />
 <!--
   ====================================================================
-  © Creado por el Ingeniero Jorge Hugo Pérez — ICONE ialabs
+  © Creado por el Ingeniero Jorge Hugo Pérez — ICONEialabs
   Todos los derechos reservados.
   Queda prohibida la reproducción, copia, distribución o modificación
   total o parcial de esta obra sin autorización expresa del autor.
@@ -257,7 +257,7 @@
       <!-- El aviso de privacidad estaba dentro del panel de configuración,
            que en modo gratis está oculto. Pero es justo en este modo cuando
            el texto del usuario sale del navegador, así que aquí va visible. -->
-      <br><span class="privacidad">🔒 Tu idea viaja a nuestro servidor y de ahí a Google (Gemini) solo para generar el prompt. No la guardamos ni la usamos para nada más. Lo que escribas queda en esta pestaña y se borra al cerrarla.</span>
+      <br><span class="privacidad">🔒 Tu idea viaja a nuestro servidor y de ahí a Google (Gemini) para generar el prompt. Nosotros no la guardamos, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos: no escribas datos personales ni confidenciales. Lo que escribas queda en esta pestaña y se borra al cerrarla.</span>
     </div>
   </div>
 
@@ -270,7 +270,7 @@
         <div>
           <label for="apiKey">Tu API Key gratis de Google Gemini</label>
           <div class="keyrow">
-            <input type="password" id="apiKey" class="grow" placeholder="AIza..." autocomplete="off" />
+            <input type="password" id="apiKey" class="grow" placeholder="AQ.… (o AIza… en claves antiguas)" autocomplete="off" />
             <button class="btn ghost" id="toggleKey" title="Mostrar/ocultar" style="padding:0 16px">👁</button>
             <span class="keybadge no" id="keyBadge">Sin key</span>
           </div>
@@ -315,7 +315,7 @@
   <section class="card locked" id="card2" inert>
     <div class="card-head">
       <div class="step-num">2</div>
-      <div><h2>Cuéntame un poco más</h2><p>Con estos 3 detalles dejamos tu prompt a tu medida.</p></div>
+      <div><h2>Cuéntame un poco más</h2><p>Con estos detalles dejamos tu prompt a tu medida.</p></div>
     </div>
     <div id="questions"></div>
     <div class="row" style="margin-top:6px">
@@ -352,10 +352,10 @@
 
   <footer>
     <div class="legal">
-      <p class="legal-main">© <span id="year"></span> · <strong>Creado por el Ingeniero Jorge Hugo Pérez</strong> · ICONE ialabs</p>
+      <p class="legal-main">© <span id="year"></span> · <strong>Creado por el Ingeniero Jorge Hugo Pérez</strong> · ICONEialabs</p>
       <p class="legal-fine">Todos los derechos reservados. Queda estrictamente prohibida la reproducción, copia, distribución, modificación o uso total o parcial de esta aplicación, su código, diseño o metodología sin autorización expresa y por escrito de su autor. Obra protegida por las leyes de propiedad intelectual y derechos de autor.</p>
     </div>
-    <p class="legal-brand">Hecho con IA <span class="dot">●</span> ICONE ialabs</p>
+    <p class="legal-brand">Hecho con IA <span class="dot">●</span> ICONEialabs</p>
   </footer>
 </div>
 
@@ -369,22 +369,22 @@
 
    Antes de publicarla, para que NUNCA te cobren y nadie la abuse:
      1) NO actives facturación en el proyecto de Google.
-     2) Restringe la clave por dominio (jorgeicone.github.io/*).
+     2) Restringe la clave por dominio (super-prompt.iconeialabs.com/*).
 
    La app decide sola:
      · Si EMBEDDED_KEY tiene clave -> IA gratis incluida (config oculta).
      · Si está vacía              -> le pide al usuario su propia clave.
-   (PROXY_URL es opcional: solo si algún día usas el servidor oculto.)
+   (PROXY_URL apunta al Worker que guarda el pool de claves; si se vacía, la app usa la clave del usuario.)
    ==================================================================== */
 const CONFIG = {
   EMBEDDED_KEY: "",          // 👈 PEGA AQUÍ TU CLAVE DE GEMINI
-  PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // (opcional) URL del Worker si usas proxy
-  MODEL: "gemini-flash-lite-latest"  // 0,8 s y responde; el Worker tiene respaldo si se jubila
+  PROXY_URL: "https://superprompt.jorgehugoperez.workers.dev",             // URL del Worker (pool de claves en secrets)
+  MODEL: "gemini-flash-lite-latest"  // ~0,9 s y responde; el Worker tiene respaldo si se jubila
 };
 
 /* ============ AVISO LEGAL / AUTORÍA ============ */
 document.getElementById("year").textContent=new Date().getFullYear();
-console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONE ialabs — Todos los derechos reservados. Prohibida su reproducción o copia sin autorización expresa.","color:#00d4ff;font-weight:bold;font-size:13px");
+console.log("%c© Creado por el Ingeniero Jorge Hugo Pérez · ICONEialabs — Todos los derechos reservados. Prohibida su reproducción o copia sin autorización expresa.","color:#00d4ff;font-weight:bold;font-size:13px");
 
 /* ============ FONDO: red neuronal + partículas discretas ============ */
 (function neuralBG(){

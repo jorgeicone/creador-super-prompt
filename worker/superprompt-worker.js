@@ -1,6 +1,6 @@
 /* ====================================================================
    Worker · Creador de Super Prompt
-   © Ingeniero Jorge Hugo Pérez — ICONE ialabs. Todos los derechos reservados.
+   © Ingeniero Jorge Hugo Pérez — ICONEialabs. Todos los derechos reservados.
    --------------------------------------------------------------------
    Proxy hacia Gemini con POOL DE CLAVES EN ROTACIÓN.
 
@@ -55,13 +55,15 @@ function origenPermitido(request) {
    Por eso nunca se fija UNO solo: si el modelo pedido está muerto o
    devuelve vacío, se pasa al siguiente de la lista. La cadena es corta
    a propósito: cada intento fallido puede costar hasta TIMEOUT_MS, y
-   tres intentos convierten un fallo en 45 s de spinner. */
+   tres intentos convierten un fallo en 30 s de spinner. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
 /* Modelos que sabemos rotos: pedirlos es gastar un viaje a Google para
    nada. Si el cliente pide uno (una pestaña vieja en caché, por ejemplo)
    se sustituye por el de por defecto sin discutir.
+   gemini-2.5-flash-lite no tiene medición registrada aquí: comprobarlo
+   en vivo antes de mantenerlo o quitarlo del veto.
    Para readmitir uno, bórralo de aquí y compruébalo antes en vivo. */
 const MODELOS_VETADOS = new Set(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
 
@@ -298,6 +300,11 @@ export default {
     let huboVacio = false;
     let huboBache = false;
     let estadoBache = 503;
+    /* Claves quemadas EN ESTA petición. agotadasHoy es memoria del isolate
+       y puede traer claves quemadas por peticiones anteriores: decidir
+       "se acabó la cuota" con ella convertía un bache en un falso
+       "vuelve mañana". Solo es cuota si TODAS se quemaron aquí. */
+    let quemadasAhora = 0;
     /* Un modelo que ya falló no se vuelve a probar con las demás claves:
        si está jubilado o devuelve vacío, no es cuestión de clave, y
        reintentarlo convierte una petición de 1 s en una de 20 s. */
@@ -346,6 +353,7 @@ export default {
           }
           if (claveQuemada(err.status, err.detalle)) {
             agotadasHoy.add(id);
+            quemadasAhora++;
             claveAgotada = true;    // siguiente clave del pool
             continue;
           }
@@ -356,9 +364,11 @@ export default {
       }
     }
 
+    const todasQuemadas = quemadasAhora >= cadena.length;
+
     /* Ningún modelo respondió y el motivo fue saturación o timeout:
        aquí sí tiene sentido que la app reintente dentro de un rato. */
-    if (huboBache && !agotadasHoy.size) {
+    if (huboBache && !todasQuemadas) {
       return json({
         error: "El servicio de IA está saturado en este momento.",
         status: estadoBache,
@@ -368,7 +378,7 @@ export default {
 
     /* Todos los modelos respondieron vacío: no es cuota ni jubilación.
        Decirlo tal cual, para que la app no reintente en vano. */
-    if (huboVacio && !agotadasHoy.size) {
+    if (huboVacio && !todasQuemadas) {
       return json({
         error: "La IA no devolvió texto. Reformula la idea e inténtalo de nuevo.",
         status: 502
@@ -377,7 +387,7 @@ export default {
 
     /* Si nunca fue cuestión de cuota sino de que TODOS los modelos están
        jubilados, el mensaje de "vuelve mañana" sería mentira. */
-    if (modelosMuertos && !agotadasHoy.size) {
+    if (modelosMuertos && !todasQuemadas) {
       return json({
         error: "El servicio de IA necesita mantenimiento: los modelos configurados ya no están disponibles.",
         status: 503
@@ -387,6 +397,13 @@ export default {
     /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
        la app NO reintente 4 veces ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
+    if (!todasQuemadas) {
+      return json({
+        error: "El servicio de IA no respondió. Inténtalo de nuevo en un momento.",
+        status: 503,
+        transient: true
+      }, 503, origen);
+    }
     return json({
       error: "Se agotó la cuota gratuita de IA por hoy. Se reinicia mañana.",
       status: 429,

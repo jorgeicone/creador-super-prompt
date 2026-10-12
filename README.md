@@ -1,2 +1,2 @@
 # creador-super-prompt
-Creador de Super Prompt - laboratorio de ingenieria de prompts con Claude
+Creador de Super Prompt - laboratorio de ingenieria de prompts con Google Gemini
