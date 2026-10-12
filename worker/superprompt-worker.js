@@ -24,6 +24,8 @@
      · Usa la primera clave viva.
      · Si esa clave agota su cuota diaria (o su proyecto se queda sin
        créditos), pasa sola a la siguiente sin que el usuario lo note.
+       Google cuenta la cuota POR PROYECTO, no por clave: el pool solo
+       suma cuota si cada clave es de un proyecto de Google distinto.
      · Si TODAS se agotan en la misma petición devuelve quota:true, para
        que la app muestre el mensaje honesto y NO reintente en vano. Otros
        fallos (saturación, respuesta vacía, modelos jubilados, claves
@@ -33,8 +35,8 @@
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
 /* 45 s era un secuestro: con Google lento el usuario miraba el spinner
    tres cuartos de minuto para acabar en error. A los 10 s se corta y se
-   prueba el siguiente modelo. Con una cadena de 2 modelos, el peor caso
-   posible queda en ~20 s en vez de los 40 s medidos el 2026-08-24. */
+   prueba el siguiente modelo. El peor caso total lo acota
+   PRESUPUESTO_MS (25 s), en vez de los 40 s medidos el 2026-08-24. */
 const TIMEOUT_MS = 10000;
 const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas (Laboratorio)
 /* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
@@ -60,6 +62,10 @@ const ORIGEN_PRINCIPAL = "https://jorgeicone.github.io";
 /* Lista exacta. Antes valía cualquier *.iconeialabs.com: un subdominio
    abandonado (o apuntado a otro servicio) heredaba el acceso al pool.
    Si otra app de ICONEialabs usa este Worker, agrega aquí su origen. */
+/* jorgeicone.github.io es UN solo origen para todos los repos de GitHub
+   Pages de esa cuenta: cualquier página publicada ahí puede usar el pool.
+   Se mantiene por las apps de ICONEialabs que aún viven en github.io;
+   cuando ninguna lo necesite, quitarlo. */
 const ORIGENES_EXACTOS = [
   ORIGEN_PRINCIPAL,
   "https://iconeialabs.com",
@@ -82,8 +88,8 @@ function origenPermitido(request) {
      · gemini-3.5-flash-lite    → 200 OK con texto VACÍO
    Por eso nunca se fija UNO solo: si el modelo pedido está muerto o
    devuelve vacío, se pasa al siguiente de la lista. La cadena es corta
-   a propósito: cada intento fallido puede costar hasta TIMEOUT_MS, y
-   tres intentos convierten un fallo en 30 s de spinner. */
+   a propósito (hasta 3 modelos: el pedido, el último que funcionó y los
+   de respaldo), y el tiempo total lo acota PRESUPUESTO_MS. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
@@ -502,7 +508,7 @@ export default {
     }
 
     /* Se acabaron todas las claves. Mensaje honesto + quota:true para que
-       la app NO reintente 4 veces ni mienta diciendo "espera un momento".
+       la app NO reintente ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
     if (sinTiempo && !todasQuemadas) {
       return json({
