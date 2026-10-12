@@ -113,6 +113,12 @@ function demasiadasPeticiones(ip) {
   v.n++;
   return v.n > LIMITE_POR_IP;
 }
+/* Una petición que Google no pudo atender (bache pasajero) no cuenta para
+   el freno: si no, una tormenta de 503 de Google expulsaba al salón entero. */
+function devolverVisita(ip) {
+  const v = visitas.get(ip);
+  if (v && v.n > 0) v.n--;
+}
 
 function hoyUTC() {
   /* Nombre histórico: devuelve el día en hora del Pacífico, que es cuando
@@ -160,19 +166,25 @@ function json(data, status, origen) {
 }
 
 /* ¿Este fallo significa "esta clave está quemada, prueba la siguiente"? */
-function claveQuemada(status, detalle) {
-  // Solo es cuota del día si Google lo dice (PerDay) o habla de créditos.
-  // Un 429 sin detalles se trata como pasajero: no "vuelve mañana" en falso.
+/* Tipo de 429. Manda el quotaId de Google (PerMinute / PerDay); solo si no
+   viene, se mira si habla de créditos agotados. La palabra "billing" sola
+   no basta: Google la menciona también en los límites por minuto. Ante la
+   duda, es pasajero: nunca un "vuelve mañana" en falso. */
+function tipo429(detalle) {
   const d = (detalle || "").toLowerCase();
-  return status === 429 && /perday|per day|credit|billing/.test(d);
+  if (/perminute|per minute/.test(d)) return "minuto";
+  if (/perday|per day/.test(d)) return "dia";
+  if (/credits are depleted|prepayment|credit balance/.test(d)) return "dia";
+  return "minuto";
+}
+function claveQuemada(status, detalle) {
+  return status === 429 && tipo429(detalle) === "dia";
 }
 
 /* Un 429 por minuto no es la cuota del día: en un salón lleno se pasa solo
    en segundos. No quema la clave y no debe decir "vuelve mañana". */
 function limitePorMinuto(status, detalle) {
-  const d = (detalle || "").toLowerCase();
-  if (status !== 429) return false;
-  return !/perday|per day|credit|billing/.test(d);  // todo 429 que no es del día
+  return status === 429 && tipo429(detalle) === "minuto";
 }
 
 /* ¿La clave no sirve (inválida o sin permiso)? También se rota, pero no es
@@ -522,6 +534,7 @@ export default {
     /* Ningún modelo respondió y el motivo fue saturación o timeout:
        aquí sí tiene sentido que la app reintente dentro de un rato. */
     if (huboBache && !todasQuemadas) {
+      devolverVisita(ip);
       return json({
         error: "El servicio de IA está saturado en este momento.",
         status: estadoBache,
@@ -559,6 +572,7 @@ export default {
        la app NO reintente ni mienta diciendo "espera un momento".
        El detalle crudo de Google (incluida la facturación) NO se expone. */
     if (sinTiempo && !todasQuemadas) {
+      devolverVisita(ip);
       return json({
         error: "La IA está tardando demasiado en responder. Inténtalo de nuevo en un momento.",
         status: 504,
@@ -566,6 +580,7 @@ export default {
       }, 504, origen);
     }
     if (huboMinuto && !todasQuemadas) {
+      devolverVisita(ip);
       return json({
         error: "Hay mucha demanda en este momento. Espera un minuto e inténtalo de nuevo.",
         status: 503,
@@ -579,6 +594,7 @@ export default {
       }, 503, origen);
     }
     if (!todasQuemadas) {
+      devolverVisita(ip);
       return json({
         error: "El servicio de IA no respondió. Inténtalo de nuevo en un momento.",
         status: 503,

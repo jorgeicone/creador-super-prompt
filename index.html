@@ -159,6 +159,8 @@
   @media (min-width:1600px){
     html{font-size:18px}
     .wrap{max-width:1180px}
+    .result{font-size:1.25rem}
+    .status{font-size:1rem}
   }
 
   .btn{cursor:pointer;border:none;border-radius:13px;padding:14px 26px;font-size:1rem;
@@ -268,6 +270,17 @@
     h1{font-size:1.35rem}
     header.top{margin-bottom:16px}
     .keyrow{flex-wrap:wrap}.keyrow .keybadge{order:3}
+  }
+  @media (max-width:640px) and (max-height:700px){
+    .wrap{padding-top:16px}
+    header.top .sub{display:none}
+    .free-banner{padding:9px 12px;margin-bottom:12px}
+    .card{padding-top:18px}
+    .card-head{margin-bottom:10px}.card-head p{display:none}
+    header.top{margin-bottom:10px}
+    .label,label{margin-bottom:5px}
+    .types{margin-bottom:12px}
+    textarea{min-height:72px}
     .result{max-height:50vh}
     header.top .sub{font-size:.85rem}
   }
@@ -841,9 +854,18 @@ async function callOnce({system,user,max_tokens,json}){
 
 // ¿Este fallo significa que la IA incluida no puede atender ahora mismo?
 // (cuota agotada, freno por IP, Worker caído o inalcanzable)
+/* Fallos de red seguidos (status 0). Uno solo suele ser el wifi; solo
+   cuando se repite con el equipo en línea se trata como servicio caído. */
+let fallosRed=0;
 function iaGratisCaida(err){
   const s = err.status||0;
-  if(err.quota || err.rate || err.caido) return true;
+  if(s===0 && !err.caido){
+    if(!navigator.onLine) return false;
+    return ++fallosRed>=2;
+  }
+  // El freno por red compartida pide esperar, no cambiar de modo.
+  if(err.rate) return false;
+  if(err.quota || err.caido) return true;
   // Un bache pasajero (salón lleno, timeout) NO es caída: se reintenta.
   // Antes cualquier 503 sacaba al usuario de la IA gratis para siempre.
   if(err.transient && s!==0) return false;
@@ -854,7 +876,7 @@ function iaGratisCaida(err){
 }
 function motivoCaida(err){
   if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy.";
-  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi del salón). Espera unos minutos (hasta 10) e inténtalo de nuevo; si tienes prisa, puedes usar tu propia clave gratis.";
+  if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi del salón). Espera unos minutos (hasta 10) e inténtalo de nuevo.";
   if(!err.status) return "No se pudo contactar el servicio de IA incluido.";
   return "El servicio de IA incluido no está disponible ahora.";
 }
@@ -862,12 +884,17 @@ function motivoCaida(err){
 // llamada a la IA con reintentos automáticos ante saturaciones temporales
 async function callAI({system,user,max_tokens=1500,json=false}){
   const t0=Date.now();
+  /* Si se pasó a clave propia pero no hay clave escrita, el botón del paso
+     vuelve a intentar con la IA incluida (p. ej. tras un corte de wifi). */
+  if(HAS_PROXY && modoClavePropia && currentKey().length<=10) volverAIaIncluida();
   /* El Worker ya rota claves y modelos por dentro: aquí basta un reintento.
      Más intentos solo alargan el spinner. */
   const MAX=2;
   for(let intento=1;intento<=MAX;intento++){
     try{
-      return await callOnce({system,user,max_tokens,json});
+      const r=await callOnce({system,user,max_tokens,json});
+      fallosRed=0;
+      return r;
     }catch(err){
       // Tras un timeout (504) no se reintenta: el Worker ya rotó claves y
       // modelos por dentro, y otro intento solo duplica la espera.
@@ -883,6 +910,9 @@ async function callAI({system,user,max_tokens=1500,json=false}){
       /* La IA incluida no puede seguir. En vez de dejar al usuario sin
          salida, se abre el panel y se le ofrece su propia clave gratis.
          Si ya tenía una guardada, ni se entera: se reintenta con ella. */
+      if(usaProxy() && err.rate) throw new Error(motivoCaida(err));
+      if(usaProxy() && (err.status||0)===0 && !err.caido && !iaGratisCaida(err))
+        throw new Error("No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
       if(usaProxy() && iaGratisCaida(err)){
         ofrecerClavePropia(motivoCaida(err));
         if(currentKey().length>10) return await callOnce({system,user,max_tokens,json});
@@ -983,7 +1013,7 @@ $("genQuestions").addEventListener("click",async()=>{
     const q0=$("qa0"); if(q0) q0.focus({preventScroll:true});
     setStatus($("status1"),"✓ Preguntas generadas","ok");
   }catch(err){if(g===gen) setStatus($("status1"),err.message,"err");}
-  finally{btn.disabled=false;}
+  finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 /* Construido con textContent en vez de innerHTML: el escapado a mano solo
    cubría "<", así que un "&" en una pregunta salía roto en pantalla. Con
@@ -1024,13 +1054,13 @@ $("genPrompt").addEventListener("click",async()=>{
     if(g!==gen) return;
     state.versiones=[]; state.chat=[]; state.currentPrompt="";   // prompt nuevo: historial limpio
     setPrompt(r.text, r.truncado);
-    unlock("card3"); setStep(3); $("chatlog").textContent="";
+    unlock("card3"); setStep(3); $("chatlog").textContent=""; guardar();
     $("card3").scrollIntoView({behavior:"smooth",block:"start"});
     $("result").focus({preventScroll:true});
     if(r.truncado) setStatus($("status2"),"⚠ La respuesta de la IA salió incompleta. Vuelve a crearlo; si se repite, pide una versión más corta en el ajuste.","warn");
     else setStatus($("status2"),"✓ Super Prompt creado","ok");
   }catch(err){if(g===gen) setStatus($("status2"),err.message,"err");}
-  finally{btn.disabled=false;}
+  finally{btn.disabled=false; if(document.activeElement===document.body) btn.focus({preventScroll:true});}
 });
 
 /* Cada refinamiento sobrescribía el prompt sin vuelta atrás: si la IA lo
@@ -1100,6 +1130,7 @@ function empezarDeNuevo(){
   $("estadoPrompt").classList.add("hidden");
   actualizarUndo(); olvidar();
   setStep(1); window.scrollTo({top:0,behavior:"smooth"});
+  $("idea").focus({preventScroll:true});
 }
 $("restartBtn").addEventListener("click",empezarDeNuevo);
 $("borrarAhora").addEventListener("click",empezarDeNuevo);
@@ -1134,7 +1165,7 @@ async function refine(){
     const log=$("chatlog"); if(log.lastChild) log.removeChild(log.lastChild);   // el ajuste no se aplicó
     if(g===gen) setStatus($("status4"),err.message,"err");
   }
-  finally{btn.disabled=false;}
+  finally{btn.disabled=false; if(document.activeElement===document.body) $("chatInput").focus({preventScroll:true});}
 }
 $("chatSend").addEventListener("click",refine);
 // Sin estas guardas, Enter repetido lanzaba otra petición con una en vuelo,
