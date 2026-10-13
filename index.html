@@ -295,7 +295,7 @@
     <div><b>IA incluida y gratis</b> <span>· no tienes que configurar nada.</span>
       <!-- Aviso de privacidad visible y corto; el detalle, plegado. -->
       <details class="privacidad"><summary>🔒 No escribas datos personales ni confidenciales. <u>Ver por qué</u></summary>
-        Tu texto (idea, respuestas y ajustes) pasa por nuestro sistema en Cloudflare y de ahí a Google (Gemini), para generar el prompt: Cloudflare lo procesa por encargo de ICONEialabs y Google lo recibe bajo sus propios términos; la dirección de tu conexión se usa solo para evitar el uso excesivo. Nosotros no guardamos tu texto, pero la IA incluida usa el plan gratuito de Google, en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. En este equipo, lo que escribas se guarda solo en esta pestaña del navegador. Preguntas sobre tus datos: <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>
+        Tu texto (idea, respuestas y ajustes) pasa por nuestro sistema en Cloudflare y de ahí a Google (Gemini), para generar el prompt: Cloudflare lo procesa por encargo de ICONEialabs y Google lo recibe bajo sus propios términos; la dirección de tu conexión se usa solo para evitar el uso excesivo. Nosotros no guardamos tu texto, pero trata tu texto como si fuera al plan gratuito de Google (la IA incluida puede usarlo), en el que Google puede usar lo que envías para mejorar sus productos y revisores humanos pueden leerlo. En este equipo, lo que escribas se guarda solo en esta pestaña del navegador. Preguntas sobre tus datos: <a href="https://iconeialabs.com" target="_blank" rel="noopener">iconeialabs.com</a>
         <span class="acciones"><button type="button" class="linkbtn" id="borrarAhora">Borrar lo que escribí</button></span></details>
     </div>
   </div>
@@ -330,7 +330,7 @@
       <p class="aviso-chico" style="margin:8px 0 0">Si estás proyectando la pantalla, no pulses 👁: mostraría tu API key a la sala.</p>
       <button type="button" class="linkbtn olvidar hidden" id="olvidarClave">Olvidar mi API key en este navegador</button>
       <span class="status" id="statusClave" role="status" aria-live="polite"></span>
-      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu API key se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos y revisores humanos pueden leerlo.</p>
+      <p class="note">🔒 Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Tu API key se queda en este navegador y no pasa por ningún servidor nuestro: las peticiones van directas a Google (Gemini), que sí recibe el texto que escribas y, si tu clave es del plan gratuito, puede usarlo para mejorar sus productos y revisores humanos pueden leerlo. No escribas datos personales ni confidenciales.</p>
     </div>
   </details>
 
@@ -661,6 +661,7 @@ function ofrecerClavePropia(motivo){
   const v=$("volverGratis"); if(v) v.addEventListener("click",volverAIaIncluida);
   // El foco va al aviso (que se desplaza a la vista), no se queda en un botón fuera de pantalla.
   aviso.setAttribute("tabindex","-1"); setTimeout(()=>aviso.focus({preventScroll:true}),350);
+  avisoClaveEn=Date.now();
   $("cfg").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -704,6 +705,7 @@ $("types").addEventListener("click",e=>{
 });
 $("types").addEventListener("keydown",e=>{
   const t=e.target.closest(".type"); if(!t)return;
+  if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey) return;   // Atrás/Adelante y atajos del navegador
   if(e.key===" "||e.key==="Enter"){e.preventDefault();elegirTipo(t,true);return;}
   const i=tipos.indexOf(t); let j=-1;
   if(e.key==="ArrowRight"||e.key==="ArrowDown") j=(i+1)%tipos.length;
@@ -713,7 +715,6 @@ $("types").addEventListener("keydown",e=>{
   if(j>=0){e.preventDefault();elegirTipo(tipos[j],true);}
 });
 
-// progreso
 
 // ¿la cuota se agotó de verdad? Entonces reintentar NO sirve de nada:
 // no es una saturación pasajera, es que no queda saldo/cuota hasta mañana.
@@ -735,7 +736,7 @@ function isTransient(msg,status){
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* Corte del navegador por intento. El Worker tiene un presupuesto total de
-   26 s (12-20 s por modelo), así que este corte solo salta si algo va muy mal. */
+   26 s (16-20 s por modelo), así que este corte solo salta si algo va muy mal. */
 const TIMEOUT_CLIENTE=34000;
 /* Peticiones en vuelo: "Empezar de nuevo", "Cancelar" o una petición nueva
    del paso 1 las abortan, para que no dejen botones bloqueados ni
@@ -757,7 +758,7 @@ async function pedir(url,opciones){
     const corto = e && e.name==="AbortError";
     const err=new Error(corto?"La IA no respondió a tiempo.":"No se pudo contactar el servicio de IA.");
     err.status=corto?504:0; err.transient=true;
-    // El Worker corta solo a los 25 s: si el navegador llega a 30, el
+    // El Worker corta solo a los 26 s: si el navegador llega a 34, el
     // servicio está colgado y la salida es la clave propia.
     err.caido=corto;
     throw err;
@@ -795,7 +796,7 @@ async function callOnce({system,user,max_tokens,json}){
                     : (isTransient(emsg,status) || undefined);
       throw err;
     }
-    if(!data.text){
+    if(typeof data.text!=="string"||!data.text){
       if(!legible && res.ok){
         // 200 que no es JSON: lo típico de un wifi que pide iniciar sesión.
         const e=new Error("La conexión devolvió una página que no es de la IA (¿el wifi pide iniciar sesión?). Revisa tu conexión e inténtalo de nuevo.");
@@ -823,7 +824,9 @@ async function callOnce({system,user,max_tokens,json}){
     if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(detail)))throw new Error("Tu API key de Gemini no es válida o está restringida. Revísala en aistudio.google.com/apikey.");
     const porMinuto=res.status===429 && !/perday|per day/i.test(detail) && /perminute|per minute|retry in \d/i.test(detail);
     if(porMinuto){ const e=new Error("Tu API key llegó a su límite por minuto. Espera un minuto e inténtalo de nuevo."); e.status=429; e.transient=false; throw e; }
-    const agotada=isQuota(detail,res.status);
+    // Solo es "agotada hoy" si Google dice que es la cuota diaria; un 429 sin detalle no se sabe.
+    const agotada=res.status===429 ? /perday|per day|daily/i.test(detail) : isQuota(detail,res.status);
+    if(res.status===429&&!agotada){ const e=new Error("Tu API key llegó a un límite de Google. Espera un minuto; si sigue igual, puede que haya agotado su uso gratuito de hoy (se reinicia a medianoche, hora del Pacífico)."); e.status=429; e.transient=false; e.final=true; throw e; }
     // Sin exponer el detalle crudo de Google (que incluye datos de facturación).
     // Ni el detalle crudo de Google (en inglés, con datos de facturación)
     // ni un "Error 500": un mensaje que el usuario pueda entender.
@@ -840,7 +843,7 @@ async function callOnce({system,user,max_tokens,json}){
   const txt=parts.map(p=>p.text||"").join("").trim();
   const razon=cand.finishReason||"";
   if(!txt){
-    if(razon==="SAFETY")throw new Error("Los filtros de Google frenaron esta petición (a veces pasa con temas sensibles). Prueba a contarlo con otras palabras.");
+    if(razon==="SAFETY"||data?.promptFeedback?.blockReason)throw new Error("Los filtros de Google frenaron esta petición (a veces pasa con temas sensibles). Prueba a contarlo con otras palabras.");
     const err=new Error("La IA no pudo responder esta vez. Inténtalo de nuevo.");err.transient=true;err.final=true;throw err;
   }
   return {text:txt, truncado:razon==="MAX_TOKENS"};
@@ -869,7 +872,7 @@ function iaGratisCaida(err){
   return s===0 || s===401 || s===403 || s===404 || s===429 || (s>=500 && s!==502);
 }
 function motivoCaida(err){
-  if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy.";
+  if(err.quota) return "Se acabó el uso gratuito de la IA incluida por hoy (vuelve después de la medianoche, hora del Pacífico).";
   if(err.rate)  return "Muchas personas están usando la IA desde esta misma red (por ejemplo, el wifi de un salón o de una oficina). Espera "+(err.esperaMin?("unos "+err.esperaMin+" min"):"unos minutos")+" e inténtalo de nuevo.";
   if(!err.status) return "No se pudo contactar la IA incluida varias veces seguidas. Si tu internet funciona (abre otra página para comprobarlo), el problema es nuestro.";
   return "La IA incluida no está disponible ahora.";
@@ -907,7 +910,7 @@ async function callAI({system,user,max_tokens=1500,json=false}){
          Si ya tenía una guardada, ni se entera: se reintenta con ella. */
       if(usaProxy() && err.rate) throw new Error(motivoCaida(err));
       if(usaProxy() && (err.status||0)===0 && !err.caido && !iaGratisCaida(err))
-        throw new Error(navigator.onLine
+        throw err.final ? err : new Error(navigator.onLine
           ? "No pudimos conectar con la IA incluida. Revisa tu wifi; si funciona, inténtalo de nuevo en un momento."
           : "No hay conexión a internet o se cortó. Revisa tu conexión e inténtalo de nuevo.");
       if(usaProxy() && iaGratisCaida(err)){
@@ -915,7 +918,7 @@ async function callAI({system,user,max_tokens=1500,json=false}){
         // Con una API key guardada no se reenvía en silencio: la persona
         // decide pulsando de nuevo (su texto saldría bajo su propia cuenta).
         if(currentKey().length>10) throw new Error(motivoCaida(err)+" Tienes tu API key guardada: pulsa de nuevo para seguir con ella.");
-        throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega arriba tu API key gratuita de Gemini e inténtalo de nuevo.");
+        throw new Error(err.rate ? motivoCaida(err) : motivoCaida(err)+" Pega tu API key gratuita de Gemini en el panel que se abrió e inténtalo de nuevo.");
       }
       // Cuota agotada: reintentar no la devuelve. Fallamos de inmediato y
       // decimos la verdad, en vez de 7 segundos de spinner y "espera un momento".
@@ -924,6 +927,7 @@ async function callAI({system,user,max_tokens=1500,json=false}){
       const reintentable = err.transient!==false && (err.transient || (!err.delWorker && isTransient(err.message,err.status||0)));
       if(reintentable){
         if(err.final) throw err;   // el mensaje ya dice la causa real
+        if(err.status===0&&!usaProxy()) throw new Error("No se pudo conectar con Google. Revisa tu conexión a internet e inténtalo de nuevo.");
         if(err.status===504) throw new Error("La IA está tardando más de lo normal. Inténtalo de nuevo en un momento.");
         if(err.delWorker) throw err;   // el Worker ya explicó la causa
         throw new Error("La IA está muy solicitada ahora mismo. Inténtalo de nuevo en un momento.");
@@ -943,11 +947,12 @@ function extractJSON(txt){
 /* Tras 8 s de espera el estado dice cuánto lleva, para que nadie crea
    que la app se colgó. */
 const relojes=new Map();
+let avisoClaveEn=0;   // al abrir el panel de la clave, el estado no debe arrastrar la vista hacia abajo
 function setStatus(el,msg,kind){
   clearInterval(relojes.get(el)); relojes.delete(el);
   el.className="status"+(kind?(" "+kind):"");
   el.textContent="";
-  if(kind==="loading"||kind==="err"||kind==="warn"){
+  if((kind==="loading"||kind==="err"||kind==="warn")&&Date.now()-avisoClaveEn>2000){
     // En celular el estado puede quedar bajo el borde: se trae a la vista.
     requestAnimationFrame(()=>{ try{
       const r=el.getBoundingClientRect(), extra=60;
@@ -1072,6 +1077,10 @@ $("genPrompt").addEventListener("click",async()=>{
     const user=`TIPO: ${state.type}\n\nIDEA DEL USUARIO:\n<idea>\n${state.idea.replace(/<\/?idea>/gi,"")}\n</idea>\n\nDETALLES ADICIONALES:\n${qa}`;
     const r=await callAI({system,user,max_tokens:2000});
     if(g!==G.p||gq!==G.q||r0!==gen){ setStatus($("status2"),"",""); return; }
+    if($("idea").value.trim()!==state.ideaPreguntas||state.type!==state.tipoPreguntas){
+      // La idea o el tipo cambiaron mientras se redactaba: este prompt ya no corresponde.
+      setStatus($("status2"),"",""); revisarVigencia(); return;
+    }
     /* Prompt nuevo: el anterior queda como versión (no se pierde), y el
        chat empieza de cero para el prompt nuevo. */
     if(state.currentPrompt) state.versiones.push({prompt:state.currentPrompt, chat:state.chat.slice(), truncado:state.truncado, respuestas:state.respuestasPrompt||""});
@@ -1089,12 +1098,12 @@ $("genPrompt").addEventListener("click",async()=>{
 
 /* Cada refinamiento sobrescribía el prompt sin vuelta atrás: si la IA lo
    empeoraba, no había forma de recuperarlo. Ahora se apilan las versiones. */
-/* La etiqueta solo dice "listo para usar" si de verdad lo está. */
+/* La etiqueta nunca promete "listo": la IA puede haber puesto datos que hay que comprobar. */
 function marcarEstado(){
   const truncado=state.truncado;
   const pendiente = /\[(COMPLETAR|COMPLETE|TO ?DO|FILL)[^\]]*\]/i.test(state.currentPrompt||"");
   const e=$("estadoPrompt"); e.classList.toggle("hidden",!state.currentPrompt);
-  e.textContent = truncado ? "salió incompleto" : pendiente ? "revisa los [COMPLETAR]" : "listo para usar";
+  e.textContent = truncado ? "salió incompleto" : pendiente ? "revisa los [COMPLETAR]" : "revisa los datos antes de usarlo";
 }
 /* Cada versión guarda también los ajustes que llevaba y si salió cortada,
    para que "Versión anterior" deshaga de verdad (y el chat no los repita). */
@@ -1102,6 +1111,7 @@ function setPrompt(txt,truncado){
   if(state.currentPrompt && state.currentPrompt!==txt)
     state.versiones.push({prompt:state.currentPrompt, chat:state.chat.slice(), truncado:state.truncado, respuestas:state.respuestasPrompt||""});
   state.currentPrompt=txt; state.truncado=!!truncado; $("result").textContent=txt;
+  setStatus($("status3"),"","");   // un "✓ Copiado" de la versión anterior ya no vale
   marcarEstado(); actualizarUndo(); guardar();
 }
 function pintarChat(){
@@ -1147,7 +1157,7 @@ $("copyBtn").addEventListener("click",async()=>{
   catch(e){
     const r=document.createRange(); r.selectNodeContents($("result"));
     const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    setStatus($("status3"),"No se pudo copiar solo: el texto quedó seleccionado; cópialo con Ctrl+C (o mantén pulsado en el celular), o usa «Descargar .txt».","err");
+    setStatus($("status3"),"No se pudo copiar automáticamente: el texto quedó seleccionado; cópialo con Ctrl+C (o mantén pulsado en el celular), o usa «Descargar .txt».","err");
   }
 });
 function empezarDeNuevo(){
@@ -1183,7 +1193,7 @@ async function refine(){
     /* Viajan también los ajustes ya pedidos, para que la IA no deshaga lo
        que acaba de aplicar. */
     const previos=state.chat.filter(m=>m.yo).map(m=>m.yo).slice(-6);
-    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual (entre <prompt_actual> y </prompt_actual>), los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. No inventes datos, cifras ni audiencias: conserva los marcadores exactamente como [COMPLETAR: …] (sin traducir la palabra COMPLETAR), salvo que la instrucción los llene. Si agregas uno, escríbelo como pregunta sencilla y tuteando. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Mantén el idioma del prompt salvo que la instrucción pida otro. Devuelve ÚNICAMENTE el prompt completo actualizado, listo para usar, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
+    const system=`Eres un ingeniero de prompts. Recibirás un PROMPT actual (entre <prompt_actual> y </prompt_actual>), los AJUSTES YA PEDIDOS antes y una INSTRUCCIÓN nueva. Aplica la instrucción nueva SIN deshacer los ajustes anteriores. No inventes datos, cifras ni audiencias: conserva los marcadores exactamente como [COMPLETAR: …] (sin traducir la palabra COMPLETAR), salvo que la instrucción los llene. Si agregas uno, escríbelo como pregunta sencilla y tuteando. Quien va a usar el prompt no es técnico: que se entienda al leerlo. Mantén el idioma del prompt salvo que la instrucción pida otro. Devuelve ÚNICAMENTE el prompt completo actualizado, sin explicaciones ni comentarios meta. Mantén las buenas prácticas (rol, contexto, delimitadores, restricciones, formato de salida).`;
     const historia=previos.length?`AJUSTES YA PEDIDOS (en orden):\n${previos.map((p,i)=>`${i+1}. ${p}`).join("\n")}\n\n`:"";
     const base=state.currentPrompt;
     const user=`<prompt_actual>\n${base}\n</prompt_actual>\n\n${historia}INSTRUCCIÓN NUEVA:\n${instr}`;
@@ -1195,13 +1205,13 @@ async function refine(){
       setStatus($("status4"),"El prompt cambió mientras se ajustaba: vuelve a pedir el ajuste.","warn");
       return;
     }
-    $("chatInput").value="";
+    if(!r.truncado) $("chatInput").value="";   // si salió cortado, la instrucción queda para reenviarla
     setPrompt(r.text, r.truncado);
     $("result").scrollIntoView({behavior:"smooth",block:"start"});
     const eco=r.truncado?"⚠ La versión ajustada salió incompleta":"✓ Prompt actualizado arriba";
     state.chat.push({yo:instr},{ia:eco}); guardar();
     mensajeChat(eco,"ai");
-    setStatus($("status4"),r.truncado?"⚠ La respuesta de la IA salió incompleta. Inténtalo de nuevo.":"",r.truncado?"warn":"");
+    setStatus($("status4"),r.truncado?"⚠ La respuesta de la IA salió incompleta. Pulsa de nuevo para reenviar el ajuste, o vuelve a la versión anterior.":"",r.truncado?"warn":"");
   }catch(err){
     const log=$("chatlog"); if(log.lastChild) log.removeChild(log.lastChild);   // el ajuste no se aplicó
     const vale=g===G.c&&gp===G.p&&r0===gen; setStatus($("status4"), vale?err.message:"", vale?"err":"");

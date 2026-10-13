@@ -33,9 +33,10 @@
    ==================================================================== */
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
-/* Corte por modelo: a los 12 s se pasa al siguiente. El peor caso total
-   lo acota PRESUPUESTO_MS (25 s), incluida la lectura de la respuesta. */
-const TIMEOUT_MS = 12000;
+/* Corte por modelo: a los 16 s se pasa al siguiente (20 s si se piden
+   1500 tokens o más; 45 s con búsqueda o más de 2000). El peor caso total
+   lo acota PRESUPUESTO_MS (26 s), incluida la lectura de la respuesta. */
+const TIMEOUT_MS = 16000;
 const TIMEOUT_LARGO_MS = 45000;   // búsqueda en Google o respuestas largas
 /* Presupuesto TOTAL por petición, sumando todos los modelos y claves que se
    prueben. Debe quedar por debajo del corte del navegador de cada app
@@ -77,16 +78,14 @@ function origenPermitido(request) {
 }
 
 /* Modelos. Google jubila modelos y mueve los alias -latest de un modelo a
-   otro con poco aviso (en septiembre de 2026 flash-lite-latest apuntaba a
-   gemini-3.5-flash-lite). Por eso nunca se fija uno solo: si el modelo
+   otro con poco aviso. Por eso nunca se fija uno solo: si el modelo
    pedido está retirado, devuelve vacío o rechaza la petición, se pasa al
    siguiente de la cadena (el pedido, el último que funcionó para esa app
-   y los de respaldo, sin repetir: hasta 4 modelos distintos). El tiempo total lo acota
+   y los de respaldo, sin repetir: hasta 3 modelos distintos, los de MODELOS_PERMITIDOS). El tiempo total lo acota
    PRESUPUESTO_MS. Antes de cambiar el modelo por defecto, medirlo en vivo. */
 const MODELO_POR_DEFECTO = "gemini-flash-lite-latest";
 const MODELOS_RESPALDO = ["gemini-flash-lite-latest", "gemini-3.6-flash"];
 
-/* Recuerda el modelo que sí funcionó, para no volver a probar los muertos. */
 /* Último modelo que funcionó, por origen: cada app conserva su propia
    cadena y una no alarga la de la otra. */
 const modeloVivoPorOrigen = new Map();
@@ -102,7 +101,7 @@ let diaDeLaMemoria = "";
 /* Freno básico por IP en memoria del isolate (un salón entero comparte
    la IP del wifi, por eso el número es alto). Complementa, no sustituye,
    las reglas de límite de Cloudflare. */
-const LIMITE_POR_IP = 600;         // peticiones…  (30 personas × ~20 en una sesión)
+const LIMITE_POR_IP = 600;         // peticiones…  (30 personas × ~20 en una sesión; lo comparten todas las apps que usan este Worker)
 const VENTANA_MS = 10 * 60 * 1000; // …por cada 10 minutos
 const visitas = new Map();
 
@@ -237,8 +236,8 @@ async function llamarGemini({ key, modelo, system, user, max_tokens, wantJson, t
       maxOutputTokens: max_tokens || 1500
     }
   };
-  /* La temperatura solo viaja si la app la pide: los modelos Gemini 3.x la
-     ignoran y Google anuncia que generaciones futuras responderán 400. */
+  /* La temperatura solo viaja si la app la pide; si no, se usa la que
+     Google recomienda por defecto para cada modelo. */
   if (temperature !== undefined) body.generationConfig.temperature = temperature;
   if (system) body.system_instruction = { parts: [{ text: system }] };
   /* Por diseño no se combinan búsqueda en Google y modo JSON: con
@@ -319,8 +318,8 @@ async function leerRespuesta(res) {
 
   /* Respuesta vacía. Dos casos muy distintos:
        · SAFETY  → la IA bloqueó el contenido: cambiar de modelo no ayuda.
-       · lo demás → este modelo no está rindiendo (le pasa hoy a
-         3.5-flash-lite): se prueba el siguiente, sin tocar la clave. */
+       · lo demás → este modelo no está rindiendo (a veces pasa con
+         los modelos Lite): se prueba el siguiente, sin tocar la clave. */
   const bloqueo = (data && data.promptFeedback && data.promptFeedback.blockReason) || "";
   if (!texto) {
     if (bloqueo || ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"].includes(razon)) {
@@ -360,7 +359,8 @@ export default {
       return json({ error: "Origen no permitido" }, 403, "");
     }
 
-    /* En Cloudflare toda petición real trae CF-Connecting-IP. Sin ella no
+    /* Cloudflare añade CF-Connecting-IP a las peticiones de visitantes (salvo
+       que se active «Remove visitor IP headers»; no activarla). Sin ella no
        hay forma de aplicar el freno, así que no se atiende. */
     const ip = request.headers.get("CF-Connecting-IP");
     if (!ip) {
@@ -490,13 +490,13 @@ export default {
             return json({ error: err.message, status: err.status }, err.status, origen);
           }
           if (err.modeloFlojo) {
-            if (modeloVivo === m) modeloVivo = "";
+            if (modeloVivo === m) { modeloVivo = ""; modeloVivoPorOrigen.delete(origen); }
             descartados.add(m);
             huboVacio = true;
             continue;               // misma clave, siguiente modelo
           }
           if (modeloMuerto(err.status, err.detalle)) {
-            if (modeloVivo === m) modeloVivo = "";
+            if (modeloVivo === m) { modeloVivo = ""; modeloVivoPorOrigen.delete(origen); }
             descartados.add(m);
             modelosMuertos++;
             probadosEnEstaClave--;  // un modelo retirado no dice nada de la cuota de la clave
@@ -506,7 +506,7 @@ export default {
             /* Bache del servicio (o se agotó el timeout). No es la clave, y
                medido en producción no siempre afecta a todos los modelos:
                antes de rendirse se prueba el siguiente de la cadena. */
-            if (modeloVivo === m) modeloVivo = "";
+            if (modeloVivo === m) { modeloVivo = ""; modeloVivoPorOrigen.delete(origen); }
             descartados.add(m);
             huboBache = true;
             estadoBache = err.status;
